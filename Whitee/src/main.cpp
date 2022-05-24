@@ -70,7 +70,9 @@ int main(int argc, char **argv)
          << "Start building IR in SSA form..." << endl;
     auto module = buildIrModule(root);
     cout << "IR built successfully." << endl;
+
     removePhiUserBlocksAndMultiCmp(module);
+
     if (_debugIr)
     {
         ofstream irStream;

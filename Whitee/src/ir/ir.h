@@ -74,8 +74,8 @@ enum ValueType
 
 enum VariableType
 {
-    INT,
-    POINTER
+    INT,  // 整型
+    POINTER  // 整型指针
 };
 
 enum InstructionType

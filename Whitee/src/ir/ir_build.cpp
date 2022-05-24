@@ -35,6 +35,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, shared_ptr<Value> &offset,
                  shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb);
 
+// 开始构建IR  有Decl | FuncDef
 shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 {
     module = make_shared<Module>(); // NOLINT
@@ -44,12 +45,11 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
         {
             for (auto &def : s_p_c<ConstDeclNode>(decl)->constDefList)
             {
-                if (def->ident->ident->symbolType == SymbolType::CONST_ARRAY)
+                if (def->ident->ident->symbolType == SymbolType::CONST_ARRAY)  // 只有常量数组才存储，常量不用存
                 {
                     shared_ptr<Value> value = make_shared<ConstantValue>(def);
                     module->globalConstants.push_back(value);
-                    globalConstantMap.insert(
-                        {def->ident->ident->usageName, s_p_c<ConstantValue>(value)});
+                    globalConstantMap.insert({def->ident->ident->usageName, s_p_c<ConstantValue>(value)});
                 }
             }
         }
@@ -96,6 +96,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 
 /**
  * Transform a block(this 'block' is the concept of AST, instead of SSA) to IR.
+ * block内有Decl | Stmt
  */
 void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<BlockNode> &block,
                shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
@@ -121,8 +122,7 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
                 {
                     shared_ptr<Value> value = make_shared<ConstantValue>(constDef);
                     module->globalConstants.push_back(value);
-                    globalConstantMap.insert(
-                        {constDef->ident->ident->usageName, s_p_c<ConstantValue>(value)});
+                    globalConstantMap.insert({constDef->ident->ident->usageName, s_p_c<ConstantValue>(value)});
                 }
             }
         }
@@ -146,14 +146,14 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
 
 /**
  * Transform the variable definitions to IR.
+ * 仅处理初始化的
  */
 void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
                 const shared_ptr<VarDefNode> &varDef, bool &afterJump)
 {
     if (afterJump)
         return;
-    func->variables.insert({varDef->ident->ident->usageName,
-                            varDef->dimension == 0 ? VariableType::INT : VariableType::POINTER});
+    func->variables.insert({varDef->ident->ident->usageName, varDef->dimension == 0 ? VariableType::INT : VariableType::POINTER});
     if (varDef->dimension == 0 && varDef->type == InitType::INIT)
     {
         shared_ptr<InitValValNode> initVal = s_p_c<InitValValNode>(varDef->initVal);
@@ -171,11 +171,9 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
         int units = 1;
         for (const auto &d : varDef->dimensions)
             units *= d;
-        shared_ptr<Value> alloc = make_shared<AllocInstruction>(varDef->ident->ident->usageName,
-                                                                units * _W_LEN, units, bb);
+        shared_ptr<Value> alloc = make_shared<AllocInstruction>(varDef->ident->ident->usageName, units * _W_LEN, units, bb);
         bb->instructions.push_back(s_p_c<Instruction>(alloc));
-        localArrayMap.insert({s_p_c<AllocInstruction>(alloc)->name,
-                              s_p_c<AllocInstruction>(alloc)});
+        localArrayMap.insert({s_p_c<AllocInstruction>(alloc)->name, s_p_c<AllocInstruction>(alloc)});
         if (varDef->type == InitType::INIT)
         {
             vector<pair<int, shared_ptr<ExpNode>>> initValues = varDef->initVal->toOneDimensionArray(0, units);
@@ -185,9 +183,9 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
                 for (; curIndex < it.first; ++curIndex)
                 {
                     shared_ptr<Value> zero = getNumberValue(0);
-                    ;
+                    
                     shared_ptr<Value> offset = getNumberValue(curIndex);
-                    ;
+                    
                     shared_ptr<Instruction> store = make_shared<StoreInstruction>(zero, alloc, offset, bb);
                     addUser(store, {zero, alloc, offset});
                     bb->instructions.push_back(store);
@@ -214,6 +212,7 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
 
 /**
  * Transform the statements to IR.
+ * 
  */
 void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<StmtNode> &stmt,
               shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
@@ -439,8 +438,8 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
 }
 
 /**
- * Transform common expression to IR.
- * @return the result Value of the expression, in non-return function call it does not have any meanings.
+ * 将普通表达式转化为IR。
+ * @return表达式的结果值，在void函数调用中，它没有任何意义。
  */
 shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &exp)
 {
@@ -737,7 +736,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 }
 
 /**
- * Transform the address of array, global value, global array or constant value to IR.
+ * 将数组、全局值、全局数组或常量值的地址转换为IR。
  */
 void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address,
                  shared_ptr<Value> &offset, shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb)
