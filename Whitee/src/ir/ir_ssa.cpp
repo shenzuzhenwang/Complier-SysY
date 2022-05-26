@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+// https://zhuanlan.zhihu.com/p/360692294
+
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName);
 
 // 从块的SSA MAP中读取变量
@@ -22,6 +24,7 @@ void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const
     }
 }
 
+// 递归向外寻找变量
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
     if (!bb->sealed)
@@ -50,6 +53,7 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
     }
 }
 
+// 加入变量的phi可能值
 shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, shared_ptr<PhiInstruction> &phi)
 {
     for (auto &it : bb->predecessors)
@@ -63,29 +67,30 @@ shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, sh
     return removeTrivialPhi(phi);
 }
 
+// 去除不重要的phi
 shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
 {
     shared_ptr<Value> same;
     shared_ptr<Value> self = phi->shared_from_this();
     for (auto &it : phi->operands)
     {
-        if (it.second == same || it.second == self)
+        if (it.second == same || it.second == self)  // 只有一个唯一值或引用自己
             continue;
         if (same != nullptr)
             return phi;
         same = it.second;
     }
-    if (same == nullptr)
+    if (same == nullptr)  // 不可达或在开始块中
         same = make_shared<UndefinedValue>(phi->localVarName);
-    phi->users.erase(phi);
+    phi->users.erase(phi);  // 找出所有以这个 phi 为操作数的 φ 函数，除了它本身
     unordered_set<shared_ptr<Value>> users = phi->users;
     shared_ptr<Value> toBeReplaced = phi;
     phi->block->phis.erase(phi);
     for (auto &it : users)
     {
-        it->replaceUse(toBeReplaced, same);
+        it->replaceUse(toBeReplaced, same);  // 将所有用到 phi 的地方替代为 same 并移除 phi
     }
-    if (_isBuildingIr)
+    if (_isBuildingIr)   // 试去递归移除用到 phi 的 φ 函数，因为它可能变得不重要（trivial）
     {
         for (auto &it : phi->operands)
         {
@@ -112,6 +117,7 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     return same;
 }
 
+// 在前驱查询变量定义 加入变量的phi可能值
 void sealBasicBlock(shared_ptr<BasicBlock> &bb)
 {
     if (!bb->sealed)

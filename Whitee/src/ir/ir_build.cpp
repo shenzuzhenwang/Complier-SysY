@@ -158,7 +158,7 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
     {
         shared_ptr<InitValValNode> initVal = s_p_c<InitValValNode>(varDef->initVal);
         shared_ptr<Value> exp = expToIr(func, bb, initVal->exp);
-        if (exp->valueType == ValueType::INSTRUCTION)
+        if (exp->valueType == ValueType::INSTRUCTION)  // ？？感觉没用
         {
             shared_ptr<Instruction> insExp = s_p_c<Instruction>(exp);
             insExp->resultType = L_VAL_RESULT;
@@ -252,7 +252,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             }
             else
             {
-                if (value->valueType == ValueType::INSTRUCTION)
+                if (value->valueType == ValueType::INSTRUCTION)  // ？？感觉没用
                 {
                     shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);
                     insValue->resultType = L_VAL_RESULT;
@@ -264,7 +264,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         }
         case SymbolType::ARRAY:
         {
-            if (value->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)
+            if (value->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)  // 右值为一个无法直接获取的值 ？？感觉没用
             {
                 shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);
                 insValue->resultType = L_VAL_RESULT;
@@ -377,48 +377,48 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
     }
     case StmtType::STMT_WHILE:
     {
-        // declare loop head, loop end and loop body.
+        // 声明循环头、循环结束和循环体
         shared_ptr<BasicBlock> whileEnd = make_shared<BasicBlock>(func, true, loopDepth);
         shared_ptr<BasicBlock> whileJudge = make_shared<BasicBlock>(func, true, loopDepth + 1);
         shared_ptr<BasicBlock> whileBody = make_shared<BasicBlock>(func, false, loopDepth + 1);
         shared_ptr<BasicBlock> preWhileBody = whileBody;
-        // transform condition.
+        // cond真则进入whileBody，假则进入whileEnd
         conditionToIr(func, bb, stmt->cond, whileBody, whileEnd);
-        /* maintain successors and predecessors,
-               be careful of the whileJudge which cannot be analyze before whileBody. */
+        // 维护前驱后继，注意whileJudge不能在whileBody之前分析。
         bb->successors.insert({whileEnd, whileBody});
         whileEnd->predecessors.insert(bb);
         whileBody->predecessors.insert(bb);
         // assign bb as while end.
         bb = whileEnd;
-        // push while body into blocks and analyze it.
+        // 标记while是否有跳出
         bool whileBodyAfterJump = false;
         func->blocks.push_back(whileBody);
+
         ++loopDepth; // goto while body.
         stmtToIr(func, whileBody, stmt->stmt, whileJudge, whileEnd, whileBodyAfterJump);
         --loopDepth;
-        if (!whileBodyAfterJump)
+        if (!whileBodyAfterJump)// while无跳出，则添加跳转到whileJudge
         {
             shared_ptr<Instruction> jmpJudge = make_shared<JumpInstruction>(whileJudge, whileBody);
             whileBody->instructions.push_back(jmpJudge);
             whileBody->successors.insert(whileJudge);
             whileJudge->predecessors.insert(whileBody);
         }
-        if (!whileJudge->predecessors.empty())
+        if (!whileJudge->predecessors.empty())  // whileJudge前驱不为空
         {
-            // finish whileJudge block.
             func->blocks.push_back(whileJudge);
+            // cond真则进入whileBody，假则进入whileEnd
             ++loopDepth;
             conditionToIr(func, whileJudge, stmt->cond, preWhileBody, whileEnd);
             --loopDepth;
+
             whileEnd->predecessors.insert(whileJudge);
             whileJudge->successors.insert(whileEnd);
-            // maintain previous while body's successors and predecessors.
             preWhileBody->predecessors.insert(whileJudge);
             whileJudge->successors.insert(preWhileBody);
         }
-        sealBasicBlock(preWhileBody);//SSAs
-        // end.
+        sealBasicBlock(preWhileBody);
+
         func->blocks.push_back(whileEnd);
         return;
     }
@@ -554,7 +554,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                 for (const auto &i : p->funcRParams->exps)
                 {
                     shared_ptr<Value> tmpExp = expToIr(func, bb, i);
-                    if (p->funcRParams->exps.size() > 1 && tmpExp->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(tmpExp)->resultType != L_VAL_RESULT)
+                    if (p->funcRParams->exps.size() > 1 && tmpExp->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(tmpExp)->resultType != L_VAL_RESULT) //当参数为非左值
                     {
                         s_p_c<Instruction>(tmpExp)->resultType = L_VAL_RESULT;
                         s_p_c<Instruction>(tmpExp)->caughtVarName = generateArgumentLeftValueName(p->ident->ident->usageName);
@@ -639,7 +639,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         {
             shared_ptr<Value> lhs = expToIr(func, bb, p->relExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->addExp);
-            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT)
+            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
             {
                 s_p_c<Instruction>(lhs)->resultType = L_VAL_RESULT;
                 s_p_c<Instruction>(lhs)->caughtVarName = generateTempLeftValueName();
@@ -661,7 +661,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         {
             shared_ptr<Value> lhs = expToIr(func, bb, p->eqExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->relExp);
-            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT)
+            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
             {
                 s_p_c<Instruction>(lhs)->resultType = L_VAL_RESULT;
                 s_p_c<Instruction>(lhs)->caughtVarName = generateTempLeftValueName();

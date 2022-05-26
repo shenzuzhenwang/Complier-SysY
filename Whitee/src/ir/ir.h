@@ -66,7 +66,7 @@ enum ValueType
     GLOBAL,  // 全局变量，包括数组或公共变量
     PARAMETER,  // 函数形参
     UNDEFINED,  // 未定义SSA
-    INSTRUCTION,
+    INSTRUCTION,  // 无法直接获取的值
     MODULE,   // 每个程序的moudel
     FUNCTION,  // 函数
     BASIC_BLOCK  // 基本块
@@ -217,7 +217,7 @@ public:
 
     unordered_map<string, shared_ptr<Value>> localVarSsaMap;  // SSA MAP
 
-    bool sealed = true;                                               // 标记此basic block是否密封
+    bool sealed = true;                                               // 标记此basic block是否密封：没有前驱
     unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // 存储不完整的 phis
 
     BasicBlock() 
@@ -246,7 +246,7 @@ public:
     ResultType resultType;
     string caughtVarName;                         // Lvalue 局部变量名
     unordered_set<shared_ptr<Value>> aliveValues; // 此instruction中活跃的变量.
-
+    
     Instruction(InstructionType type, shared_ptr<BasicBlock> &block, ResultType resultType)
         : Value(ValueType::INSTRUCTION), type(type), resultType(resultType), block(block){};
 
