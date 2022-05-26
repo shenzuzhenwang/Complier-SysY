@@ -186,7 +186,7 @@ bool isExpConstOrIMM(std::shared_ptr<ExpNode> exp)
 /**
  * Symbol Table:
  */
-unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable; // NOLINT  根据ID存储symbol
+unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable; // NOLINT   块ID<-->块内对象
 
 std::unordered_map<int, int> blockLayerId2LayerNum; // NOLINT 第i层的最大块ID
 

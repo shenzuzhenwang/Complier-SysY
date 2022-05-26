@@ -9,5 +9,5 @@ bool _debugMachineIr = false;  // 机器IR
 
 bool _isBuildingIr = true; // Used for IR Phi.
 
-bool _optimizeMachineIr = false;  // 机器IR优化
-bool _optimizeDivAndMul = false;  // 乘除法优化
+bool _optimizeMachineIr = false;  // 机器IR优化 O1
+bool _optimizeDivAndMul = false;  // 乘除法优化 O2

@@ -147,8 +147,7 @@ UnaryExpNode UnaryExpNode::primaryUnaryExp (shared_ptr<PrimaryExpNode>& primaryE
 	return UnaryExpNode (UnaryExpType::UNARY_PRIMARY, primaryExp, ident, funcRParams, op, unaryExp);
 }
 
-UnaryExpNode UnaryExpNode::funcCallUnaryExp (shared_ptr<IdentNode>& ident,
-											 shared_ptr<FuncRParamsNode>& funcRParams, string& op)
+UnaryExpNode UnaryExpNode::funcCallUnaryExp (shared_ptr<IdentNode>& ident, shared_ptr<FuncRParamsNode>& funcRParams, string& op)
 {
 	shared_ptr<PrimaryExpNode> primaryExp (nullptr);
 	shared_ptr<UnaryExpNode> unaryExp (nullptr);
@@ -207,8 +206,7 @@ PrimaryExpNode PrimaryExpNode::lValExp (shared_ptr<LValNode>& lVal)
 	string str;
 	if (lVal->ident->ident->symbolType == SymbolType::CONST_VAR)
 	{
-		shared_ptr<ConstInitValValNode> val = s_p_c<ConstInitValValNode> (
-			lVal->ident->ident->constInitVal);
+		shared_ptr<ConstInitValValNode> val = s_p_c<ConstInitValValNode> (lVal->ident->ident->constInitVal);
 		number = val->value;
 		return PrimaryExpNode (PrimaryExpType::PRIMARY_NUMBER, exp, lVal, number, str);
 	}
@@ -249,25 +247,22 @@ string PrimaryExpNode::toString (int tabCnt)
 }
 
 // Definition of symbol table item.
-SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension,
-								  std::vector<std::shared_ptr<ExpNode>>& expressionOfEachDimension, std::string& name,
-								  std::pair<int, int>& blockId)
+SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, std::vector<std::shared_ptr<ExpNode>>& expressionOfEachDimension, 
+								  std::string& name, std::pair<int, int>& blockId)
 	: symbolType (symbolType), dimension (dimension), expressionOfEachDimension (expressionOfEachDimension), name (name), blockId (blockId)
 {
-	this->usageName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") + std::to_string (blockId.first) + '_' + std::to_string (blockId.second) + '_' + name;
-	this->uniqueName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F$" : "V$") + name;
+	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
+		+ std::to_string (blockId.first) + '_' + std::to_string (blockId.second) + '_' + name;
+	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F$" : "V$") + name;
 }
 
 SymbolTableItem::SymbolTableItem (SymbolType& symbolType, std::string& name, std::pair<int, int>& blockId) 
 	: symbolType (symbolType), name (name), blockId (blockId)
 {
 	this->dimension = 0;
-	this->usageName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") + std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
-	this->uniqueName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
+	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
+		+ std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
+	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
 	if (symbolType == SymbolType::RET_FUNC && name == "main")
 	{
 		this->usageName = "main";
@@ -275,15 +270,12 @@ SymbolTableItem::SymbolTableItem (SymbolType& symbolType, std::string& name, std
 	}
 };
 
-SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension,
-								  std::vector<int>& numOfEachDimension, std::string& name,
-								  std::pair<int, int>& blockId)
+SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, std::vector<int>& numOfEachDimension, std::string& name, std::pair<int, int>& blockId)
 	: symbolType (symbolType), dimension (dimension), numOfEachDimension (numOfEachDimension), name (name), blockId (blockId)
 {
-	this->usageName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") + std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
-	this->uniqueName =
-		((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
+	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
+		+ std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
+	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
 }
 
 bool SymbolTableItem::isVarSingleUseInUnRecursionFunction ()
@@ -514,8 +506,7 @@ string MulExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "MulExp " + op + "\n" + mulExp->toString (tabCnt + 1) +
-			unaryExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "MulExp " + op + "\n" + mulExp->toString (tabCnt + 1) + unaryExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "MulExp\n" + unaryExp->toString (tabCnt + 1);
 }
@@ -524,8 +515,7 @@ string AddExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "AddExp " + op + "\n" + addExp->toString (tabCnt + 1) +
-			mulExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "AddExp " + op + "\n" + addExp->toString (tabCnt + 1) + mulExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "AddExp\n" + mulExp->toString (tabCnt + 1);
 }
@@ -534,8 +524,7 @@ string RelExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "RelExp " + op + "\n" + relExp->toString (tabCnt + 1) +
-			addExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "RelExp " + op + "\n" + relExp->toString (tabCnt + 1) + addExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "RelExp\n" + addExp->toString (tabCnt + 1);
 }
@@ -544,8 +533,7 @@ string EqExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "EqExp " + op + "\n" + eqExp->toString (tabCnt + 1) +
-			relExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "EqExp " + op + "\n" + eqExp->toString (tabCnt + 1) + relExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "EqExp\n" + relExp->toString (tabCnt + 1);
 }
@@ -554,8 +542,7 @@ string LAndExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "LAndExp " + op + "\n" + lAndExp->toString (tabCnt + 1) +
-			eqExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "LAndExp " + op + "\n" + lAndExp->toString (tabCnt + 1) + eqExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "LAndExp\n" + eqExp->toString (tabCnt + 1);
 }
@@ -564,8 +551,7 @@ string LOrExpNode::toString (int tabCnt)
 {
 	if (!op.empty ())
 	{
-		return string (tabCnt * _W_LEN, ' ') + "LOrExp " + op + "\n" + lOrExp->toString (tabCnt + 1) +
-			lAndExp->toString (tabCnt + 1);
+		return string (tabCnt * _W_LEN, ' ') + "LOrExp " + op + "\n" + lOrExp->toString (tabCnt + 1) + lAndExp->toString (tabCnt + 1);
 	}
 	return string (tabCnt * _W_LEN, ' ') + "LOrExp\n" + lAndExp->toString (tabCnt + 1);
 }

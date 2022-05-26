@@ -9,9 +9,9 @@
  */
 extern bool irCheck(const shared_ptr<Module> &);
 
-extern bool globalIrCorrect;
-extern bool irUserCheck;
+extern bool globalIrCorrect;  // 全局IR都正确
+extern bool irUserCheck;      // 检查是否有使用指令
 
-extern bool globalWarningPermit;
+extern bool globalWarningPermit;  // 启用警告
 
 #endif

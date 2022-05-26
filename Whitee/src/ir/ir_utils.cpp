@@ -3,7 +3,7 @@
 #include <iostream>
 #include <queue>
 
-const unordered_set<InstructionType> noResultTypes{// NOLINT
+const unordered_set<InstructionType> noResultTypes{// 无返回值指令
                                                    InstructionType::BR,
                                                    InstructionType::JMP,
                                                    InstructionType::RET,
@@ -284,7 +284,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 
 void fixRightValue(shared_ptr<Module> &module)
 {
-    // pre-deal with the alloc and non-users function call.
+    // 预处理分配和非用户的函数调用
     for (auto &func : module->functions)
     {
         for (auto &bb : func->blocks)
@@ -308,7 +308,7 @@ void fixRightValue(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)
+                if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)  // 如果此右值仅被一个指令使用，则临时 LVal 名称
                 {
                     if (ins->users.begin()->get()->valueType == ValueType::INSTRUCTION && ins->block != s_p_c<Instruction>(*ins->users.begin())->block)
                     {
@@ -321,6 +321,7 @@ void fixRightValue(shared_ptr<Module> &module)
     }
 }
 
+// 获取函数所需的堆栈大小
 void getFunctionRequiredStackSize(shared_ptr<Function> &func)
 {
     unsigned int size = 4 * _W_LEN;
@@ -347,6 +348,7 @@ void getFunctionRequiredStackSize(shared_ptr<Function> &func)
     func->requiredStackSize = size;
 }
 
+// phi消除，将phi的可能取值进行copy，phi仅有一个确定值
 void phiElimination(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)

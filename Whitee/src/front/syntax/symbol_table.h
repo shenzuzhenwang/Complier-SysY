@@ -21,13 +21,13 @@ public:
     std::pair<int, int> blockId;
     bool isTop; // blockId.first == 0
     std::pair<int, int> fatherBlockId;
-    std::unordered_map<std::string, std::shared_ptr<SymbolTableItem>> symbolTableThisBlock; // 名字，对象
+    std::unordered_map<std::string, std::shared_ptr<SymbolTableItem>> symbolTableThisBlock; // 名字<-->对象
 
     SymbolTablePerBlock(std::pair<int, int> &blockId, bool &isTop, std::pair<int, int> &fatherBlockId)
         : blockId(blockId), isTop(isTop), fatherBlockId(fatherBlockId){};
 };
 
-extern std::unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // ID，对象
+extern std::unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // 块ID<-->块内对象
 
 /**
  * @brief 用于按名字依次向外查找某个变量

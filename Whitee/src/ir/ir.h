@@ -66,7 +66,7 @@ enum ValueType
     GLOBAL,  // 全局变量，包括数组或公共变量
     PARAMETER,  // 函数形参
     UNDEFINED,  // 未定义SSA
-    INSTRUCTION,  // 无法直接获取的值
+    INSTRUCTION,  // 无法直接获取的值，右值
     MODULE,   // 每个程序的moudel
     FUNCTION,  // 函数
     BASIC_BLOCK  // 基本块
