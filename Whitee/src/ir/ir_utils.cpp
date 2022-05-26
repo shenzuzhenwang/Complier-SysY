@@ -251,6 +251,7 @@ void addUser(const shared_ptr<Value> &user, const vector<shared_ptr<Value>> &use
     }
 }
 
+// 移除Phi用户块和多重Cmp
 void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -261,7 +262,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
             {
                 if ((*ins)->type == InstructionType::CMP && ins + 1 != bb->instructions.end())
                 {
-                    if ((*(ins + 1))->type != InstructionType::BR)
+                    if ((*(ins + 1))->type != InstructionType::BR)  // 如果此指令是cmp且下个指令不为branch，则此指令变为binary，进行计算
                     {
                         (*ins)->type = InstructionType::BINARY;
                     }
@@ -272,7 +273,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
                 unordered_set<shared_ptr<Value>> users = phi->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::BASIC_BLOCK)
+                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者 ？？？？没见过
                     {
                         phi->users.erase(user);
                     }
