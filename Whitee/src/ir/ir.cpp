@@ -9,7 +9,8 @@ unsigned int Value::getValueId()
     return valueId++;
 }
 
-ConstantValue::ConstantValue(shared_ptr<ConstDefNode> &constDef) : BaseValue(ValueType::CONSTANT)
+ConstantValue::ConstantValue(shared_ptr<ConstDefNode> &constDef) 
+    : BaseValue(ValueType::CONSTANT)
 {
     name = constDef->ident->ident->usageName;
     dimensions = constDef->ident->ident->numOfEachDimension;
@@ -25,7 +26,8 @@ ConstantValue::ConstantValue(shared_ptr<ConstDefNode> &constDef) : BaseValue(Val
     }
 }
 
-ConstantValue::ConstantValue(shared_ptr<GlobalValue> &globalVar) : BaseValue(ValueType::CONSTANT)
+ConstantValue::ConstantValue(shared_ptr<GlobalValue> &globalVar) 
+    : BaseValue(ValueType::CONSTANT)
 {
     name = globalVar->name;
     dimensions = globalVar->dimensions;
@@ -48,7 +50,8 @@ ParameterValue::ParameterValue(shared_ptr<Function> &function, shared_ptr<FuncFP
     dimensions = funcFParam->dimensions;
 }
 
-GlobalValue::GlobalValue(shared_ptr<VarDefNode> &varDef) : BaseValue(ValueType::GLOBAL)
+GlobalValue::GlobalValue(shared_ptr<VarDefNode> &varDef) 
+    : BaseValue(ValueType::GLOBAL)
 {
     name = varDef->ident->ident->usageName;
     valueType = ValueType::GLOBAL;
@@ -93,6 +96,7 @@ void Function::abandonUse()
     name = "abandon_function_" + name;
 }
 
+// 展开内联函数
 bool Function::fitInline(unsigned int maxInsCnt, unsigned int maxPointerSituationCnt)
 {
     unsigned int insCnt = 0;
@@ -114,6 +118,7 @@ bool Function::fitInline(unsigned int maxInsCnt, unsigned int maxPointerSituatio
     return insCnt < maxInsCnt && !hasPointerArgument;
 }
 
+// 将localVarSsaMap中的变量替换
 void BasicBlock::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -567,7 +572,7 @@ PhiMoveInstruction::PhiMoveInstruction(shared_ptr<PhiInstruction> &phi) : Instru
     }
 }
 
-unordered_map<int, shared_ptr<NumberValue>> numberValueMap;
+unordered_map<int, shared_ptr<NumberValue>> numberValueMap;  // 常数公用表
 
 shared_ptr<NumberValue> getNumberValue(int number)
 {
@@ -576,6 +581,7 @@ shared_ptr<NumberValue> getNumberValue(int number)
     return numberValueMap.at(number);
 }
 
+// 生成参数 LVal 名称
 string generateArgumentLeftValueName(const string &functionName)
 {
     static unordered_map<string, int> functionCallTimesMap;
@@ -588,6 +594,7 @@ string generateArgumentLeftValueName(const string &functionName)
     return "Arg_" + functionName + "_" + to_string(functionCallTimesMap.at(functionName));
 }
 
+// 生成phi LVal 名称
 string generatePhiLeftValueName(const string &phiName)
 {
     static unordered_map<string, int> phiLeftValueMap;
@@ -600,6 +607,7 @@ string generatePhiLeftValueName(const string &phiName)
     return "Phi_" + phiName + "_" + to_string(phiLeftValueMap.at(phiName));
 }
 
+// 生成临时 LVal 名称
 string generateTempLeftValueName()
 {
     static int tempCount = 0;
@@ -609,6 +617,5 @@ string generateTempLeftValueName()
 unsigned int countWeight(unsigned int depth, unsigned int base)
 {
     unsigned int max = depth < _MAX_DEPTH ? depth : _MAX_DEPTH;
-    return (unsigned int)(pow(_LOOP_WEIGHT_BASE, max) + base < _MAX_LOOP_WEIGHT ? pow(_LOOP_WEIGHT_BASE, max) + base
-                                                                                : base);
+    return (unsigned int)(pow(_LOOP_WEIGHT_BASE, max) + base < _MAX_LOOP_WEIGHT ? pow(_LOOP_WEIGHT_BASE, max) + base : base);
 }

@@ -670,8 +670,8 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
 }
 
 /**
- * Transform the condition expression of IF or WHILE statement, which may build new basic blocks.
- */
+  * 转换 IF 或 WHILE 语句的条件表达式，可构建新的基本块。
+  */
 void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &cond,
                    shared_ptr<BasicBlock> &trueBlock, shared_ptr<BasicBlock> &falseBlock)
 {
