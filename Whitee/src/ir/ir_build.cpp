@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <initializer_list>
 
 #include "ir_build.h"
@@ -35,7 +35,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, shared_ptr<Value> &offset,
                  shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb);
 
-// ��ʼ����IR  ��Decl | FuncDef
+// 开始构建IR  有Decl | FuncDef
 shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 {
     module = make_shared<Module>(); // NOLINT
@@ -45,7 +45,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
         {
             for (auto &def : s_p_c<ConstDeclNode>(decl)->constDefList)
             {
-                if (def->ident->ident->symbolType == SymbolType::CONST_ARRAY)  // ֻ�г�������Ŵ洢���������ô�
+                if (def->ident->ident->symbolType == SymbolType::CONST_ARRAY)  // 只有常量数组才存储，常量不用存
                 {
                     shared_ptr<Value> value = make_shared<ConstantValue>(def);
                     module->globalConstants.push_back(value);
@@ -55,7 +55,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
         }
         else
         {
-            for (auto &def : s_p_c<VarDeclNode>(decl)->varDefList)
+            for (auto &def : s_p_c<VarDeclNode>(decl)->varDefList)   // 全局变量
             {
                 shared_ptr<Value> value = make_shared<GlobalValue>(def);
                 module->globalVariables.push_back(value);
@@ -81,11 +81,11 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
                 function->params.push_back(paramValue);
                 if (s_p_c<ParameterValue>(paramValue)->variableType == VariableType::INT)
                 {
-                    writeLocalVariable(entryBlock, s_p_c<ParameterValue>(paramValue)->name, paramValue);//SSA
+                    writeLocalVariable(entryBlock, s_p_c<ParameterValue>(paramValue)->name, paramValue);
                 }
                 else
                 {
-                    localArrayMap[param->ident->ident->usageName] = paramValue;
+                    localArrayMap[param->ident->ident->usageName] = paramValue;  // 局部数组
                 }
             }
         }
@@ -96,7 +96,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 
 /**
  * Transform a block(this 'block' is the concept of AST, instead of SSA) to IR.
- * block����Decl | Stmt
+ * block内有Decl | Stmt
  */
 void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<BlockNode> &block,
                shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
@@ -105,7 +105,7 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
         return;
     for (const auto &item : block->blockItems)
     {
-        if (dynamic_cast<VarDeclNode *>(item.get()))
+        if (dynamic_cast<VarDeclNode *>(item.get()))  // 局部变量定义
         {
             shared_ptr<VarDeclNode> varDecl = s_p_c<VarDeclNode>(item);
             for (const auto &varDef : varDecl->varDefList)
@@ -113,7 +113,7 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
                 varDefToIr(func, bb, varDef, afterJump);
             }
         }
-        else if (dynamic_cast<ConstDeclNode *>(item.get()))
+        else if (dynamic_cast<ConstDeclNode *>(item.get()))  // const变量定义
         {
             shared_ptr<ConstDeclNode> constDecl = s_p_c<ConstDeclNode>(item);
             for (auto &constDef : constDecl->constDefList)
@@ -140,21 +140,21 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
 void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<BlockNode> &block)
 {
     shared_ptr<BasicBlock> judge, end;
-    bool afterJump = false;
+    bool afterJump = false;    // 还未跳出
     blockToIr(func, bb, block, judge, end, afterJump);
 }
 
 /**
  * Transform the variable definitions to IR.
- * ��������ʼ����
  */
 void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
                 const shared_ptr<VarDefNode> &varDef, bool &afterJump)
 {
-    if (afterJump)
+    if (afterJump)  // 已经跳出
         return;
     func->variables.insert({varDef->ident->ident->usageName, varDef->dimension == 0 ? VariableType::INT : VariableType::POINTER});
-    if (varDef->dimension == 0 && varDef->type == InitType::INIT)
+
+    if (varDef->dimension == 0 && varDef->type == InitType::INIT)  // 初始化的局部变量
     {
         shared_ptr<InitValValNode> initVal = s_p_c<InitValValNode>(varDef->initVal);
         shared_ptr<Value> exp = expToIr(func, bb, initVal->exp);
@@ -164,32 +164,33 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
             insExp->resultType = L_VAL_RESULT;
             insExp->caughtVarName = varDef->ident->ident->usageName;
         }
-        writeLocalVariable(bb, varDef->ident->ident->usageName, exp);   //SSA
+        writeLocalVariable(bb, varDef->ident->ident->usageName, exp); 
     }
-    else if (varDef->dimension != 0)
+    else if (varDef->dimension != 0)   // 数组
     {
         int units = 1;
         for (const auto &d : varDef->dimensions)
             units *= d;
         shared_ptr<Value> alloc = make_shared<AllocInstruction>(varDef->ident->ident->usageName, units * _W_LEN, units, bb);
         bb->instructions.push_back(s_p_c<Instruction>(alloc));
-        localArrayMap.insert({s_p_c<AllocInstruction>(alloc)->name, s_p_c<AllocInstruction>(alloc)});
-        if (varDef->type == InitType::INIT)
+        localArrayMap.insert({s_p_c<AllocInstruction>(alloc)->name, s_p_c<AllocInstruction>(alloc)});  // ？？同名数组
+
+        if (varDef->type == InitType::INIT)  // 初始化的数组
         {
             vector<pair<int, shared_ptr<ExpNode>>> initValues = varDef->initVal->toOneDimensionArray(0, units);
             int curIndex = 0;
             for (auto &it : initValues)
             {
-                for (; curIndex < it.first; ++curIndex)
+                for (; curIndex < it.first; ++curIndex)  // 给未指定的位置赋值1
                 {
                     shared_ptr<Value> zero = getNumberValue(0);
-                    
                     shared_ptr<Value> offset = getNumberValue(curIndex);
                     
                     shared_ptr<Instruction> store = make_shared<StoreInstruction>(zero, alloc, offset, bb);
                     addUser(store, {zero, alloc, offset});
                     bb->instructions.push_back(store);
                 }
+                // 给指定初始化的位置赋值
                 ++curIndex;
                 shared_ptr<Value> exp = expToIr(func, bb, it.second);
                 shared_ptr<Value> offset = getNumberValue(it.first);
@@ -198,7 +199,7 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
                 addUser(store, {exp, alloc, offset});
                 bb->instructions.push_back(store);
             }
-            for (; curIndex < units; ++curIndex)
+            for (; curIndex < units; ++curIndex)  // 给未指定的位置赋值1
             {
                 shared_ptr<Value> zero = getNumberValue(0);
                 shared_ptr<Value> offset = getNumberValue(curIndex);
@@ -212,37 +213,37 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
 
 /**
  * Transform the statements to IR.
- * 
  */
 void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<StmtNode> &stmt,
               shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
 {
-    if (afterJump)
+    if (afterJump)  // 已经跳出
         return;
-    switch (stmt->type)
+    switch (stmt->type)   //     STMT_ASSIGN | STMT_EXP | STMT_BLOCK | STMT_IF | STMT_IF_ELSE | STMT_WHILE | STMT_BREAK | STMT_CONTINUE | STMT_RETURN | STMT_RETURN_VOID | STMT_EMPTY
     {
     case StmtType::STMT_EMPTY:
         return;
-    case StmtType::STMT_EXP:
+    case StmtType::STMT_EXP:   // 空表达式
     {
         expToIr(func, bb, stmt->exp);
         return;
     }
-    case StmtType::STMT_BLOCK:
+    case StmtType::STMT_BLOCK:  // 代码块
     {
         blockToIr(func, bb, stmt->block, loopJudge, loopEnd, afterJump);
         return;
     }
-    case StmtType::STMT_ASSIGN:
+    case StmtType::STMT_ASSIGN:   // 赋值语句
     {
-        shared_ptr<Value> value = expToIr(func, bb, stmt->exp);
-        shared_ptr<SymbolTableItem> identItem = stmt->lVal->ident->ident;
+        shared_ptr<Value> value = expToIr(func, bb, stmt->exp);  // 右值
+        shared_ptr<SymbolTableItem> identItem = stmt->lVal->ident->ident;  // 左值
+        // 查找左值
         shared_ptr<Value> address, offset;
-        switch (identItem->symbolType)
+        switch (identItem->symbolType)  // //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
         {
         case SymbolType::VAR:
         {
-            if (identItem->blockId.first == 0)
+            if (identItem->blockId.first == 0)  // 全局变量
             {
                 pointerToIr(stmt->lVal, address, offset, func, bb);
                 shared_ptr<Instruction> ins = make_shared<StoreInstruction>(value, address, offset, bb);
@@ -257,7 +258,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
                     insValue->resultType = L_VAL_RESULT;
                     insValue->caughtVarName = stmt->lVal->ident->ident->usageName;
                 }
-                writeLocalVariable(bb, stmt->lVal->ident->ident->usageName, value);  // SSA
+                writeLocalVariable(bb, stmt->lVal->ident->ident->usageName, value);
             }
             return;
         }
@@ -282,11 +283,11 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
     }
     case StmtType::STMT_RETURN:
     {
-        shared_ptr<Value> value = expToIr(func, bb, stmt->exp);
+        shared_ptr<Value> value = expToIr(func, bb, stmt->exp);  // 返回值
         shared_ptr<Instruction> ins = make_shared<ReturnInstruction>(FuncType::FUNC_INT, value, bb);
         addUser(ins, {value});
         bb->instructions.push_back(ins);
-        afterJump = true;
+        afterJump = true;    // 已经跳出
         return;
     }
     case StmtType::STMT_RETURN_VOID:
@@ -294,39 +295,43 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         shared_ptr<Value> value = nullptr;
         shared_ptr<Instruction> ins = make_shared<ReturnInstruction>(FuncType::FUNC_VOID, value, bb);
         bb->instructions.push_back(ins);
-        afterJump = true;
+        afterJump = true;    // 已经跳出
         return;
     }
     case StmtType::STMT_IF:
     {
-        // declare if and end.
         shared_ptr<BasicBlock> endIf = make_shared<BasicBlock>(func, true, loopDepth);
         shared_ptr<BasicBlock> ifStmt = make_shared<BasicBlock>(func, true, loopDepth);
-        // transform condition.
+        // 转换cond
         conditionToIr(func, bb, stmt->cond, ifStmt, endIf);
-        // maintain successors and predecessors.
+        // 每个状态的前驱和后继
         bb->successors.insert({endIf, ifStmt});
         endIf->predecessors.insert(bb);
         ifStmt->predecessors.insert(bb);
-        // bb comes to the end, assign it to endIf block;
+        // block变为if后的block
         bb = endIf;
-        // the if stmt should be added to blocks of the function.
+        // ifstmt状态加入block
         func->blocks.push_back(ifStmt);
-        // define ifAfterJump to mark if the if come to an end itself.
+        // 标记if是否有跳出
         bool ifAfterJump = false;
-        // analyze if stmt.
+        // 分析ifstmt
         stmtToIr(func, ifStmt, stmt->stmt, loopJudge, loopEnd, ifAfterJump);
-        // if no jump happens, add a jump back to the end block, in case of the disordering of the blocks.
-        if (!ifAfterJump)
+        
+        if (!ifAfterJump)  // 如果没有发生跳转，则添加一个跳转回endif块
         {
             shared_ptr<Instruction> jmp = make_shared<JumpInstruction>(endIf, ifStmt);
             ifStmt->instructions.push_back(jmp);
-            // maintain if stmt successors and end if block's predecessors.
+            // ifstmt的后继为endif，endif的前驱为ifstmt
             ifStmt->successors.insert(endIf);
             endIf->predecessors.insert(ifStmt);
         }
-        // add end if stmt to function.
-        func->blocks.push_back(endIf);
+
+        //func->blocks.push_back (endIf);  ????
+        if (ifAfterJump)  // if和else都发生跳转
+            afterJump = true;
+        else
+            func->blocks.push_back (endIf);
+
         return;
     }
     case StmtType::STMT_IF_ELSE:
@@ -335,15 +340,17 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         shared_ptr<BasicBlock> ifStmt = make_shared<BasicBlock>(func, true, loopDepth);
         shared_ptr<BasicBlock> elseStmt = make_shared<BasicBlock>(func, true, loopDepth);
         conditionToIr(func, bb, stmt->cond, ifStmt, elseStmt);
+        // 每个状态的前驱和后继
         bb->successors.insert({ifStmt, elseStmt});
         ifStmt->predecessors.insert(bb);
         elseStmt->predecessors.insert(bb);
         bb = endIf;
+        // 标记if和else是否有跳出
         bool ifAfterJump = false, elseAfterJump = false;
-        // if stmt.
+        // 分析ifstmt
         func->blocks.push_back(ifStmt);
         stmtToIr(func, ifStmt, stmt->stmt, loopJudge, loopEnd, ifAfterJump);
-        if (!ifAfterJump)
+        if (!ifAfterJump)    // 如果没有发生跳转，则添加一个跳转回endif块
         {
             shared_ptr<Instruction> jmpIf = make_shared<JumpInstruction>(endIf, ifStmt);
             ifStmt->instructions.push_back(jmpIf);
@@ -351,10 +358,10 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             ifStmt->successors.insert(endIf);
             endIf->predecessors.insert(ifStmt);
         }
-        // different from if, analyze else here.
+        // 分析elsestmt
         func->blocks.push_back(elseStmt);
         stmtToIr(func, elseStmt, stmt->elseStmt, loopJudge, loopEnd, elseAfterJump);
-        if (!elseAfterJump)
+        if (!elseAfterJump)    // 如果没有发生跳转，则添加一个跳转回endif块
         {
             shared_ptr<Instruction> jmpElse = make_shared<JumpInstruction>(endIf, elseStmt);
             elseStmt->instructions.push_back(jmpElse);
@@ -362,7 +369,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             elseStmt->successors.insert(endIf);
             endIf->predecessors.insert(elseStmt);
         }
-        if (ifAfterJump && elseAfterJump)
+        if (ifAfterJump && elseAfterJump)  // if和else都发生跳转
             afterJump = true;
         else
             func->blocks.push_back(endIf);
@@ -417,46 +424,47 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
     }
     case StmtType::STMT_BREAK:
     {
-        if (!loopEnd)
+        if (!loopEnd)  // 没有循环
             cerr << "Error occurs in stmt to IR: break without a loop." << endl;
         shared_ptr<Instruction> jmp = make_shared<JumpInstruction>(loopEnd, bb);
         bb->instructions.push_back(jmp);
         bb->successors.insert(loopEnd);
         loopEnd->predecessors.insert(bb);
-        afterJump = true;
+        afterJump = true;  // 发生跳转
         return;
     }
     default:
-        if (!loopJudge)
+        if (!loopJudge)  // 没有循环
             cerr << "Error occurs in stmt to IR: continue without a loop." << endl;
         shared_ptr<Instruction> jmp = make_shared<JumpInstruction>(loopJudge, bb);
         bb->instructions.push_back(jmp);
         bb->successors.insert(loopJudge);
         loopJudge->predecessors.insert(bb);
-        afterJump = true;
+        afterJump = true;  // 发生跳转
     }
 }
 
 /**
- * ����ͨ����ʽת��ΪIR��
- * @return����ʽ�Ľ��ֵ����void���������У���û���κ����塣
+ * 将普通表达式转化为IR。PrimaryExpNode | UnaryExpNode | MulExpNode | AddExpNode | RelExpNode | EqExpNode
+ * 
+ * @return 表达式的结果值，在void函数调用中，它没有任何意义。
  */
 shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &exp)
 {
     if (dynamic_cast<PrimaryExpNode *>(exp.get()))
     {
         auto p = s_p_c<PrimaryExpNode>(exp);
-        switch (p->type)
+        switch (p->type)      //  PrimaryExp -> '(' Exp ')'  |  IntConst  |  LVal
         {
         case PrimaryExpType::PRIMARY_L_VAL:
         {
             shared_ptr<SymbolTableItem> identItem = p->lVal->ident->ident;
             shared_ptr<Value> address, offset;
-            switch (identItem->symbolType)
+            switch (identItem->symbolType)   //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
             {
             case SymbolType::VAR:
             {
-                if (identItem->blockId.first == 0)
+                if (identItem->blockId.first == 0)  // 全局变量
                 {
                     pointerToIr(p->lVal, address, offset, func, bb);
                     shared_ptr<Instruction> ins = make_shared<LoadInstruction>(address, offset, bb);
@@ -464,12 +472,13 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                     bb->instructions.push_back(ins);
                     return ins;
                 }
-                return readLocalVariable(bb, identItem->usageName);//SSA
+                // 局部变量
+                return readLocalVariable(bb, identItem->usageName);
             }
             case SymbolType::CONST_ARRAY:
             case SymbolType::ARRAY:
             {
-                if (p->lVal->exps.empty())
+                if (p->lVal->exps.empty())  // 数组无[]，提取指针
                 {
                     if (localArrayMap.count(p->lVal->ident->ident->usageName) != 0)
                         return localArrayMap.at(p->lVal->ident->ident->usageName);
@@ -480,17 +489,17 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                     cerr << "Error occurs in process primary exp to IR: array is not defined." << endl;
                     return nullptr;
                 }
-                else
+                else  // 提取数组的某一维
                 {
                     pointerToIr(p->lVal, address, offset, func, bb);
-                    if (p->lVal->exps.size() == p->lVal->dimension)
+                    if (p->lVal->exps.size() == p->lVal->dimension)  // 维数与[]数一样，提取某个元素
                     {
                         shared_ptr<Instruction> load = make_shared<LoadInstruction>(address, offset, bb);
                         addUser(load, {address, offset});
                         bb->instructions.push_back(load);
                         return load;
                     }
-                    else
+                    else  // 维数与[]数一样，提取某个指针
                     {
                         shared_ptr<Instruction> pt = make_shared<BinaryInstruction>(addOp, address, offset, bb);
                         addUser(pt, {address, offset});
@@ -515,7 +524,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             module->globalStrings.push_back(str);
             return str;
         }
-        case PrimaryExpType::PRIMARY_NUMBER:
+        case PrimaryExpType::PRIMARY_NUMBER:  // 全局的常量数字
             return getNumberValue(p->number);
         default:
             return expToIr(func, bb, p->exp);
@@ -524,7 +533,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
     else if (dynamic_cast<UnaryExpNode *>(exp.get()))
     {
         auto p = s_p_c<UnaryExpNode>(exp);
-        switch (p->type)
+        switch (p->type)  // UnaryExp -> PrimaryExp  |  IdentUsage '(' [FuncRParams] ')'  |  ('+' | '−' | '!') UnaryExp
         {
         case UnaryExpType::UNARY_PRIMARY:
         {
@@ -540,7 +549,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         case UnaryExpType::UNARY_FUNC:
         {
             vector<shared_ptr<Value>> params;
-            if (p->funcRParams)
+            if (p->funcRParams)  // 如果有参数
             {
                 for (const auto &i : p->funcRParams->exps)
                 {
@@ -553,12 +562,13 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                     params.push_back(tmpExp);
                 }
             }
+
             shared_ptr<Value> invoke;
-            if (InvokeInstruction::sysFuncMap.count(p->ident->ident->name) != 0)
+            if (InvokeInstruction::sysFuncMap.count(p->ident->ident->name) != 0)  // 调用运行时函数
             {
                 invoke = make_shared<InvokeInstruction>(p->ident->ident->name, params, bb);
             }
-            else
+            else  // 调用自定义函数
             {
                 shared_ptr<Function> targetFunction = globalFunctionMap.at(p->ident->ident->usageName);
                 func->callees.insert(targetFunction);
@@ -670,7 +680,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
 }
 
 /**
-  * ת�� IF �� WHILE ������������ʽ���ɹ����µĻ����顣
+  * 转换 IF 或 WHILE 语句的条件表达式，可构建新的基本块。  LOrExpNode | LAndExpNode | EqExpNode | CondNode
   */
 void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &cond,
                    shared_ptr<BasicBlock> &trueBlock, shared_ptr<BasicBlock> &falseBlock)
@@ -682,16 +692,17 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
         {
             conditionToIr(func, bb, lOrExp->lAndExp, trueBlock, falseBlock);
         }
-        else
+        else  // 有|| 短路求值
         {
-            // declare a new basic block as the 2nd condition judge block.
+            // 声明一个新的基本块作为第二个条件判断块
             shared_ptr<BasicBlock> logicOrBlock = make_shared<BasicBlock>(func, true, loopDepth);
+            
             conditionToIr(func, bb, lOrExp->lOrExp, trueBlock, logicOrBlock);
-            // maintain the predecessors and successors of last basic block.
+            // 如果条件为真则进入trueBlock，条件为假进入logicOrBlock
             bb->successors.insert({trueBlock, logicOrBlock});
             trueBlock->predecessors.insert(bb);
             logicOrBlock->predecessors.insert(bb);
-            // change bb to the 2nd condition block, and then push back it to function's blocks.
+            // 将 block 更改为第二个条件块
             bb = logicOrBlock;
             func->blocks.push_back(logicOrBlock);
             // deal with the logic and condition.
@@ -701,16 +712,16 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
     else if (dynamic_cast<LAndExpNode *>(cond.get()))
     {
         const shared_ptr<LAndExpNode> lAndExp = s_p_c<LAndExpNode>(cond);
-        if (lAndExp->lAndExp != nullptr)
+        if (lAndExp->lAndExp != nullptr) // 有&& 短路求值
         {
-            // declare a new basic block as the 2nd condition judge block.
+            // 声明一个新的基本块作为第二个条件判断块
             shared_ptr<BasicBlock> logicAndBlock = make_shared<BasicBlock>(func, true, loopDepth);
             conditionToIr(func, bb, lAndExp->lAndExp, logicAndBlock, falseBlock);
-            // maintain the predecessors and successors of last basic block.
+            // 如果条件为真则进入logicAndBlock，条件为假进入falseBlock
             bb->successors.insert({falseBlock, logicAndBlock});
             falseBlock->predecessors.insert(bb);
             logicAndBlock->predecessors.insert(bb);
-            // change bb to the 2nd condition block, and then push back it to function's blocks.
+            // 将 block 更改为第二个条件块
             bb = logicAndBlock;
             func->blocks.push_back(logicAndBlock);
         }
@@ -736,19 +747,18 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 }
 
 /**
- * �����顢ȫ��ֵ��ȫ���������ֵ�ĵ�ַת��ΪIR��
+ * 将数组、全局值、全局数组或常量值的地址转换为IR。
  */
-void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address,
-                 shared_ptr<Value> &offset, shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb)
+void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb)
 {
     shared_ptr<SymbolTableItem> identItem = lVal->ident->ident;
-    switch (identItem->symbolType)
+    switch (identItem->symbolType)  //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
     {
     case SymbolType::VAR:
     {
         if (identItem->blockId.first == 0)
         {
-            address = globalVariableMap.at(identItem->usageName);
+            address = globalVariableMap.at(identItem->usageName);  // 全局变量，直接获取
             offset = getNumberValue(0);
             return;
         }
@@ -765,7 +775,7 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address,
         for (int i = 1; i < identItem->numOfEachDimension.size(); ++i)
             size *= identItem->numOfEachDimension.at(i);
         offset = nullptr;
-        for (int i = 0; i < lVal->exps.size(); ++i)
+        for (int i = 0; i < lVal->exps.size(); ++i)  // 根据[]中的值，计算地址偏移量
         {
             shared_ptr<Value> number = getNumberValue(size);
             shared_ptr<Value> off = expToIr(func, bb, lVal->exps.at(i));
@@ -786,7 +796,7 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address,
             if (i + 1 < identItem->numOfEachDimension.size())
                 size /= identItem->numOfEachDimension.at(i + 1);
         }
-        if (lVal->exps.size() < identItem->numOfEachDimension.size())
+        if (lVal->exps.size() < identItem->numOfEachDimension.size())  // []数小于维数，为指针
         {
             shared_ptr<Value> oldOffset = offset;
             shared_ptr<Value> four = getNumberValue(_W_LEN);
@@ -794,11 +804,11 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address,
             addUser(offset, {oldOffset, four});
             bb->instructions.push_back(s_p_c<Instruction>(offset));
         }
-        if (identItem->symbolType == SymbolType::CONST_ARRAY)
+        if (identItem->symbolType == SymbolType::CONST_ARRAY) // 全局变量数组
             address = globalConstantMap.at(identItem->usageName);
-        else if (identItem->blockId.first == 0)
+        else if (identItem->blockId.first == 0)  // 全局变量数组
             address = globalVariableMap.at(identItem->usageName);
-        else
+        else  // 局部变量数组
             address = localArrayMap.at(identItem->usageName);
         return;
     }

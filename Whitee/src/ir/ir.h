@@ -110,7 +110,7 @@ enum InvokeType  // 普通函数，与9种运行时函数
 
 enum ResultType
 {
-    R_VAL_RESULT,
+    R_VAL_RESULT,   // 右值
     L_VAL_RESULT,
     OTHER_RESULT   // 无返回
 };
@@ -123,7 +123,7 @@ private:
 public:
     unsigned int id;
     ValueType valueType;
-    unordered_set<shared_ptr<Value>> users;
+    unordered_set<shared_ptr<Value>> users;  // 使用对象
 
     bool valid = true;
 
@@ -134,9 +134,9 @@ public:
 
     virtual string toString() = 0;
 
-    virtual void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) = 0;
+    virtual void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) = 0;  // 替换value
 
-    virtual void abandonUse() = 0;
+    virtual void abandonUse() = 0;  // 放弃使用
 
     virtual unsigned long long hashCode() = 0;
 
@@ -147,7 +147,7 @@ class Module : public Value
 {
 public:
     vector<shared_ptr<Value>> globalStrings;
-    vector<shared_ptr<Value>> globalConstants;
+    vector<shared_ptr<Value>> globalConstants;  // const array
     vector<shared_ptr<Value>> globalVariables;
     vector<shared_ptr<Function>> functions;
 
@@ -168,14 +168,14 @@ public:
 class Function : public Value
 {
 public:
-    string name;
+    string name;  // 函数名
     FuncType funcType;
     vector<shared_ptr<Value>> params;
     vector<shared_ptr<BasicBlock>> blocks;
     shared_ptr<BasicBlock> entryBlock; // the entryBlock is the first block of a function.
 
-    unordered_set<shared_ptr<Function>> callees;
-    unordered_set<shared_ptr<Function>> callers;
+    unordered_set<shared_ptr<Function>> callees;  // 此函数中调用其他函数
+    unordered_set<shared_ptr<Function>> callers;  // 此函数被其他函数调用
 
     unordered_map<shared_ptr<Value>, unsigned int> variableWeight; // value <--> weight.
     unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.
@@ -207,15 +207,15 @@ class BasicBlock : public Value
 public:
     shared_ptr<Function> function;
 
-    unordered_set<shared_ptr<BasicBlock>> predecessors;
-    unordered_set<shared_ptr<BasicBlock>> successors;
-    vector<shared_ptr<Instruction>> instructions;
-    unordered_set<shared_ptr<PhiInstruction>> phis;
+    unordered_set<shared_ptr<BasicBlock>> predecessors;  // 前驱块
+    unordered_set<shared_ptr<BasicBlock>> successors;   // 后继块
+    vector<shared_ptr<Instruction>> instructions;     // 块中指令
+    unordered_set<shared_ptr<PhiInstruction>> phis;   // 块中的phi
 
     unsigned int loopDepth = 1;                   // 用于寄存器权重计算
     unordered_set<shared_ptr<Value>> aliveValues; // 此basic block中活跃的变量
 
-    unordered_map<string, shared_ptr<Value>> localVarSsaMap;
+    unordered_map<string, shared_ptr<Value>> localVarSsaMap;  // SSA MAP
 
     bool sealed = true;                                               // 标记此basic block是否密封
     unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // 存储不完整的 phis
@@ -241,7 +241,7 @@ class Instruction : public Value
 {
 public:
     InstructionType type;
-    shared_ptr<BasicBlock> block;
+    shared_ptr<BasicBlock> block;   // 属于的基本块
 
     ResultType resultType;
     string caughtVarName;                         // Lvalue 局部变量名
@@ -267,7 +267,7 @@ public:
     explicit BaseValue(ValueType type) 
         : Value(type){};
 
-    virtual string getIdent() = 0;  // 新增
+    virtual string getIdent() = 0;  // 取得标识名
 
     void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) override{};
 
@@ -304,7 +304,7 @@ public:
 class NumberValue : public BaseValue
 {
 public:
-    int number;
+    int number;  // 数字大小
 
     explicit NumberValue(int number) 
         : BaseValue(ValueType::NUMBER), number(number){};
@@ -325,8 +325,8 @@ class ConstantValue : public BaseValue
 {
 public:
     string name;
-    vector<int> dimensions;
-    map<int, int> values;
+    vector<int> dimensions;  // 数组维数
+    map<int, int> values;    // 数组中值
     int size = 0;
 
     ConstantValue() 
@@ -354,7 +354,7 @@ public:
     string name;
     VariableType variableType;
     vector<int> dimensions;
-    shared_ptr<Function> function;
+    shared_ptr<Function> function;  // 所在函数
 
     ParameterValue(shared_ptr<Function> &function, shared_ptr<FuncFParamNode> &funcFParam);
 
@@ -415,7 +415,7 @@ class ReturnInstruction : public Instruction
 {
 public:
     FuncType funcType;
-    shared_ptr<Value> value;
+    shared_ptr<Value> value;  // 返回的值
 
     ReturnInstruction(FuncType funcType, shared_ptr<Value> &value, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::RET, bb, OTHER_RESULT), funcType(funcType), value(value){};
@@ -437,9 +437,9 @@ public:
 class BranchInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> condition;
-    shared_ptr<BasicBlock> trueBlock;
-    shared_ptr<BasicBlock> falseBlock;
+    shared_ptr<Value> condition;  // 跳转条件
+    shared_ptr<BasicBlock> trueBlock;  // true跳转块
+    shared_ptr<BasicBlock> falseBlock;  // false跳转块
 
     BranchInstruction(shared_ptr<Value> &condition, shared_ptr<BasicBlock> &trueBlock, shared_ptr<BasicBlock> &falseBlock, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::BR, bb, OTHER_RESULT), condition(condition), trueBlock(trueBlock), falseBlock(falseBlock){};
@@ -461,7 +461,7 @@ public:
 class JumpInstruction : public Instruction
 {
 public:
-    shared_ptr<BasicBlock> targetBlock;
+    shared_ptr<BasicBlock> targetBlock;  // 目标块
 
     JumpInstruction(shared_ptr<BasicBlock> &targetBlock, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::JMP, bb, OTHER_RESULT), targetBlock(targetBlock){};
@@ -483,11 +483,11 @@ public:
 class InvokeInstruction : public Instruction
 {
 public:
-    static unordered_map<string, InvokeType> sysFuncMap;
-    shared_ptr<Function> targetFunction;
-    vector<shared_ptr<Value>> params;
+    static unordered_map<string, InvokeType> sysFuncMap;  // 运行时函数表
+    shared_ptr<Function> targetFunction;   // 调用的函数
+    vector<shared_ptr<Value>> params;    // 参数
     InvokeType invokeType;
-    string targetName; // only used for system call.
+    string targetName; // 仅用于运行时函数
 
     InvokeInstruction(shared_ptr<Function> &targetFunction, vector<shared_ptr<Value>> &params, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::INVOKE, bb, targetFunction->funcType == FuncType::FUNC_INT ? R_VAL_RESULT : OTHER_RESULT),
@@ -514,8 +514,8 @@ public:
 class UnaryInstruction : public Instruction
 {
 public:
-    string op;
-    shared_ptr<Value> value;
+    string op;  // 一元操作符
+    shared_ptr<Value> value; // 操作数
 
     UnaryInstruction(string &op, shared_ptr<Value> &value, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::UNARY, bb, R_VAL_RESULT), op(op), value(value){};
@@ -540,16 +540,16 @@ public:
 class BinaryInstruction : public Instruction
 {
 public:
-    string op;
-    shared_ptr<Value> lhs;
-    shared_ptr<Value> rhs;
+    string op;   // 二元操作符
+    shared_ptr<Value> lhs;  // 操作数
+    shared_ptr<Value> rhs;  // 操作数
 
     BinaryInstruction(string &op, shared_ptr<Value> &lhs, shared_ptr<Value> &rhs, shared_ptr<BasicBlock> &bb)
         : Instruction(swapOp(op) != op ? InstructionType::CMP : InstructionType::BINARY, bb, R_VAL_RESULT), op(op), lhs(lhs), rhs(rhs){};
 
     string toString() override;
 
-    inline static string swapOp(const string &op)
+    inline static string swapOp(const string &op)  // 操作符取反
     {
         return op == "==" ? "!=" : op == "!=" ? "=="
                                : op == ">"    ? "<="
@@ -559,7 +559,7 @@ public:
                                               : op;
     }
 
-    inline static string swapOpConst(const string &op)
+    inline static string swapOpConst(const string &op)  // 操作符取反
     {
         return op == ">" ? "<" : op == "<" ? ">"
                              : op == "<="  ? ">="
@@ -590,9 +590,9 @@ public:
 class AllocInstruction : public Instruction
 {
 public:
-    string name;
-    int bytes;
-    int units;
+    string name;  // 变量名
+    int bytes;    // 占用空间
+    int units;    // 元素个数
 
     AllocInstruction(string &name, int bytes, int units, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::ALLOC, bb, OTHER_RESULT), name(name), bytes(bytes), units(units){};
@@ -614,9 +614,9 @@ public:
 class StoreInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> value;
-    shared_ptr<Value> address;
-    shared_ptr<Value> offset;
+    shared_ptr<Value> value;  // store的值
+    shared_ptr<Value> address;  // 基地址
+    shared_ptr<Value> offset;   // 偏移量
 
     StoreInstruction(shared_ptr<Value> &value, shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::STORE, bb, OTHER_RESULT), value(value), address(address), offset(offset){};
@@ -638,8 +638,8 @@ public:
 class LoadInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> address;
-    shared_ptr<Value> offset;
+    shared_ptr<Value> address;  // 基地址
+    shared_ptr<Value> offset;   // 偏移量
 
     LoadInstruction(shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::LOAD, bb, R_VAL_RESULT), address(address), offset(offset){};
@@ -661,8 +661,8 @@ public:
 class PhiInstruction : public Instruction
 {
 public:
-    string localVarName;
-    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;
+    string localVarName;  // 变量名
+    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // 操作数（可能的数）
 
     shared_ptr<PhiMoveInstruction> phiMove; // 在 phi 消除后使用
 
@@ -695,9 +695,9 @@ public:
 class PhiMoveInstruction : public Instruction
 {
 public:
-    shared_ptr<PhiInstruction> phi;
+    shared_ptr<PhiInstruction> phi;  // phi指令
 
-    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;
+    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // 块中活跃的变量
 
     explicit PhiMoveInstruction(shared_ptr<PhiInstruction> &phi);
 

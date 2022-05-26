@@ -795,8 +795,7 @@ std::shared_ptr<VarDefNode> analyzeVarDef()
             }
             else
             {
-                return std::make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension,
-                                                    initVal);
+                return std::make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension, initVal);
             }
         }
     }

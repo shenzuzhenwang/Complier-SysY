@@ -201,6 +201,7 @@ bool StringValue::equals(shared_ptr<Value> &value)
     return s_p_c<StringValue>(value)->str == str;
 }
 
+// 替换value
 void ReturnInstruction::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -225,6 +226,7 @@ void ReturnInstruction::abandonUse()
     }
 }
 
+// 替换value
 void BranchInstruction::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -268,7 +270,7 @@ unordered_map<string, InvokeType> InvokeInstruction::sysFuncMap{// NOLINT
                                                                 {"putf", InvokeType::PUT_F},
                                                                 {"starttime", InvokeType::START_TIME},
                                                                 {"stoptime", InvokeType::STOP_TIME}};
-
+// 替换value
 void InvokeInstruction::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -305,6 +307,7 @@ bool InvokeInstruction::equals(shared_ptr<Value> &value)
     return self == value;
 }
 
+// 替换value
 void UnaryInstruction::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -489,7 +492,7 @@ bool LoadInstruction::equals(shared_ptr<Value> &value)
 }
 
 /**
- * The phi instruction should not only replace value but basic block.
+ * phi指令不仅要替换值，还要替换基本块。
  */
 void PhiInstruction::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
@@ -536,6 +539,7 @@ void PhiInstruction::abandonUse()
     }
 }
 
+// 计算phi Operand中与value相等的个数
 int PhiInstruction::getOperandValueCount(const shared_ptr<Value> &value)
 {
     int cnt = 0;
@@ -546,6 +550,7 @@ int PhiInstruction::getOperandValueCount(const shared_ptr<Value> &value)
     return cnt;
 }
 
+// 基本块无用户使用
 bool PhiInstruction::onlyHasBlockUserOrUserEmpty()
 {
     for (auto &user : users)
@@ -562,7 +567,8 @@ bool PhiInstruction::equals(shared_ptr<Value> &value)
     return self == value;
 }
 
-PhiMoveInstruction::PhiMoveInstruction(shared_ptr<PhiInstruction> &phi) : Instruction(InstructionType::PHI_MOV, phi->block, L_VAL_RESULT), phi(phi)
+PhiMoveInstruction::PhiMoveInstruction(shared_ptr<PhiInstruction> &phi) 
+    : Instruction(InstructionType::PHI_MOV, phi->block, L_VAL_RESULT), phi(phi)
 {
     caughtVarName = phi->caughtVarName;
     for (auto &op : phi->operands)
@@ -614,6 +620,7 @@ string generateTempLeftValueName()
     return "Temp_" + to_string(tempCount++);
 }
 
+// 计算权重
 unsigned int countWeight(unsigned int depth, unsigned int base)
 {
     unsigned int max = depth < _MAX_DEPTH ? depth : _MAX_DEPTH;

@@ -4,6 +4,7 @@
 
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName);
 
+// 从块的SSA MAP中读取变量
 shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 {
     if (bb->localVarSsaMap.count(varName) != 0)
@@ -11,6 +12,7 @@ shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
     return readLocalVariableRecursively(bb, varName);
 }
 
+// 将变量写入块的SSA MAP
 void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const shared_ptr<Value> &value)
 {
     bb->localVarSsaMap[varName] = value;
