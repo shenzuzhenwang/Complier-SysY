@@ -1,5 +1,6 @@
 #include "ir_optimize.h"
 
+// ËÀ´úÂëÉ¾³ı
 void deadCodeElimination(shared_ptr<Module> &module)
 {
     removeUnusedFunctions(module);

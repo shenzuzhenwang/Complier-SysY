@@ -2,6 +2,7 @@
 
 void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb);
 
+// 局部公共子表达式删除
 void localCommonSubexpressionElimination(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

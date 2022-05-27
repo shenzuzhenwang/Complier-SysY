@@ -98,6 +98,7 @@ void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
     }
 }
 
+// 局部数组传播
 void localArrayFolding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

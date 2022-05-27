@@ -110,9 +110,9 @@ unordered_map<shared_ptr<Value>, string> lValRegMap;
 unordered_map<shared_ptr<Value>, string> rValRegMap;
 unordered_set<string> regInUse;
 
-// we need to record vars' addr in this step
-// for local vars, we need to record the offset to the sp
-// for global vars, we need to record the label
+// 在这一步中我们需要记录变量的地址。
+// 对于本地变量，我们需要记录到SP的偏移量。
+// 对于全局变量，我们需要记录标签
 
 shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
 {

@@ -6,7 +6,6 @@
 
 shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module);
 
-shared_ptr<MachineBB>
-bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFunction, shared_ptr<Module> &module);
+shared_ptr<MachineBB> bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFunction, shared_ptr<Module> &module);
 
 #endif

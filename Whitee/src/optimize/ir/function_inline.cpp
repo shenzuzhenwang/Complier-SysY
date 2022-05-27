@@ -22,6 +22,7 @@ shared_ptr<Value> findValueInMap(shared_ptr<Value> &value,
 shared_ptr<BasicBlock> findBlockInMap(shared_ptr<BasicBlock> &bb,
                                       unordered_map<shared_ptr<BasicBlock>, shared_ptr<BasicBlock>> &copyBlockMap);
 
+// º¯ÊýÄÚÁª
 void functionInline(shared_ptr<Module> &module)
 {
 START_INLINE:

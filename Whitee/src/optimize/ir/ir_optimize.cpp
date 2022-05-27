@@ -1,7 +1,8 @@
 #include "ir_optimize.h"
 #include "../../basic/std/compile_std.h"
 
-// lazy to check if the IR changed after a pass.
+// 未检查IR是否在通过后发生变化。
+
 const unsigned int OPTIMIZE_TIMES = 10;
 
 extern bool needIrCheck;
@@ -9,8 +10,8 @@ extern bool needIrPassCheck;
 
 void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
 {
-    for (int i = 0; i < OPTIMIZE_TIMES; ++i)
-        deadCodeElimination(module);
+    //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ？？？？感觉没用
+    //    deadCodeElimination(module);
 
     for (int i = 0; i < OPTIMIZE_TIMES; ++i)
     {

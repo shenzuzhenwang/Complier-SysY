@@ -328,6 +328,7 @@ void fold(shared_ptr<Instruction> &ins)
     }
 }
 
+// ³£Á¿ÕÛµþ
 void constantFolding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

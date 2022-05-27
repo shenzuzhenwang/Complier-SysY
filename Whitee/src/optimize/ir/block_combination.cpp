@@ -1,5 +1,6 @@
 #include "ir_optimize.h"
 
+// 基本块合并
 void blockCombination(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

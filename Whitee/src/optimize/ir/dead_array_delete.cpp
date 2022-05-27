@@ -1,5 +1,6 @@
 #include "ir_optimize.h"
 
+// 
 void deadArrayDelete(shared_ptr<Module> &module)
 {
     for (auto glb = module->globalVariables.begin(); glb != module->globalVariables.end();)

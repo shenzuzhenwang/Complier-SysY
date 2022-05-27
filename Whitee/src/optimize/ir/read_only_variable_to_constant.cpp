@@ -63,6 +63,7 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
     }
 }
 
+// 只读变量转为常数
 void readOnlyVariableToConstant(shared_ptr<Module> &module)
 {
     vector<shared_ptr<Value>> globalVariables = module->globalVariables;
