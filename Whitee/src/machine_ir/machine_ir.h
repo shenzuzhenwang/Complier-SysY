@@ -61,29 +61,29 @@ namespace mit
 {
     enum InsType
     {
-        ADD,
-        SUB,
-        RSB,
-        MUL,
-        DIV,
-        MLS,
-        MLA,
-        AND,
-        ORR,
-        ASR,
-        LSR,
-        LSL,
-        SMULL,
-        LOAD,
+        ADD,  // 加法
+        SUB,  // 减法
+        RSB,  // 反相减法
+        MUL,  // 乘法
+        DIV,  // 除法
+        MLS,  // 乘减
+        MLA,  // 乘加
+        AND,  // 与
+        ORR,  // 或
+        ASR,  // 算数右移
+        LSR,  // 逻辑右移
+        LSL,  // 逻辑左移
+        SMULL,// 长整型有符号乘法
+        LOAD, // 加载
         PSEUDO_LOAD, //LDR ,=label/number
-        STORE,
-        POP,
-        PUSH,
-        MOV,
-        MOVW,
-        MOVT,
-        CMP,
-        BRANCH,
+        STORE,// 存储
+        POP,  // 弹出
+        PUSH, // 推入
+        MOV,  // 移动
+        MOVW, // 
+        MOVT, // 移至顶部
+        CMP,  // 比较
+        BRANCH,// 
         BLINK,
         BRETURN,
         GLOBAL,
@@ -97,9 +97,9 @@ namespace mit
 enum SType
 {
     NONE,
-    ASR,
-    LSR,
-    LSL
+    ASR,  // 算数右移
+    LSR,  // 逻辑右移
+    LSL   // 逻辑左移
 };
 
 /**

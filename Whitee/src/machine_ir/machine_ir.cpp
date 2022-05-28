@@ -108,6 +108,7 @@ void MachineBB::toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<
     }
 }
 
+// 可以移位偶数次得到
 bool canRotateShiftEvenTimes(unsigned int number)
 {
     for (int i = 0; i < 16; ++i)
@@ -121,6 +122,7 @@ bool canRotateShiftEvenTimes(unsigned int number)
     return false;
 }
 
+// 判断有效立即数
 bool judgeImmValid(unsigned int imm, bool mov)
 {
     bool valid = canRotateShiftEvenTimes(imm);

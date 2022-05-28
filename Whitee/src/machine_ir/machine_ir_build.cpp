@@ -124,19 +124,20 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     {
         // if (_debugMachineIr) cout << func->name + ":" << endl;
         shared_ptr<MachineFunc> machineFunction = make_shared<MachineFunc>();
-        //machineModule->machineFunctions.push_back(machineFunction);
+        
         machineFunction->name = func->name;
         machineFunction->funcType = func->funcType;
         machineFunction->params = func->params;
         machineFunction->stackSize = func->requiredStackSize + _W_LEN;
         machineFunction->stackPointer = 0;
 
-        /// begin: clear all register pools.
+        /// begin: 清除寄存器信息
         while (!tempRegPool.empty())
             tempRegPool.clear();
         regInUse.clear();
         rValRegMap.clear();
         lValRegMap = func->variableRegs;
+
         for (int i = _TMP_REG_CNT - 2; i >= 0; --i)
         {
             tempRegPool.insert(to_string(_TMP_REG_START + i));
@@ -144,40 +145,36 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
         tempRegPool.insert("14");
         for (auto &it : lValRegMap)
             regInUse.insert(it.second);
-        /// end: clear all register pools.
+        /// end: 清除寄存器信息
 
         shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB>(func->blocks[0]->getValueId(), machineFunction);
-        /// manage parameters
+        /// 处理函数参数
         int para_size = 0;
-        for (int i = 4; i < machineFunction->params.size(); ++i)
+        for (int i = 4; i < machineFunction->params.size(); ++i)  // 当形参大于4个
         {
             if (lValRegMap.count(machineFunction->params[i]) != 0)
             {
                 shared_ptr<Operand> des = make_shared<Operand>(REG, lValRegMap.at(machineFunction->params[i]));
                 shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
                 shared_ptr<Operand> offset = make_shared<Operand>(IMM, to_string((i - 4) * 4));
-                shared_ptr<MemoryIns> load_para = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, des, stack,
-                                                                         offset);
+                shared_ptr<MemoryIns> load_para = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, des, stack, offset);
                 func_epilogue->MachineInstructions.push_back(load_para);
             }
-            else
+            else   // 之后形参的偏移量为栈向后
             {
-                machineFunction->var2offset.insert(pair<string, int>(to_string(machineFunction->params[i]->id),
-                                                                     (i - 4) * 4 + machineFunction->stackSize));
+                machineFunction->var2offset.insert(pair<string, int>(to_string(machineFunction->params[i]->id), (i - 4) * 4 + machineFunction->stackSize));
             }
         }
-        for (int i = 0; i < machineFunction->params.size() && i < 4; ++i)
+        for (int i = 0; i < machineFunction->params.size() && i < 4; ++i)  // 四个以下的形参
         {
             if (lValRegMap.count(machineFunction->params[i]) == 0) //no reg
             {
                 shared_ptr<Operand> para_reg = make_shared<Operand>(REG, to_string(i));
                 shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
                 shared_ptr<Operand> offset = make_shared<Operand>(IMM, to_string(-16 + i * 4));
-                shared_ptr<MemoryIns> storeParam = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, para_reg,
-                                                                          stack, offset);
+                shared_ptr<MemoryIns> storeParam = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, para_reg, stack, offset);
                 func_epilogue->MachineInstructions.push_back(storeParam);
-                machineFunction->var2offset.insert(pair<string, int>(to_string(machineFunction->params[i]->id),
-                                                                     -16 + i * 4 + machineFunction->stackSize));
+                machineFunction->var2offset.insert(pair<string, int>(to_string(machineFunction->params[i]->id), -16 + i * 4 + machineFunction->stackSize));
             }
             else
             {
@@ -208,7 +205,7 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
         func_epilogue->MachineInstructions.push_back(moveStack);
         machineFunction->machineBlocks.push_back(func_epilogue);
 
-        ///for each block in func, mapping it into machineFunc.
+        /// 对于func中的每个块，将其映射到machineFunc中。
         for (auto &bb : func->blocks)
         {
             // if (_debugMachineIr) cout << "block" + to_string(bb->id) + ":" << endl;
@@ -218,7 +215,7 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
         machineModule->machineFunctions.push_back(machineFunction);
     }
 
-    for (auto &machineFunc : machineModule->machineFunctions)
+    for (auto &machineFunc : machineModule->machineFunctions)  // 向每个块前加label
     {
         for (auto &machineBB : machineFunc->machineBlocks)
         {
@@ -381,6 +378,7 @@ bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFuncti
     return machineBB;
 }
 
+// 分配临时寄存器
 string allocTempRegister()
 {
     if (!tempRegPool.empty())
@@ -401,6 +399,7 @@ string allocTempRegister()
     }
 }
 
+// 释放临时寄存器
 void releaseTempRegister(const string &reg)
 {
     set<string> copy = tempRegPool;
@@ -589,6 +588,7 @@ void storeNewValue(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc>
     machineFunc->stackPointer += 4;
 }
 
+// 存储至内存
 void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc,
                   vector<shared_ptr<MachineIns>> &res)
 {
@@ -645,7 +645,7 @@ void loadOperand(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
 /**
  * @param valueId
  * @param op is the Operand
- * @return true if the register need releasing.
+ * @return true 如果寄存器需要释放
  */
 bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
                   vector<shared_ptr<MachineIns>> &res, bool mov, bool regRequired)
@@ -749,7 +749,7 @@ bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<Ma
 /**
  * @param val
  * @param op
- * @return true if the register need releasing.
+ * @return true 如果寄存器需要释放
  */
 bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
                    vector<shared_ptr<MachineIns>> &res)
