@@ -87,7 +87,7 @@ namespace mit
         BLINK,
         BRETURN,
         GLOBAL,
-        COMMENT
+        COMMENT  // ×¢ÊÍ
     };
 }
 

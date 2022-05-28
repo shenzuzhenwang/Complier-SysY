@@ -147,8 +147,9 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
             regInUse.insert(it.second);
         /// end: 清除寄存器信息
 
+        // 函数进入后的基本处理
         shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB>(func->blocks[0]->getValueId(), machineFunction);
-        /// 处理函数参数
+        // 处理函数参数
         int para_size = 0;
         for (int i = 4; i < machineFunction->params.size(); ++i)  // 当形参大于4个
         {
@@ -160,12 +161,12 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
                 shared_ptr<MemoryIns> load_para = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, des, stack, offset);
                 func_epilogue->MachineInstructions.push_back(load_para);
             }
-            else   // 之后形参的偏移量为栈向后
+            else  
             {
                 machineFunction->var2offset.insert(pair<string, int>(to_string(machineFunction->params[i]->id), (i - 4) * 4 + machineFunction->stackSize));
             }
         }
-        for (int i = 0; i < machineFunction->params.size() && i < 4; ++i)  // 四个以下的形参
+        for (int i = 0; i < machineFunction->params.size() && i < 4; ++i)  // 四个以下的形参  保存R0到R3的形参作为局部变量存入sp-16至sp-4
         {
             if (lValRegMap.count(machineFunction->params[i]) == 0) //no reg
             {
@@ -184,13 +185,14 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
                 func_epilogue->MachineInstructions.push_back(mov2Des);
             }
         }
-        ///lr: temp reg
+        ///lr: temp reg   lr即函数返回地址永远存在目前栈的sp-20处
         shared_ptr<Operand> lr = make_shared<Operand>(REG, "14");
         shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
         shared_ptr<Operand> lrSpace = make_shared<Operand>(IMM, "-20");
         shared_ptr<MemoryIns> storeLR = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, lr, stack, lrSpace);
         func_epilogue->MachineInstructions.push_back(storeLR);
-        ///move stack
+
+        // 移动sp，大小为栈的值
         shared_ptr<Operand> stack_size;
         if (judgeImmValid(machineFunction->stackSize, false))
         {
@@ -242,8 +244,7 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
                     shared_ptr<PseudoLoad> ldr = s_p_c<PseudoLoad>(ins);
                     if (ldr->isGlob)
                     {
-                        ldr->label->value =
-                            ldr->label->value + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id);
+                        ldr->label->value = ldr->label->value + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id);
                     }
                     else
                     {
@@ -284,8 +285,7 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
             {
                 vector<shared_ptr<MachineIns>> res;
                 res = genGlobIns(machineModule);
-                machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(),
-                                                      res.end());
+                machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(), res.end());
                 pre_ins_count = ins_count;
             }
         }
@@ -293,8 +293,7 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     vector<shared_ptr<MachineIns>> res;
     res = genGlobIns(machineModule);
     shared_ptr<MachineBB> machineBB = machineModule->machineFunctions.back()->machineBlocks.back();
-    machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(),
-                                          res.end());
+    machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(), res.end());
     pre_ins_count = ins_count;
 
     if (_optimizeMachineIr)
@@ -309,21 +308,20 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     return machineModule;
 }
 
-shared_ptr<MachineBB>
-bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFunction, shared_ptr<Module> &module)
+shared_ptr<MachineBB> bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFunction, shared_ptr<Module> &module)
 {
     shared_ptr<MachineBB> machineBB = make_shared<MachineBB>(bb->id, machineFunction);
     IRB2MachB.insert(pair<shared_ptr<BasicBlock>, shared_ptr<MachineBB>>(bb, machineBB));
     for (auto &ins : bb->instructions)
     {
         /*
-         * for each ins, we need to mapping it into machineIns.
-         * for the result(ssa left value) in each type of ins except BR, JMP, RET, STORE,
-         * we propose it as a local var, we need to record its offset and increase stackSize.
-         */
+          * 对于每个 ins，我们需要将其映射到 machineIns。
+          * 对于除 BR、JMP、RET、STORE 之外的每种类型的 ins 中的结果（ssa 左值），
+          * 我们建议将它作为一个本地变量，我们需要记录它的偏移量并增加stackSize。
+          */
         vector<shared_ptr<MachineIns>> res;
         string content = ins->toString();
-        shared_ptr<Comment> ir = make_shared<Comment>(content);
+        shared_ptr<Comment> ir = make_shared<Comment>(content);  // 注释显示此IR
         switch (ins->type)
         {
         case RET:
@@ -424,7 +422,7 @@ void loadImm2Reg(int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>
 {
     shared_ptr<Operand> imm;
     if (judgeImmValid(num, mov))
-    { //can move to reg
+    { //  可以移动 
         imm = make_shared<Operand>(IMM, to_string(num));
         shared_ptr<MovIns> mov2Reg = make_shared<MovIns>(NON, NONE, 0, des, imm);
         res.push_back(mov2Reg);

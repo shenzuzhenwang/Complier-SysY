@@ -122,7 +122,7 @@ bool canRotateShiftEvenTimes(unsigned int number)
     return false;
 }
 
-// 判断有效立即数
+// 判断立即数是否有效   每个立即数都是由一个8位的常循环右移偶数位得到
 bool judgeImmValid(unsigned int imm, bool mov)
 {
     bool valid = canRotateShiftEvenTimes(imm);
