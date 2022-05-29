@@ -30,9 +30,7 @@ void MachineModule::toARM()
     {
         if (s_p_c<GlobalValue>(variable)->variableType == INT)
         {
-            machineIrStream << s_p_c<GlobalValue>(variable)->name + ": .word " +
-                                   to_string(s_p_c<GlobalValue>(variable)->initValues.at(0))
-                            << endl;
+            machineIrStream << s_p_c<GlobalValue>(variable)->name + ": .word " + to_string(s_p_c<GlobalValue>(variable)->initValues.at(0)) << endl;
         }
         else if (s_p_c<GlobalValue>(variable)->variableType == POINTER)
         {
@@ -50,9 +48,7 @@ void MachineModule::toARM()
             }
             if (start < s_p_c<GlobalValue>(variable)->size * 4)
             {
-                machineIrStream
-                    << "    .zero " + to_string(s_p_c<GlobalValue>(variable)->size * 4 - start)
-                    << endl;
+                machineIrStream << "    .zero " + to_string(s_p_c<GlobalValue>(variable)->size * 4 - start) << endl;
             }
         }
     }
@@ -62,8 +58,7 @@ void MachineModule::toARM()
         int start = 0;
         int space;
         map<int, int>::iterator iter;
-        for (iter = s_p_c<ConstantValue>(const_array)->values.begin();
-             iter != s_p_c<ConstantValue>(const_array)->values.end(); iter++)
+        for (iter = s_p_c<ConstantValue>(const_array)->values.begin(); iter != s_p_c<ConstantValue>(const_array)->values.end(); iter++)
         {
             space = iter->first * 4 - start;
             if (space != 0)
@@ -75,9 +70,7 @@ void MachineModule::toARM()
         }
         if (start < s_p_c<ConstantValue>(const_array)->size * 4)
         {
-            machineIrStream
-                << "    .zero " + to_string(s_p_c<ConstantValue>(const_array)->size * 4 - start)
-                << endl;
+            machineIrStream << "    .zero " + to_string(s_p_c<ConstantValue>(const_array)->size * 4 - start) << endl;
         }
     }
     machineIrStream << ".text" << endl;
@@ -151,9 +144,7 @@ string convertImm(int imm, const string &reg, bool mov)
     invalid_imm.insert(imm);
     if (imm < 0)
     {
-        machineIrStream << "        LDR " + reg + ", invalid_imm_" + to_string(const_pool_id) + "__" +
-                               to_string(abs((int)imm))
-                        << endl;
+        machineIrStream << "        LDR " + reg + ", invalid_imm_" + to_string(const_pool_id) + "__" + to_string(abs((int)imm)) << endl;
     }
     else
     {
@@ -175,24 +166,19 @@ void insert_reference(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<
     //generate constant pool reference
     for (const auto &glob_var : global_vars)
     {
-        machineIrStream << s_p_c<GlobalValue>(glob_var)->name + to_string(const_pool_id) + "_whitee_" +
-                               to_string(const_pool_id) + ":"
-                        << endl;
+        machineIrStream << s_p_c<GlobalValue>(glob_var)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id) + ":" << endl;
         machineIrStream << "    .long " + s_p_c<GlobalValue>(glob_var)->name << endl;
     }
     for (const auto &glob_const : global_consts)
     {
-        machineIrStream << s_p_c<ConstantValue>(glob_const)->name + to_string(const_pool_id) + "_whitee_" +
-                               to_string(const_pool_id) + ":"
-                        << endl;
+        machineIrStream << s_p_c<ConstantValue>(glob_const)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id) + ":" << endl;
         machineIrStream << "    .long " + s_p_c<ConstantValue>(glob_const)->name << endl;
     }
     for (int invalid_int : invalid_imm)
     {
         if (invalid_int < 0)
         {
-            machineIrStream << "invalid_imm_" + to_string(const_pool_id) + "__" + to_string(abs(invalid_int)) + ":"
-                            << endl;
+            machineIrStream << "invalid_imm_" + to_string(const_pool_id) + "__" + to_string(abs(invalid_int)) + ":" << endl;
         }
         else
         {
@@ -270,16 +256,11 @@ void BinaryIns::toARM(shared_ptr<MachineFunc> &machineFunc)
     //compute
     if (this->type == mit::ASR || this->type == mit::LSR || this->type == mit::LSL)
     {
-        machineIrStream
-            << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 +
-                   ", #" + to_string(shift->shift)
-            << endl;
+        machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 + ", #" + to_string(shift->shift) << endl;
     }
     else
     {
-        machineIrStream
-            << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 +
-                   ", " + t_op2;
+        machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 + ", " + t_op2;
         ins_count++;
         if (this->shift->type != NONE)
         {
@@ -378,10 +359,7 @@ void TriIns::toARM(shared_ptr<MachineFunc> &machineFunc)
         des = "R4";
     }
     //compute
-    machineIrStream
-        << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 +
-               ", " + t_op2 + ", " + t_op3
-        << endl;
+    machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + t_op1 + ", " + t_op2 + ", " + t_op3 << endl;
     ins_count++;
     //store rd
     if (rd->state == GLOB_INT)
@@ -457,9 +435,7 @@ void MemoryIns::toARM(shared_ptr<MachineFunc> &machineFunc)
             cerr << "GG!!!In MemoryIns::toARM, rd->state == IMM" << endl;
             exit(_MACH_IR_ERR);
         }
-        machineIrStream
-            << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", [" + add +
-                   ", " + off;
+        machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", [" + add + ", " + off;
         if (this->shift->type != NONE)
         {
             machineIrStream << ", " + stype2string.at(this->shift->type) + " #" + to_string(this->shift->shift);
@@ -469,9 +445,7 @@ void MemoryIns::toARM(shared_ptr<MachineFunc> &machineFunc)
     }
     else
     {
-        machineIrStream
-            << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", [" + add +
-                   ", " + off;
+        machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", [" + add + ", " + off;
         if (this->shift->type != NONE)
         {
             machineIrStream << ", " + stype2string.at(this->shift->type) + " #" + to_string(this->shift->shift);
@@ -494,9 +468,7 @@ void MemoryIns::toARM(shared_ptr<MachineFunc> &machineFunc)
 void PseudoLoad::toARM(shared_ptr<MachineFunc> &machineFunc)
 {
     string des = "R" + rd->value;
-    machineIrStream
-        << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + label->value
-        << endl;
+    machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + des + ", " + label->value << endl;
 }
 
 void StackIns::toARM(shared_ptr<MachineFunc> &machineFunc)
@@ -554,8 +526,7 @@ void CmpIns::toARM(shared_ptr<MachineFunc> &machineFunc)
         s_op = "R" + op2->value;
     }
 
-    machineIrStream
-        << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + f_op + ", " + s_op;
+    machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + f_op + ", " + s_op;
     if (this->shift->type != NONE)
     {
         machineIrStream << ", " + stype2string.at(this->shift->type) + " #" + to_string(this->shift->shift);
@@ -596,9 +567,7 @@ void MovIns::toARM(shared_ptr<MachineFunc> &machineFunc)
     {
         t_op = "R2";
     }
-    machineIrStream
-        << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + t_op + ", " + v_op
-        << endl;
+    machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + t_op + ", " + v_op << endl;
     ins_count++;
     if (op1->state == GLOB_INT)
     {

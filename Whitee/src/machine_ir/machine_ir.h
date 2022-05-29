@@ -171,7 +171,8 @@ public:
     shared_ptr<MachineFunc> function;
     vector<shared_ptr<MachineIns>> MachineInstructions;
 
-    explicit MachineBB(int index, shared_ptr<MachineFunc> &function) : index(index), function(function){};
+    explicit MachineBB(int index, shared_ptr<MachineFunc> &function) 
+        : index(index), function(function){};
 
     void toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts);
 };
@@ -192,9 +193,11 @@ public:
 
     explicit MachineIns(mit::InsType type) : type(type){};
 
-    MachineIns(mit::InsType type, Cond cond, shared_ptr<Shift> &shift) : type(type), cond(cond), shift(shift){};
+    MachineIns(mit::InsType type, Cond cond, shared_ptr<Shift> &shift) 
+        : type(type), cond(cond), shift(shift){};
 
-    MachineIns(mit::InsType type, Cond cond, SType stype, int shift) : type(type), cond(cond)
+    MachineIns(mit::InsType type, Cond cond, SType stype, int shift) 
+        : type(type), cond(cond)
     {
         shared_ptr<Shift> shift_ptr = make_shared<Shift>();
         shift_ptr->shift = shift;
@@ -226,12 +229,10 @@ public:
     BinaryIns(mit::InsType type, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, shared_ptr<Operand> &rd)
         : MachineIns(type), op1(op1), op2(op2), rd(rd){};
 
-    BinaryIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1,
-              shared_ptr<Operand> &op2, shared_ptr<Operand> &rd)
+    BinaryIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, shared_ptr<Operand> &rd)
         : MachineIns(type, condition, stype, shift), op1(op1), op2(op2), rd(rd){};
 
-    BinaryIns(mit::InsType type, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &op1,
-              shared_ptr<Operand> &op2, shared_ptr<Operand> &rd)
+    BinaryIns(mit::InsType type, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, shared_ptr<Operand> &rd)
         : MachineIns(type, condition, shift), op1(op1), op2(op2), rd(rd){};
 
     string toString() override;
@@ -247,18 +248,15 @@ public:
     shared_ptr<Operand> op3;
     shared_ptr<Operand> rd;
 
-    TriIns(mit::InsType type, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, shared_ptr<Operand> &op3,
-           shared_ptr<Operand> &rd)
+    TriIns(mit::InsType type, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, shared_ptr<Operand> &op3, shared_ptr<Operand> &rd)
         : MachineIns(type), op1(op1), op2(op2), op3(op3), rd(rd){};
 
-    TriIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1,
-           shared_ptr<Operand> &op2, shared_ptr<Operand> &op3,
-           shared_ptr<Operand> &rd)
+    TriIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, 
+           shared_ptr<Operand> &op3, shared_ptr<Operand> &rd)
         : MachineIns(type, condition, stype, shift), op1(op1), op2(op2), op3(op3), rd(rd){};
 
-    TriIns(mit::InsType type, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &op1,
-           shared_ptr<Operand> &op2, shared_ptr<Operand> &op3,
-           shared_ptr<Operand> &rd)
+    TriIns(mit::InsType type, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2, 
+           shared_ptr<Operand> &op3, shared_ptr<Operand> &rd)
         : MachineIns(type, condition, shift), op1(op1), op2(op2), op3(op3), rd(rd){};
 
     string toString() override;
@@ -277,18 +275,15 @@ public:
     shared_ptr<Operand> offset;
     Mode mode;
 
-    MemoryIns(mit::InsType type, Mode mode, shared_ptr<Operand> &rd, shared_ptr<Operand> &base,
-              shared_ptr<Operand> &offset)
+    MemoryIns(mit::InsType type, Mode mode, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
         : MachineIns(type), mode(mode), rd(rd), base(base), offset(offset){};
 
     MemoryIns(mit::InsType type, Mode mode, Cond condition, SType stype, int shift, shared_ptr<Operand> &rd,
-              shared_ptr<Operand> &base,
-              shared_ptr<Operand> &offset)
+              shared_ptr<Operand> &base,shared_ptr<Operand> &offset)
         : MachineIns(type, condition, stype, shift), mode(mode), rd(rd), base(base), offset(offset){};
 
     MemoryIns(mit::InsType type, Mode mode, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &rd,
-              shared_ptr<Operand> &base,
-              shared_ptr<Operand> &offset)
+              shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
         : MachineIns(type, condition, shift), mode(mode), rd(rd), base(base), offset(offset){};
 
     string toString() override;
@@ -306,8 +301,7 @@ public:
     PseudoLoad(Cond condition, SType stype, int shift, shared_ptr<Operand> &label, shared_ptr<Operand> &rd, bool isGlob)
         : MachineIns(mit::PSEUDO_LOAD, condition, stype, shift), label(label), rd(rd), isGlob(isGlob){};
 
-    PseudoLoad(Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &label, shared_ptr<Operand> &rd,
-               bool isGlob)
+    PseudoLoad(Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &label, shared_ptr<Operand> &rd, bool isGlob)
         : MachineIns(mit::PSEUDO_LOAD, condition, shift), label(label), rd(rd), isGlob(isGlob){};
 
     string toString() override;
@@ -325,8 +319,8 @@ public:
 
     explicit StackIns(bool isPush) : MachineIns(isPush ? mit::PUSH : mit::POP){};
 
-    StackIns(Cond condition, SType stype, int shift, bool isPush) : MachineIns(isPush ? mit::PUSH : mit::POP, condition,
-                                                                               stype, shift){};
+    StackIns(Cond condition, SType stype, int shift, bool isPush) 
+        : MachineIns(isPush ? mit::PUSH : mit::POP, condition, stype, shift){};
 
     string toString() override;
 
@@ -341,9 +335,8 @@ public:
 
     CmpIns(shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) : MachineIns(mit::CMP), op1(op1), op2(op2){};
 
-    CmpIns(Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) : MachineIns(
-                                                                                                             mit::CMP, condition, stype, shift),
-                                                                                                         op1(op1), op2(op2){};
+    CmpIns(Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) 
+        : MachineIns(mit::CMP, condition, stype, shift), op1(op1), op2(op2){};
 
     string toString() override;
 
@@ -356,13 +349,14 @@ public:
     shared_ptr<Operand> op1; //rd
     shared_ptr<Operand> op2;
 
-    MovIns(shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) : MachineIns(mit::MOV), op1(op1), op2(op2){};
+    MovIns(shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) 
+        : MachineIns(mit::MOV), op1(op1), op2(op2){};
 
-    MovIns(Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) : MachineIns(
-                                                                                                             mit::MOV, condition, stype, shift),
-                                                                                                         op1(op1), op2(op2){};
+    MovIns(Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) 
+        : MachineIns(mit::MOV, condition, stype, shift), op1(op1), op2(op2){};
 
-    MovIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) : MachineIns(type, condition, stype, shift), op1(op1), op2(op2){};
+    MovIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &op1, shared_ptr<Operand> &op2) 
+        : MachineIns(type, condition, stype, shift), op1(op1), op2(op2){};
 
     string toString() override;
 
@@ -389,7 +383,8 @@ class BXIns : public MachineIns
 public:
     BXIns() : MachineIns(mit::BRETURN){};
 
-    BXIns(Cond condition, SType stype, int shift) : MachineIns(mit::BRETURN, condition, stype, shift){};
+    BXIns(Cond condition, SType stype, int shift) 
+        : MachineIns(mit::BRETURN, condition, stype, shift){};
 
     string toString() override;
 
@@ -403,8 +398,8 @@ public:
 
     explicit BLIns(string &label) : MachineIns(mit::BLINK), label(label){};
 
-    BLIns(Cond condition, SType stype, int shift, string &label) : MachineIns(mit::BLINK, condition, stype, shift),
-                                                                   label(label){};
+    BLIns(Cond condition, SType stype, int shift, string &label) 
+        : MachineIns(mit::BLINK, condition, stype, shift), label(label){};
 
     string toString() override;
 
@@ -420,7 +415,8 @@ public:
     string name;
     string value;
 
-    GlobalIns(string name, string value) : MachineIns(mit::GLOBAL, NON, NONE, 0), name(name), value(value){};
+    GlobalIns(string name, string value) 
+        : MachineIns(mit::GLOBAL, NON, NONE, 0), name(name), value(value){};
 
     string toString() override;
 

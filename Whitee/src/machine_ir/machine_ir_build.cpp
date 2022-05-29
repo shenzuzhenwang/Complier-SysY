@@ -81,8 +81,7 @@ vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_pt
 
 vector<shared_ptr<MachineIns>> genJmpIns(shared_ptr<Instruction> &ins);
 
-vector<shared_ptr<MachineIns>>
-genInvokeIns2(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc, shared_ptr<Module> &module);
+vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc, shared_ptr<Module> &module);
 
 vector<shared_ptr<MachineIns>> genUnaryIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc);
 
@@ -98,8 +97,7 @@ vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<
 
 vector<shared_ptr<MachineIns>> genCmpIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc);
 
-vector<shared_ptr<MachineIns>>
-genPhiMov(shared_ptr<Instruction> &ins, shared_ptr<BasicBlock> &basicBlock, shared_ptr<MachineFunc> &machineFunc);
+vector<shared_ptr<MachineIns>> genPhiMov(shared_ptr<Instruction> &ins, shared_ptr<BasicBlock> &basicBlock, shared_ptr<MachineFunc> &machineFunc);
 
 vector<shared_ptr<MachineIns>> genPhi(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc);
 
