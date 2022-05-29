@@ -105,10 +105,10 @@ vector<shared_ptr<MachineIns>> genPhi(shared_ptr<Instruction> &ins, shared_ptr<M
 
 vector<shared_ptr<MachineIns>> genGlobIns(shared_ptr<MachineModule> &machineModule);
 
-set<string> tempRegPool; // NOLINT
+set<string> tempRegPool; // 未分配寄存器
 unordered_map<shared_ptr<Value>, string> lValRegMap;
 unordered_map<shared_ptr<Value>, string> rValRegMap;
-unordered_set<string> regInUse;
+unordered_set<string> regInUse;  // 已使用寄存器
 
 // 在这一步中我们需要记录变量的地址。
 // 对于本地变量，我们需要记录到SP的偏移量。
@@ -418,6 +418,7 @@ void releaseTempRegister(const string &reg)
     tempRegPool.insert(reg);
 }
 
+// load一个立即数
 void loadImm2Reg(int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>> &res, bool mov)
 {
     shared_ptr<Operand> imm;
@@ -468,6 +469,7 @@ void loadOffset(int offset, shared_ptr<Operand> &off, string reg, vector<shared_
     loadImm2Reg(offset, off, res, true);
 }
 
+// load 全局变量
 void loadGlobVar2Reg(shared_ptr<GlobalValue> &glob, shared_ptr<Operand> &des, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> op;
@@ -483,6 +485,7 @@ void loadGlobVar2Reg(shared_ptr<GlobalValue> &glob, shared_ptr<Operand> &des, ve
     res.push_back(loadAddr);
 }
 
+// load const array
 void loadConst2Reg(shared_ptr<ConstantValue> &cons, shared_ptr<Operand> &des, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> op = make_shared<Operand>(GLOB_POINTER, cons->name);
@@ -490,8 +493,8 @@ void loadConst2Reg(shared_ptr<ConstantValue> &cons, shared_ptr<Operand> &des, ve
     res.push_back(loadAddr);
 }
 
-void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr<Operand> &offset,
-                    vector<shared_ptr<MachineIns>> &res)
+// 以sp为基地址取数
+void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr<Operand> &offset, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
     if (var->valueType == INSTRUCTION && s_p_c<Instruction>(var)->type == ALLOC)
@@ -506,6 +509,7 @@ void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr
     }
 }
 
+// 加载一个值到register
 void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc,
                  vector<shared_ptr<MachineIns>> &res, bool mov, int compensate, string reg)
 {
@@ -525,8 +529,9 @@ void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
         loadConst2Reg(const_var, des, res);
     }
     else
-    { //VIRTUAL
+    { // 局部变量
         shared_ptr<Operand> off;
+        // 在寄存器里
         if (machineFunc->var2offset.count(to_string(val->id)) == 0)
         {
             if (rValRegMap.count(val) != 0 || lValRegMap.count(val) != 0)
@@ -548,10 +553,10 @@ void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
                     return;
                 }
             }
-
             cerr << "machine_ir_build: unalloc memory" << endl;
             return;
         }
+        // 不在寄存器里
         int offset = machineFunc->var2offset.at(to_string(val->id)) + compensate;
         if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->type == ALLOC)
         { //use ADD instead of LDR+OFFSET
@@ -573,23 +578,22 @@ void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
     }
 }
 
-void storeNewValue(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc,
-                   vector<shared_ptr<MachineIns>> &res, string reg = "3")
+// 加入一个新的局部变量
+void storeNewValue(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, string reg = "3")
 {
     shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
     shared_ptr<Operand> offset;
     loadOffset(machineFunc->stackPointer, offset, reg, res);
     shared_ptr<MemoryIns> strValue = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, des, stack, offset);
     res.push_back(strValue);
-    machineFunc->var2offset.insert(
-        pair<string, int>(to_string(val_id), machineFunc->stackPointer));
+    machineFunc->var2offset.insert(pair<string, int>(to_string(val_id), machineFunc->stackPointer));
     machineFunc->stackPointer += 4;
 }
 
 // 存储至内存
-void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc,
-                  vector<shared_ptr<MachineIns>> &res)
+void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res)
 {
+    // 此局部变量为新
     if (machineFunc->var2offset.count(to_string(val_id)) == 0)
     { // new value
         string reg = allocTempRegister();
@@ -598,19 +602,19 @@ void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> 
         releaseTempRegister(des->value);
     }
     else
-    { // existing value
+    { // 此局部变量之前已在栈中
         shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
         shared_ptr<Operand> offset;
         string reg = allocTempRegister();
         loadOffset(machineFunc->var2offset.at(to_string(val_id)), offset, reg, res);
-        shared_ptr<MemoryIns> storeExistVal = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, des, stack,
-                                                                     offset);
+        shared_ptr<MemoryIns> storeExistVal = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, des, stack, offset);
         res.push_back(storeExistVal);
         releaseTempRegister(reg);
         releaseTempRegister(des->value);
     }
 }
 
+// 加载operand至reg寄存器
 void loadOperand(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc,
                  vector<shared_ptr<MachineIns>> &res, bool mov, string reg = "3", bool regRequired = true)
 {
@@ -641,13 +645,14 @@ void loadOperand(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
 }
 
 /**
- * @param valueId
- * @param op is the Operand
+ * 读一个值，查看此值所在寄存器op
+ * @param regRequired为true，则是必须是寄存器，否则可以变为imm
  * @return true 如果寄存器需要释放
  */
 bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
                   vector<shared_ptr<MachineIns>> &res, bool mov, bool regRequired)
 {
+    // 此值为一个无法直接获取的值（表达式）
     if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->resultType == L_VAL_RESULT)
     {
         if (lValRegMap.count(val) != 0)
@@ -655,14 +660,14 @@ bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<Ma
             op->value = lValRegMap.at(val);
             return false;
         }
-        else
+        else  // 需要临时放入寄存器，并之后释放
         {
             op->value = allocTempRegister();
             loadOperand(val, op, machineFunc, res, mov, op->value, regRequired);
             return true;
         }
     }
-    else if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->resultType == R_VAL_RESULT)
+    else if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->resultType == R_VAL_RESULT)// 此值为一个无法直接获取的值（表达式）
     {
         if (rValRegMap.count(val) == 0)
         {
@@ -745,12 +750,11 @@ bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<Ma
 }
 
 /**
- * @param val
- * @param op
+ * 
+ * 如果val值已有，则op为此寄存器，否则分配寄存器
  * @return true 如果寄存器需要释放
  */
-bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
-                   vector<shared_ptr<MachineIns>> &res)
+bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res)
 {
     if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->resultType == L_VAL_RESULT)
     {
@@ -807,19 +811,19 @@ vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_pt
             {
                 ret_reg = lValRegMap.at(ret_val);
             }
-            if (ret_reg != "0")
+            if (ret_reg != "0")   // 如果返回值没在R0里  move to R0
             {
                 shared_ptr<Operand> ori_reg = make_shared<Operand>(REG, ret_reg);
                 shared_ptr<MovIns> move2R0 = make_shared<MovIns>(NON, NONE, 0, op1, ori_reg);
                 res.push_back(move2R0);
             }
         }
-        else
+        else  // 值之前未存储，直接load
         {
             loadVal2Reg(ret_val, op1, machineFunc, res, true);
         }
     }
-    //end of function
+    //end of function  sp释放栈，所有形参均出栈
     shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
     int para_size;
     int para_num = machineFunc->params.size();
@@ -844,7 +848,8 @@ vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_pt
     }
     shared_ptr<BinaryIns> restore_func = make_shared<BinaryIns>(mit::ADD, NON, NONE, 0, stack, restore_stack, stack);
     res.push_back(restore_func);
-    ///restore lr to pc
+
+    // 加载LR至PC
     shared_ptr<Operand> pc = make_shared<Operand>(REG, "15");
     shared_ptr<Operand> lrOff = make_shared<Operand>(IMM, to_string(-20 - para_size * 4));
     shared_ptr<MemoryIns> restoreLR = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, pc, stack, lrOff);
@@ -864,8 +869,8 @@ vector<shared_ptr<MachineIns>> genJmpIns(shared_ptr<Instruction> &ins)
     return res;
 }
 
-vector<shared_ptr<MachineIns>>
-genInvokeIns2(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc, shared_ptr<Module> &module)
+// 调用函数
+vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc, shared_ptr<Module> &module)
 {
     vector<shared_ptr<MachineIns>> res;
     shared_ptr<InvokeInstruction> invoke = static_pointer_cast<InvokeInstruction>(ins);
@@ -1171,8 +1176,7 @@ vector<shared_ptr<MachineIns>> genBinaryIns(shared_ptr<Instruction> &ins, shared
         shared_ptr<Operand> op2 = make_shared<Operand>(REG, "3");
         shared_ptr<Value> rhs = s_p_c<BinaryInstruction>(ins)->rhs;
         bool release2;
-        if (s_p_c<BinaryInstruction>(ins)->op == "*" ||
-            s_p_c<BinaryInstruction>(ins)->op == "/")
+        if (s_p_c<BinaryInstruction>(ins)->op == "*" || s_p_c<BinaryInstruction>(ins)->op == "/")
         {
             release2 = readRegister(rhs, op2, machineFunc, res, true, true);
         }

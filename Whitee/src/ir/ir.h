@@ -60,7 +60,7 @@ class PhiMoveInstruction;
 
 enum ValueType
 {
-    CONSTANT,  // const
+    CONSTANT,  // const array
     NUMBER,  // 临时变量即数字
     STRING,
     GLOBAL,  // 全局变量，包括数组或公共变量

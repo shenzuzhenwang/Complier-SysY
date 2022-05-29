@@ -123,9 +123,9 @@ enum State
 {
     GLOB_INT,
     GLOB_POINTER,
-    VIRTUAL,
-    REG,
-    IMM,
+    VIRTUAL, // 局部变量
+    REG,   // register
+    IMM,   // immediate
     LABEL
 };
 
@@ -156,7 +156,7 @@ public:
     FuncType funcType;
     vector<shared_ptr<Value>> params;
     vector<shared_ptr<MachineBB>> machineBlocks;
-    unordered_map<string, int> var2offset;
+    unordered_map<string, int> var2offset;  // 局部变量偏移
     // stack size
     int stackSize;
     int stackPointer;
@@ -374,9 +374,8 @@ class BIns : public MachineIns
 public:
     string label;
 
-    explicit BIns(Cond condition, SType stype, int shift, string &label) : MachineIns(mit::BRANCH, condition, stype,
-                                                                                      shift),
-                                                                           label(label){};
+    explicit BIns(Cond condition, SType stype, int shift, string &label) 
+        : MachineIns(mit::BRANCH, condition, stype, shift), label(label){};
 
     explicit BIns(string &label) : MachineIns(mit::BRANCH), label(label){};
 
