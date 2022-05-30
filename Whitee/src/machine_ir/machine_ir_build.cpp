@@ -17,8 +17,8 @@ int ins_count = 0;
 int pre_ins_count = 0;
 set<int> invalid_imm;
 
-Cond cmp_op = NON;
-bool true_cmp = false;
+Cond cmp_op = NON;  // 比较的失败的条件
+bool true_cmp = false;   // 跳转前是否进行过一次比较
 
 unordered_map<mit::InsType, string> instype2string = { // NOLINT
     {mit::ADD, "ADD"},
@@ -74,8 +74,7 @@ unordered_map<State, string> state2string{// NOLINT
 
 void loadImm2Reg(int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>> &res, bool mov);
 
-void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc,
-                 vector<shared_ptr<MachineIns>> &res, bool mov, int compensate = 0, string reg = "3");
+void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, bool mov, int compensate = 0, string reg = "3");
 
 vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc);
 
@@ -1264,7 +1263,7 @@ vector<shared_ptr<MachineIns>> genCmpIns(shared_ptr<Instruction> &ins, shared_pt
         assign_f->cond = LS;
         cmp_op = LS;
     }
-    if (!true_cmp)
+    if (!true_cmp)  // ？？？？永远不会进来
     {
         res.push_back(assign_t);
         res.push_back(assign_f);
@@ -1282,6 +1281,7 @@ vector<shared_ptr<MachineIns>> genCmpIns(shared_ptr<Instruction> &ins, shared_pt
     return res;
 }
 
+// 根据之前比较，选择跳转
 vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1298,7 +1298,7 @@ vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<
     //true case
     string true_label = "block" + to_string(br->trueBlock->id);
     shared_ptr<BIns> btIns = make_shared<BIns>(NON, NONE, 0, true_label);
-    if (cmp_op != NON)
+    if (cmp_op != NON)  // 有过比较
     {
         bfIns->cond = cmp_op;
     }
@@ -1312,6 +1312,7 @@ vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<
     return res;
 }
 
+// 分配一个局部变量
 void genAlloc(shared_ptr<MachineFunc> &machineFunc, shared_ptr<Instruction> &ins)
 {
     shared_ptr<AllocInstruction> al = s_p_c<AllocInstruction>(ins);
@@ -1366,8 +1367,8 @@ vector<shared_ptr<MachineIns>> genLoadIns(shared_ptr<Instruction> &ins, shared_p
             store2Memory(t_rd, li->id, machineFunc, res);
         }
     }
-    else
-    { //use sp
+    else  // 局部变量
+    {
         //compute offset
         shared_ptr<Operand> f_pre = make_shared<Operand>(REG, "2");
         f_pre->value = allocTempRegister();
@@ -1471,8 +1472,8 @@ vector<shared_ptr<MachineIns>> genStoreIns(shared_ptr<Instruction> &ins, shared_
         if (release_base)
             releaseTempRegister(t_base->value);
     }
-    else
-    { //use sp
+    else   // 局部变量
+    {
         //compute offset
         shared_ptr<Operand> f_pre = make_shared<Operand>(REG, "2");
         f_pre->value = allocTempRegister();
@@ -1527,8 +1528,7 @@ vector<shared_ptr<MachineIns>> genStoreIns(shared_ptr<Instruction> &ins, shared_
     return res;
 }
 
-vector<shared_ptr<MachineIns>> genPhiMov(shared_ptr<Instruction> &ins, shared_ptr<BasicBlock> &basicBlock,
-                                         shared_ptr<MachineFunc> &machineFunc) //PhiMoveIns
+vector<shared_ptr<MachineIns>> genPhiMov(shared_ptr<Instruction> &ins, shared_ptr<BasicBlock> &basicBlock, shared_ptr<MachineFunc> &machineFunc) //PhiMoveIns
 {
     vector<shared_ptr<MachineIns>> res;
     shared_ptr<PhiMoveInstruction> p_move = static_pointer_cast<PhiMoveInstruction>(ins);
