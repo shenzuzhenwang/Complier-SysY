@@ -1567,6 +1567,7 @@ vector<shared_ptr<MachineIns>> genPhi(shared_ptr<Instruction> &ins, shared_ptr<M
     return res;
 }
 
+// 全局的变量
 vector<shared_ptr<MachineIns>> genGlobIns(shared_ptr<MachineModule> &machineModule)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1576,8 +1577,7 @@ vector<shared_ptr<MachineIns>> genGlobIns(shared_ptr<MachineModule> &machineModu
     bool need = false;
     for (auto &glob_var : machineModule->globalVariables)
     {
-        string name = s_p_c<GlobalValue>(glob_var)->name + to_string(const_pool_id) + "_whitee_" +
-                      to_string(const_pool_id);
+        string name = s_p_c<GlobalValue>(glob_var)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id);
         string value = s_p_c<GlobalValue>(glob_var)->name;
         shared_ptr<GlobalIns> glob_var_label = make_shared<GlobalIns>(name, value);
         res.push_back(glob_var_label);
@@ -1585,8 +1585,7 @@ vector<shared_ptr<MachineIns>> genGlobIns(shared_ptr<MachineModule> &machineModu
     }
     for (auto &glob_const : machineModule->globalConstants)
     {
-        string name = s_p_c<ConstantValue>(glob_const)->name + to_string(const_pool_id) + "_whitee_" +
-                      to_string(const_pool_id);
+        string name = s_p_c<ConstantValue>(glob_const)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id);
         string value = s_p_c<ConstantValue>(glob_const)->name;
         shared_ptr<GlobalIns> glob_const_label = make_shared<GlobalIns>(name, value);
         res.push_back(glob_const_label);
