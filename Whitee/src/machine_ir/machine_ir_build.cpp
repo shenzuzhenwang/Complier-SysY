@@ -507,8 +507,7 @@ void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr
 }
 
 // 加载一个值到register
-void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc,
-                 vector<shared_ptr<MachineIns>> &res, bool mov, int compensate, string reg)
+void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, bool mov, int compensate, string reg)
 {
     if (val->valueType == NUMBER)
     {
@@ -789,7 +788,7 @@ bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<M
 vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
-    shared_ptr<BXIns> bx = make_shared<BXIns>(NON, NONE, 0); // bx lr
+    shared_ptr<BXIns> bx = make_shared<BXIns>(NON, NONE, 0); // bx lr  ？？？？没用
 
     if (s_p_c<ReturnInstruction>(ins)->funcType == FUNC_INT)
     {
@@ -871,9 +870,10 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
 {
     vector<shared_ptr<MachineIns>> res;
     shared_ptr<InvokeInstruction> invoke = static_pointer_cast<InvokeInstruction>(ins);
-    //save context
+    // 保存上下文
     bool useR0 = false;
     shared_ptr<StackIns> push = make_shared<StackIns>(NON, NONE, 0, true);
+    // 记录已使用的register
     set<int> reg_index;
     int context_size = 0;
     for (auto &r_val : rValRegMap)
@@ -903,29 +903,29 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
         }
     }
     reg_index.insert(current_reg_index.begin(), current_reg_index.end());
+    // 将需要保存的register push入栈中
     for (auto index : reg_index)
     {
         context_size += 4;
         shared_ptr<Operand> reg = make_shared<Operand>(REG, to_string(index));
         push->regs.push_back(reg);
     }
-
     if (!push->regs.empty())
     {
         res.push_back(push);
     }
-    //save params
-    //save rest params
+
+    // 保存参数
     int i;
     int para_size = 0;
     int compensate = context_size;
-    for (i = invoke->params.size() - 1; i >= 4;)
+    for (i = invoke->params.size() - 1; i >= 4;)  // 四个以上的参数
     {
         para_size += 4;
         int j = 0;
         shared_ptr<StackIns> push_param = make_shared<StackIns>(NON, NONE, 0, true);
         set<int> regs;
-        while (i >= 4 && j < 4)
+        while (i >= 4 && j < 4)  // 参数从后向前存于R0至R3
         {
             shared_ptr<Operand> tmp_param = make_shared<Operand>(REG, to_string(3 - j));
             loadVal2Reg(invoke->params[i], tmp_param, machineFunc, res, true, compensate, tmp_param->value);
@@ -933,7 +933,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
             j++;
             i--;
         }
-        for (auto reg : regs)
+        for (auto reg : regs)  // 然后按R0至R3依次push
         {
             shared_ptr<Operand> param = make_shared<Operand>(REG, to_string(reg));
             push_param->regs.push_back(param);
@@ -941,8 +941,8 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
         res.push_back(push_param);
         compensate += j * 4;
     }
-    //save first 4 params
-    while (i >= 0)
+    
+    while (i >= 0)   // 四个以内的参数，加载入R0至R3
     {
         shared_ptr<Operand> init_param = make_shared<Operand>(REG, to_string(i));
         if (lValRegMap.count(invoke->params[i]) == 0 && rValRegMap.count(invoke->params[i]) == 0)
@@ -972,15 +972,14 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
         }
         i--;
     }
-    if (invoke->targetFunction == nullptr &&
-        (invoke->targetName == "_sysy_starttime" || invoke->targetName == "_sysy_stoptime"))
+    if (invoke->targetFunction == nullptr && (invoke->targetName == "_sysy_starttime" || invoke->targetName == "_sysy_stoptime"))
     {
         shared_ptr<Operand> R0 = make_shared<Operand>(REG, "0");
         shared_ptr<Operand> one = make_shared<Operand>(IMM, "1");
         shared_ptr<MovIns> mov1 = make_shared<MovIns>(NON, NONE, 0, R0, one);
         res.push_back(mov1);
     }
-    //bl
+    // 跳转
     string targetName;
     if (invoke->targetFunction != nullptr)
     {
@@ -996,7 +995,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
     }
     shared_ptr<BLIns> blink = make_shared<BLIns>(NON, NONE, 0, targetName);
     res.push_back(blink);
-    //save return value in R0
+    // 保存R0内的返回值
     bool needFetch = false;
     bool needMove = false;
     if ((s_p_c<InvokeInstruction>(ins)->invokeType == GET_ARRAY ||
@@ -1011,8 +1010,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
             shared_ptr<Operand> ret = make_shared<Operand>(REG, "0");
             shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
             shared_ptr<Operand> offset = make_shared<Operand>(IMM, "-4");
-            shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, ret, stack,
-                                                                   offset);
+            shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns>(mit::STORE, OFFSET, NON, NONE, 0, ret, stack, offset);
             res.push_back(storeR0);
         }
         else
@@ -1020,7 +1018,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
             needMove = true;
         }
     }
-    //restore context
+    // 重建上下文
     shared_ptr<StackIns> pop = make_shared<StackIns>(NON, NONE, 0, false);
     for (int j = 0; j < push->regs.size(); ++j)
     {
@@ -1051,8 +1049,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
         shared_ptr<Value> i_ins = ins;
         bool release_des = writeRegister(i_ins, final_des, machineFunc, res);
         shared_ptr<Operand> offset = make_shared<Operand>(IMM, to_string(-context_size - 4));
-        shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, final_des, stack,
-                                                               offset);
+        shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns>(mit::LOAD, OFFSET, NON, NONE, 0, final_des, stack, offset);
         res.push_back(fetchR0);
         if (release_des)
         {
@@ -1066,7 +1063,7 @@ vector<shared_ptr<MachineIns>> genUnaryIns(shared_ptr<Instruction> &ins, shared_
 {
     shared_ptr<UnaryInstruction> ui = s_p_c<UnaryInstruction>(ins);
     vector<shared_ptr<MachineIns>> res;
-    if (ui->op == "-")
+    if (ui->op == "-")   // 负号转为0-值
     {
         shared_ptr<Operand> op1 = make_shared<Operand>(IMM, "0");
         shared_ptr<Operand> op2 = make_shared<Operand>(REG, "3");
@@ -1086,7 +1083,7 @@ vector<shared_ptr<MachineIns>> genUnaryIns(shared_ptr<Instruction> &ins, shared_
             store2Memory(rd, ui->id, machineFunc, res);
         }
     }
-    else
+    else  // 取反转为cmp值与0，相等则变为1，否则变为0
     {
         shared_ptr<Operand> op2 = make_shared<Operand>(IMM, "0");
         shared_ptr<Operand> op1 = make_shared<Operand>(REG, "2");
@@ -1118,7 +1115,7 @@ vector<shared_ptr<MachineIns>> genBinaryIns(shared_ptr<Instruction> &ins, shared
 {
     vector<shared_ptr<MachineIns>> res;
     shared_ptr<Operand> rd;
-    if (s_p_c<BinaryInstruction>(ins)->op == "%")
+    if (s_p_c<BinaryInstruction>(ins)->op == "%")  // 取余需要转为三元，先进行除法，在对结果进行乘减
     {
         shared_ptr<Operand> d_op1 = make_shared<Operand>(REG, "2");
         shared_ptr<Value> lhs = s_p_c<BinaryInstruction>(ins)->lhs;

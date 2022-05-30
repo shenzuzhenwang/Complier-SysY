@@ -41,18 +41,15 @@ class GlobalIns;
 
 class PhiTmp;
 
-extern bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
-                         vector<shared_ptr<MachineIns>> &res, bool mov, bool regRequired);
+extern bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, bool mov, bool regRequired);
 
-extern bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc,
-                          vector<shared_ptr<MachineIns>> &res);
+extern bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res);
 
 extern void releaseTempRegister(const string &reg);
 
 extern string allocTempRegister();
 
-extern void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc,
-                         vector<shared_ptr<MachineIns>> &res);
+extern void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res);
 
 /**
  * mit means machine ins type
@@ -83,9 +80,9 @@ namespace mit
         MOVW, // 
         MOVT, // 移至顶部
         CMP,  // 比较
-        BRANCH,// 
-        BLINK,
-        BRETURN,
+        BRANCH, // B
+        BLINK,  // BL
+        BRETURN, 
         GLOBAL,
         COMMENT  // 注释
     };
@@ -191,7 +188,8 @@ public:
     Cond cond;
     shared_ptr<Shift> shift;
 
-    explicit MachineIns(mit::InsType type) : type(type){};
+    explicit MachineIns(mit::InsType type) 
+        : type(type){};
 
     MachineIns(mit::InsType type, Cond cond, shared_ptr<Shift> &shift) 
         : type(type), cond(cond), shift(shift){};
@@ -216,7 +214,8 @@ public:
     State state;
     string value; // op value
 
-    Operand(State state, string value) : state(state), value(value){};
+    Operand(State state, string value) 
+        : state(state), value(value){};
 };
 
 class BinaryIns : public MachineIns
@@ -396,7 +395,8 @@ class BLIns : public MachineIns
 public:
     string label;
 
-    explicit BLIns(string &label) : MachineIns(mit::BLINK), label(label){};
+    explicit BLIns(string &label) 
+        : MachineIns(mit::BLINK), label(label){};
 
     BLIns(Cond condition, SType stype, int shift, string &label) 
         : MachineIns(mit::BLINK, condition, stype, shift), label(label){};
@@ -442,10 +442,11 @@ public:
     void toARM(shared_ptr<MachineFunc> &machineFunc) override;
 };
 
-class PhiTmp : public Value
+class PhiTmp : public Value   //？？？？没用
 {
 public:
-    PhiTmp() : Value(ValueType::UNDEFINED){};
+    PhiTmp() 
+        : Value(ValueType::UNDEFINED){};
 
     string toString() override { return ""; };
 
