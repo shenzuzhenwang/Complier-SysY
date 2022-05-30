@@ -6,7 +6,7 @@
 using namespace std;
 
 ofstream machineIrStream; // NOLINT
-string longConstantDnf;
+//string longConstantDnf;  // 无用
 extern int const_pool_id;
 extern int ins_count;
 extern int pre_ins_count;
@@ -79,8 +79,8 @@ void MachineModule::toARM()
     {
         func->toARM(this->globalVariables, this->globalConstants);
 
-        machineIrStream << longConstantDnf;
-        longConstantDnf = "";
+        //machineIrStream << longConstantDnf;  ？？？？没用
+        //longConstantDnf = "";
     }
 }
 
@@ -158,7 +158,7 @@ string convertImm(int imm, const string &reg)
 {
     return convertImm(imm, reg, false);
 }
-
+// 无用
 void insert_reference(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts)
 {
     //generate jump to skip constant pool
@@ -585,7 +585,7 @@ void BIns::toARM(shared_ptr<MachineFunc> &machineFunc)
 {
     machineIrStream << "        " + instype2string.at(this->type) + cond2string.at(this->cond) + " " + label << endl;
     ins_count++;
-}
+} 
 
 void BLIns::toARM(shared_ptr<MachineFunc> &machineFunc)
 {

@@ -54,10 +54,10 @@ unordered_map<SType, string> stype2string{// NOLINT
                                           {ASR, "ASR"},
                                           {LSR, "LSR"},
                                           {LSL, "LSL"}};
-
+ 
 unordered_map<Cond, string> cond2string{// NOLINT
                                         {NON, ""},
-                                        {EQ, "EQ"},
+                                        {EQ, "EQ"}, 
                                         {NE, "NE"},
                                         {LS, "LT"},
                                         {LE, "LE"},

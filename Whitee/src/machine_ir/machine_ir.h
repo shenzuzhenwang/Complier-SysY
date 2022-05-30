@@ -270,7 +270,7 @@ class MemoryIns : public MachineIns
 {
 public:
     shared_ptr<Operand> rd;
-    shared_ptr<Operand> base;
+    shared_ptr<Operand> base; 
     shared_ptr<Operand> offset;
     Mode mode;
 

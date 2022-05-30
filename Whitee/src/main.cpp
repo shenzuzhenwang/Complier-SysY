@@ -103,7 +103,7 @@ int main(int argc, char **argv)
         }
         cout << endl;
     }
-    else
+    else 
     {
         fixRightValue(module);
         for (auto &func : module->functions)
