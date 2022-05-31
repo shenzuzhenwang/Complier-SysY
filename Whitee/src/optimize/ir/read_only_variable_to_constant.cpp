@@ -1,5 +1,6 @@
 #include "ir_optimize.h"
 
+// 查看变量是否有被写入的可能
 bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
 {
     for (auto &user : globalVar->users)
@@ -14,10 +15,10 @@ bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
     }
     return false;
 }
-
+// 全局变量变为常量
 void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &module)
 {
-    for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it)
+    for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it) // 删去全局变量
     {
         if (*it == globalVar)
         {
@@ -34,9 +35,7 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
         {
             if (!dynamic_cast<LoadInstruction *>(user.get()))
             {
-                cerr << "Error occurs in process global variable to constant:"
-                        " global has other type users except load."
-                     << endl;
+                cerr << "Error occurs in process global variable to constant: global has other type users except load."<< endl;
             }
             else
             {
@@ -50,7 +49,7 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
         }
         global->abandonUse();
     }
-    else
+    else  // 全局数组
     {
         shared_ptr<Value> constantArray = make_shared<ConstantValue>(global);
         unordered_set<shared_ptr<Value>> users = global->users;

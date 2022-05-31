@@ -14,6 +14,7 @@ unordered_set<shared_ptr<BasicBlock>> blockRelationTree;
 
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb);
 
+// 去除不用的指令
 void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
 {
     auto it = bb->instructions.begin();
@@ -72,10 +73,11 @@ VISIT_ALL_PHIS:
     }
 }
 
+// 去除不用的块
 void removeUnusedBasicBlocks(shared_ptr<Function> &func)
 {
     blockRelationTree.clear();
-    buildBlockRelationTree(func->entryBlock);
+    buildBlockRelationTree(func->entryBlock);  // 将所有可能的块构建
     auto it = func->blocks.begin();
     while (it != func->blocks.end())
     {
@@ -124,18 +126,19 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
     }
 }
 
+// 去除不被调用的函数
 void removeUnusedFunctions(shared_ptr<Module> &module)
 {
-    auto func = module->functions.begin();
-    while (func != module->functions.end())
+    auto func = module->functions.begin ();
+    while (func != module->functions.end ())
     {
-        if ((*func)->callers.empty() && (*func)->name != "main")
+        if ((*func)->callers.empty () && (*func)->name != "main")
         {
-            (*func)->abandonUse();
-            func = module->functions.erase(func);
+            (*func)->abandonUse ();
+            func = module->functions.erase (func);
         }
         else
-            ++func;
+            func++;
     }
 }
 
@@ -154,6 +157,7 @@ void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &
     }
 }
 
+// 块关系树，将后继的块全部插入
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
 {
     blockRelationTree.insert(bb);
@@ -166,6 +170,7 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
     }
 }
 
+// 函数有副作用：修改了自己范围之外的资源    修改全局变量、修改输入参数所引用的对象、做输入输出操作、调用其他有副作用的函数
 void countFunctionSideEffect(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -285,7 +290,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 
 void fixRightValue(shared_ptr<Module> &module)
 {
-    // 预处理分配和非用户的函数调用
+    // 预处理分配和非用户的函数调用?
     for (auto &func : module->functions)
     {
         for (auto &bb : func->blocks)

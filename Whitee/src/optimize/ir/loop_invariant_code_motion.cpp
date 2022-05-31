@@ -20,6 +20,7 @@ void fixNewForwardBlock(shared_ptr<Function> &func, shared_ptr<BasicBlock> &firs
 
 inline bool judgeInLoop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop);
 
+// 循环不变量移除
 void loopInvariantCodeMotion(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

@@ -158,7 +158,7 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
     {
         shared_ptr<InitValValNode> initVal = s_p_c<InitValValNode>(varDef->initVal);
         shared_ptr<Value> exp = expToIr(func, bb, initVal->exp);
-        if (exp->valueType == ValueType::INSTRUCTION)  // ？？感觉没用
+        if (exp->valueType == ValueType::INSTRUCTION)    // 一个值（可能为左值或右值），IR将其记录为一个变量
         {
             shared_ptr<Instruction> insExp = s_p_c<Instruction>(exp);
             insExp->resultType = L_VAL_RESULT;
@@ -252,7 +252,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             }
             else
             {
-                if (value->valueType == ValueType::INSTRUCTION)  // ？？感觉没用
+                if (value->valueType == ValueType::INSTRUCTION)  // 一个值（可能为左值或右值），IR将其记录为一个变量
                 {
                     shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);
                     insValue->resultType = L_VAL_RESULT;
@@ -264,7 +264,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         }
         case SymbolType::ARRAY:
         {
-            if (value->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)  // 右值为一个无法直接获取的值 ？？感觉没用
+            if (value->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)  // 右值为一个无法直接获取的值 
             {
                 shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);
                 insValue->resultType = L_VAL_RESULT;

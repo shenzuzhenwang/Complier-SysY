@@ -328,7 +328,7 @@ void fold(shared_ptr<Instruction> &ins)
     }
 }
 
-// 常量折叠
+// 常量折叠  直接计算出可以被计算的值，作为常量
 void constantFolding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

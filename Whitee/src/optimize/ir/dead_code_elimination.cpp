@@ -7,7 +7,7 @@ void deadCodeElimination(shared_ptr<Module> &module)
     countFunctionSideEffect(module);
     for (auto var = module->globalStrings.begin(); var != module->globalStrings.end();)
     {
-        if ((*var)->users.empty())
+        if ((*var)->users.empty())  // 删除没有被使用的值
         {
             var = module->globalConstants.erase(var);
         }
