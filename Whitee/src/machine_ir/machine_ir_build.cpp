@@ -293,14 +293,14 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(), res.end());
     pre_ins_count = ins_count;
 
-    if (_optimizeMachineIr)
-    {
-        delete_imm_jump(machineModule);
-        delete_useless_compute(machineModule);
-        reduce_redundant_move(machineModule);
-        merge_mla_and_mls(machineModule);
-        exchange_branch_ins(machineModule);
-    }
+    //if (_optimizeMachineIr)
+    //{
+    //    delete_imm_jump(machineModule);
+    //    delete_useless_compute(machineModule);
+    //    reduce_redundant_move(machineModule);
+    //    merge_mla_and_mls(machineModule);
+    //    exchange_branch_ins(machineModule);
+    //}
 
     return machineModule;
 }

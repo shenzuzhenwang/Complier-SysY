@@ -87,7 +87,7 @@ enum InstructionType
     UNARY,  // 一元操作
     BINARY, // 二元操作
     CMP,    // cmp
-    ALLOC,  // 分配变量
+    ALLOC,  // 分配数组
     LOAD,   // 取用
     STORE,  // 存储
     PHI,    // phi
@@ -148,7 +148,7 @@ class Module : public Value
 public:
     vector<shared_ptr<Value>> globalStrings;
     vector<shared_ptr<Value>> globalConstants;  // const array
-    vector<shared_ptr<Value>> globalVariables;
+    vector<shared_ptr<Value>> globalVariables;  // 全局变量
     vector<shared_ptr<Function>> functions;
 
     Module() 
@@ -526,7 +526,7 @@ public:
 
     void abandonUse() override;
 
-    unsigned long long hashCode() override
+    unsigned long long hashCode() override   // 相同的表达式，应有相同的hashCode
     {
         return (unsigned long long)value.get() * (op.empty() ? 0 : op.at(0));
     }
@@ -571,7 +571,7 @@ public:
 
     void abandonUse() override;
 
-    unsigned long long hashCode() override
+    unsigned long long hashCode() override   // 相同的表达式，应有相同的hashCode
     {
         unsigned long long x = 0;
         if (!op.empty())
@@ -585,7 +585,7 @@ public:
 };
 
 /**
- * Memory Alloc IR.
+ * Memory Alloc IR  对于数组
  */
 class AllocInstruction : public Instruction
 {

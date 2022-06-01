@@ -7,7 +7,7 @@
 
 extern shared_ptr<CompUnitNode> syntaxAnalyze();
 
-extern bool openFolder;
+//extern bool openFolder;
 extern std::unordered_map<std::string, std::string> usageNameListOfVarSingleUseInUnRecursionFunction;
 
 extern void changeCondDivideIntoMul(shared_ptr<CondNode> &condNode);

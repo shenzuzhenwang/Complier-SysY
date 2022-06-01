@@ -3,7 +3,7 @@
 
 // 未检查IR是否在通过后发生变化。
 
-const unsigned int OPTIMIZE_TIMES = 10;
+const unsigned int OPTIMIZE_TIMES = 5;
 
 extern bool needIrCheck;
 extern bool needIrPassCheck;
@@ -32,7 +32,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Constant Folding." << endl;
         }
 
-        if (level >= O3)
+        if (level >= O1)  // 可以不用
         {
             localArrayFolding(module);
             deadCodeElimination(module);
@@ -40,7 +40,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Local Array Folding." << endl;
         }
 
-        if (level >= O3)
+        if (level >= O1)
         {
             deadArrayDelete(module);
             deadCodeElimination(module);
@@ -48,7 +48,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Dead Array Delete." << endl;
         }
 
-        if (level >= O3)
+        if (level >= O1)
         {
             arrayExternalLift(module);
             deadCodeElimination(module);
@@ -56,13 +56,13 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Array External Lift." << endl;
         }
 
-        if (level >= O2)
-        {
-            deadBlockCodeGroupDelete(module);
-            deadCodeElimination(module);
-            if (needIrPassCheck && !irCheck(module))
-                cerr << "Error: Dead Block Code Group Delete." << endl;
-        }
+        //if (level >= O2)
+        //{
+        //    deadBlockCodeGroupDelete(module);
+        //    deadCodeElimination(module);
+        //    if (needIrPassCheck && !irCheck(module))
+        //        cerr << "Error: Dead Block Code Group Delete." << endl;
+        //}
 
         if (level >= O1)
         {
@@ -77,9 +77,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
             localCommonSubexpressionElimination(module);
             deadCodeElimination(module);
             if (needIrPassCheck && !irCheck(module))
-                cerr << "Error: Local Common "
-                        "Subexpression Elimination."
-                     << endl;
+                cerr << "Error: Local Common Subexpression Elimination." << endl;
         }
 
         if (level >= O1)
@@ -98,13 +96,13 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Block Combination." << endl;
         }
 
-        if (level >= O2)
-        {
-            functionInline(module);
-            deadCodeElimination(module);
-            if (needIrPassCheck && !irCheck(module))
-                cerr << "Error: Function Inline." << endl;
-        }
+        //if (level >= O2)
+        //{
+        //    functionInline(module);
+        //    deadCodeElimination(module);
+        //    if (needIrPassCheck && !irCheck(module))
+        //        cerr << "Error: Function Inline." << endl;
+        //}
 
         if (_debugIrOptimize)
         {

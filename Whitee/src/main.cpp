@@ -18,7 +18,7 @@ using namespace std;
 OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
 bool needIrCheck = false;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
-bool openFolder = false;  // ? 循环展开  O2
+//bool openFolder = false;  // ? 循环展开  O2
 
 string sourceCodeFile;  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
@@ -231,11 +231,11 @@ int setCompileOptions(int argc, char **argv)
             {
                 _optimizeMachineIr = true;
             }
-            if (optimizeLevel >= OptimizeLevel::O2)
-            {
-                openFolder = true;
-                _optimizeDivAndMul = true;
-            }
+            //if (optimizeLevel >= OptimizeLevel::O2)
+            //{
+            //    openFolder = true;
+            //    _optimizeDivAndMul = true;
+            //}
         }
         else if (!argCheckFlag && (string(argv[i]).find("-c") == 0 || string(argv[i]).find("--check") == 0))
         {

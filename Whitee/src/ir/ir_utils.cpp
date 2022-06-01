@@ -142,11 +142,12 @@ void removeUnusedFunctions(shared_ptr<Module> &module)
     }
 }
 
+// 删除pre的后继块bb
 void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre)
 {
     pre->successors.erase(bb);
     bb->predecessors.erase(pre);
-    if (bb->predecessors.empty())
+    if (bb->predecessors.empty())  // 如果此块没有前驱块，则递归删除此块
     {
         unordered_set<shared_ptr<BasicBlock>> successorsCopy = bb->successors;
         bb->successors.clear();

@@ -1,5 +1,6 @@
 #include "ir_optimize.h"
 
+// 分支条件常数转化
 void constantBranchConversion(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -8,21 +9,21 @@ void constantBranchConversion(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->type == InstructionType::BR)
+                if (ins->type == InstructionType::BR)  // 分支指令
                 {
                     shared_ptr<BranchInstruction> br = s_p_c<BranchInstruction>(ins);
-                    if (br->condition->valueType == ValueType::NUMBER)
+                    if (br->condition->valueType == ValueType::NUMBER)  // 分支条件为常数
                     {
                         shared_ptr<NumberValue> num = s_p_c<NumberValue>(br->condition);
                         if (num->number == 0)
                         {
-                            removeBlockPredecessor(br->trueBlock, bb);
-                            ins = make_shared<JumpInstruction>(br->falseBlock, bb);
+                            removeBlockPredecessor(br->trueBlock, bb);  // 去掉其trueBlock
+                            ins = make_shared<JumpInstruction>(br->falseBlock, bb);  // 变分支指令为跳转
                             br->abandonUse();
                         }
                         else
                         {
-                            removeBlockPredecessor(br->falseBlock, bb);
+                            removeBlockPredecessor(br->falseBlock, bb);  // 去掉其falseBlock
                             ins = make_shared<JumpInstruction>(br->trueBlock, bb);
                             br->abandonUse();
                         }
