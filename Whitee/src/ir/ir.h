@@ -91,7 +91,7 @@ enum InstructionType
     LOAD,   // 取用
     STORE,  // 存储
     PHI,    // phi
-    PHI_MOV  //  phi move
+    PHI_MOV  //  phi move 对phi中变量进行赋值
 };
 
 enum InvokeType  // 普通函数，与9种运行时函数
@@ -662,9 +662,9 @@ class PhiInstruction : public Instruction
 {
 public:
     string localVarName;  // 变量名
-    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // 操作数（可能的数）
+    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // phi的操作数（可能的数）
 
-    shared_ptr<PhiMoveInstruction> phiMove; // 在 phi 消除后使用
+    shared_ptr<PhiMoveInstruction> phiMove; // 确定phi的phi move对象
 
     PhiInstruction(string &localVarName, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::PHI, bb, L_VAL_RESULT), localVarName(localVarName)

@@ -27,7 +27,7 @@ void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
     }
     for (auto &func : module->functions)
     {
-        if (level >= O2)
+        if (level >= O1)
         {
             calculateVariableWeight(func);
             registerAlloc(func);

@@ -4,7 +4,7 @@ void calculateVariableWeight(shared_ptr<Function> &func)
 {
     for (auto &arg : func->params)
     {
-        unsigned int tempWeight = countWeight(0, 0);
+        unsigned int tempWeight = countWeight(0, 0);   // ³õÊ¼È¨ÖØ1
         if (func->variableWeight.count(arg) != 0)
         {
             tempWeight = func->variableWeight.at(arg);
@@ -44,9 +44,7 @@ void calculateVariableWeight(shared_ptr<Function> &func)
                     }
                     else if (user->valueType != INSTRUCTION)
                     {
-                        cerr << "Error occurs in process calculate variable weight: "
-                                "user is not an instruction."
-                             << endl;
+                        cerr << "Error occurs in process calculate variable weight: user is not an instruction." << endl;
                     }
                 }
                 func->variableWeight[ins] = tempWeight;
@@ -78,9 +76,7 @@ void calculateVariableWeight(shared_ptr<Function> &func)
                 }
                 else if (user->valueType != INSTRUCTION)
                 {
-                    cerr << "Error occurs in process calculate variable weight: "
-                            "user is not an instruction."
-                         << endl;
+                    cerr << "Error occurs in process calculate variable weight: user is not an instruction." << endl;
                 }
             }
             func->variableWeight[phi] = tempWeight;

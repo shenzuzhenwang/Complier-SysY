@@ -13,7 +13,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
     //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ？？？？感觉没用
     //    deadCodeElimination(module);
 
-    for (int i = 0; i < OPTIMIZE_TIMES; ++i)
+    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // 连续优化10次
     {
         globalIrCorrect = true;
         if (level >= O1)

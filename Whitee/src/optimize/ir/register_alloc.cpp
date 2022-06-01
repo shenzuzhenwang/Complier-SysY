@@ -10,9 +10,7 @@ bool conflictGraphBuildSuccess;
 unsigned long CONFLICT_GRAPH_TIMEOUT = 10;
 
 unordered_map<shared_ptr<Value>, shared_ptr<unordered_set<shared_ptr<Value>>>> conflictGraph;
-unordered_map<shared_ptr<BasicBlock>, shared_ptr<unordered_map<shared_ptr<BasicBlock>,
-                                                               unordered_set<shared_ptr<BasicBlock>>>>>
-    blockPath;
+unordered_map<shared_ptr<BasicBlock>, shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>>> blockPath;
 
 inline bool checkRegAllocTimeout(time_t startTime, unsigned long timeout)
 {
@@ -44,6 +42,7 @@ void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> 
 
 void outputConflictGraph(const string &funcName);
 
+// 寄存器分配
 void registerAlloc(shared_ptr<Function> &func)
 {
     conflictGraph.clear();
@@ -62,6 +61,7 @@ void registerAlloc(shared_ptr<Function> &func)
     }
 }
 
+// 给每个左值赋予一个空set
 void initConflictGraph(shared_ptr<Function> &func)
 {
     for (auto &arg : func->params)

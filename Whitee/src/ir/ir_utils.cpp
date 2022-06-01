@@ -327,25 +327,25 @@ void fixRightValue(shared_ptr<Module> &module)
     }
 }
 
-// 获取函数所需的堆栈大小
+// 获取函数所需的堆栈大小  只与函数内的局部变量有关
 void getFunctionRequiredStackSize(shared_ptr<Function> &func)
 {
-    unsigned int size = 4 * _W_LEN;
+    unsigned int size = 4 * _W_LEN;  // 初始为4个字节
     unordered_set<shared_ptr<Value>> phiMovSet;
     for (auto &bb : func->blocks)
     {
         for (auto &ins : bb->instructions)
         {
-            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)
+            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)  // phi move 只用分配一次
             {
                 phiMovSet.insert(ins);
                 size += _W_LEN;
             }
-            else if (ins->resultType == L_VAL_RESULT && func->variableRegs.count(ins) == 0)
+            else if (ins->resultType == L_VAL_RESULT && func->variableRegs.count(ins) == 0)  // 生成了新的左值
             {
                 size += _W_LEN;
             }
-            else if (ins->type == ALLOC)
+            else if (ins->type == ALLOC)  // 有变量分配空间
             {
                 size += s_p_c<AllocInstruction>(ins)->bytes;
             }
@@ -395,6 +395,7 @@ void phiElimination(shared_ptr<Function> &func)
     }
 }
 
+// 将块中的AliveValues加入ins中
 void mergeAliveValuesToInstruction(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)
