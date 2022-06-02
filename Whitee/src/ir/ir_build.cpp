@@ -1,4 +1,11 @@
-﻿#include <iostream>
+﻿/*********************************************************************
+ * @file   ir_build.cpp
+ * @brief  IR生成
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
+#include <iostream>
 #include <initializer_list>
 
 #include "ir_build.h"
@@ -11,10 +18,10 @@ unordered_map<string, shared_ptr<GlobalValue>> globalVariableMap;   // name <-->
 unordered_map<string, shared_ptr<Value>> localArrayMap;             // name <--> Local Array
 unordered_map<string, shared_ptr<StringValue>> globalStringMap;     // string <--> string pointer
 
-string mulOp = "*"; // NOLINT
-string addOp = "+"; // NOLINT
+string mulOp = "*"; 
+string addOp = "+";
 
-unsigned int loopDepth = 0;
+unsigned int loopDepth = 0;  // 循环层数
 
 void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<BlockNode> &block,
                shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump);
@@ -35,10 +42,14 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, shared_ptr<Value> &offset,
                  shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb);
 
-// 开始构建IR  有Decl | FuncDef
+/**
+ * @brief 开始构建IR，逐步分析语法树中的变量，函数  有Decl | FuncDef
+ * @param compUnit 语法树根节点
+ * @return IR生成
+ */
 shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 {
-    module = make_shared<Module>(); // NOLINT
+    module = make_shared<Module>(); 
     for (const auto &decl : compUnit->declList)
     {
         if (dynamic_cast<ConstDeclNode *>(decl.get()))
@@ -79,7 +90,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
             {
                 shared_ptr<Value> paramValue = make_shared<ParameterValue>(function, param);
                 function->params.push_back(paramValue);
-                if (s_p_c<ParameterValue>(paramValue)->variableType == VariableType::INT)
+                if (s_p_c<ParameterValue>(paramValue)->variableType == VariableType::INT)  // 局部变量
                 {
                     writeLocalVariable(entryBlock, s_p_c<ParameterValue>(paramValue)->name, paramValue);
                 }
@@ -95,8 +106,13 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
 }
 
 /**
- * Transform a block(this 'block' is the concept of AST, instead of SSA) to IR.
- * block内有Decl | Stmt
+ * @brief Transform a block(this 'block' is the concept of AST, instead of SSA) to IR.  block内有Decl | Stmt
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
+ * @param block 语法树函数中的块
+ * @param loopJudge 循环判断
+ * @param loopEnd 循环结束
+ * @param afterJump 是否已跳出循环
  */
 void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<BlockNode> &block,
                shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
@@ -145,10 +161,13 @@ void blockToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sha
 }
 
 /**
- * Transform the variable definitions to IR.
+ * @brief 将变量定义转为IR
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
+ * @param varDef 语法树变量定义
+ * @param afterJump 是否跳出
  */
-void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
-                const shared_ptr<VarDefNode> &varDef, bool &afterJump)
+void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<VarDefNode> &varDef, bool &afterJump)
 {
     if (afterJump)  // 已经跳出
         return;
@@ -212,14 +231,20 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb,
 }
 
 /**
- * Transform the statements to IR.
+ * @brief 将statements转为IR
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
+ * @param stmt 语法树stmt
+ * @param loopJudge 循环判断
+ * @param loopEnd 循环结束
+ * @param afterJump 是否已跳出循环
  */
 void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<StmtNode> &stmt,
               shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
 {
     if (afterJump)  // 已经跳出
         return;
-    switch (stmt->type)   //     STMT_ASSIGN | STMT_EXP | STMT_BLOCK | STMT_IF | STMT_IF_ELSE | STMT_WHILE | STMT_BREAK | STMT_CONTINUE | STMT_RETURN | STMT_RETURN_VOID | STMT_EMPTY
+    switch (stmt->type)   // STMT_ASSIGN | STMT_EXP | STMT_BLOCK | STMT_IF | STMT_IF_ELSE | STMT_WHILE | STMT_BREAK | STMT_CONTINUE | STMT_RETURN | STMT_RETURN_VOID | STMT_EMPTY
     {
     case StmtType::STMT_EMPTY:
         return;
@@ -445,8 +470,10 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
 }
 
 /**
- * 将普通表达式转化为IR。PrimaryExpNode | UnaryExpNode | MulExpNode | AddExpNode | RelExpNode | EqExpNode
- * 
+ * @brief 将普通表达式转化为IR。PrimaryExpNode | UnaryExpNode | MulExpNode | AddExpNode | RelExpNode | EqExpNode
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
+ * @param exp 语法树exp表达式
  * @return 表达式的结果值，在void函数调用中，它没有任何意义。
  */
 shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &exp)
@@ -680,8 +707,13 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
 }
 
 /**
-  * 转换 IF 或 WHILE 语句的条件表达式，可构建新的基本块。  LOrExpNode | LAndExpNode | EqExpNode | CondNode
-  */
+ * @brief 转换 IF 或 WHILE 语句的条件表达式，可构建新的基本块。  LOrExpNode | LAndExpNode | EqExpNode | CondNode
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
+ * @param cond 语法树条件表达式exp
+ * @param trueBlock 为真跳入的IR块
+ * @param falseBlock 为假跳入的IR块
+ */
 void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<ExpNode> &cond,
                    shared_ptr<BasicBlock> &trueBlock, shared_ptr<BasicBlock> &falseBlock)
 {
@@ -747,7 +779,12 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
 }
 
 /**
- * 将数组、全局值、全局数组或常量值的地址转换为IR。
+ * @brief 将数组、全局值、全局数组或常量值的地址转换为IR。
+ * @param lVal 语法树左值
+ * @param address 基地址
+ * @param offset 偏移量
+ * @param func 所在的IR函数
+ * @param bb 生成的IR基本块
  */
 void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb)
 {

@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   ir_ssa.cpp
+ * @brief  SSA静态单赋值策略
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
 #include "ir_ssa.h"
 
 #include <iostream>
@@ -6,7 +13,12 @@
 
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName);
 
-// 从块的SSA MAP中读取变量
+/**
+ * @brief 从一个块的SSA MAP中读取变量
+ * @param bb 变量所在的块
+ * @param varName 变量的名字
+ * @return 变量的值
+ */
 shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 {
     if (bb->localVarSsaMap.count(varName) != 0)
@@ -15,6 +27,12 @@ shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 }
 
 // 将变量写入块的SSA MAP
+/**
+ * @brief 将变量写入块的SSA MAP
+ * @param bb 变量所在的块
+ * @param varName 变量的名字
+ * @param value 给变量写入的值
+ */
 void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const shared_ptr<Value> &value)
 {
     bb->localVarSsaMap[varName] = value;
@@ -24,7 +42,12 @@ void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const
     }
 }
 
-// 递归向外寻找变量
+/**
+ * @brief 递归向外层的块寻找变量
+ * @param bb 开始寻找的块
+ * @param varName 变量的名字
+ * @return 变量的值
+ */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
     if (!bb->sealed)
@@ -53,7 +76,13 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
     }
 }
 
-// 加入变量的phi可能值
+/**
+ * @brief 加入变量的phi可能值
+ * @param bb phi所在的块
+ * @param varName 变量的名字
+ * @param phi phi对象
+ * @return 
+ */
 shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, shared_ptr<PhiInstruction> &phi)
 {
     for (auto &it : bb->predecessors)
@@ -67,7 +96,11 @@ shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, sh
     return removeTrivialPhi(phi);
 }
 
-// 去除不重要的phi
+/**
+ * @brief 去除不重要的phi
+ * @param phi 
+ * @return 
+ */
 shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
 {
     shared_ptr<Value> same;
@@ -117,7 +150,10 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     return same;
 }
 
-// 在前驱查询变量定义 加入变量的phi可能值
+/**
+ * @brief 在前驱查询变量定义 加入变量的phi可能值
+ * @param bb 此块
+ */
 void sealBasicBlock(shared_ptr<BasicBlock> &bb)
 {
     if (!bb->sealed)

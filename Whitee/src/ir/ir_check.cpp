@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   ir_check.cpp
+ * @brief  对IR进行检查
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
 #include "ir_check.h"
 
 #include <iostream>
@@ -19,6 +26,11 @@ void instructionCheck(const shared_ptr<Instruction> &);
 
 void phiCheck(const shared_ptr<PhiInstruction> &);
 
+/**
+ * @brief 检查IR的语法
+ * @param module 被检查的IR对象
+ * @return true if IR has no bugs.
+ */
 bool irCheck(const shared_ptr<Module> &module)
 {
     for (auto &cst : module->globalConstants)

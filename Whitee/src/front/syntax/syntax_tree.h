@@ -117,7 +117,7 @@ enum SymbolType
 class SymbolTableItem
 {
 public:
-    SymbolType symbolType;
+    SymbolType symbolType;  // 符号类型
 
     int dimension;  // 数组维数
     vector<int> numOfEachDimension;  // 数组各维大小

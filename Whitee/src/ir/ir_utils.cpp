@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   ir_utils.cpp
+ * @brief  一些优化所需的工具
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
 #include "ir_utils.h"
 
 #include <iostream>
@@ -14,7 +21,10 @@ unordered_set<shared_ptr<BasicBlock>> blockRelationTree;
 
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb);
 
-// 去除不用的指令
+/**
+ * @brief 去除块不用的指令
+ * @param bb 此块中的指令
+ */
 void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
 {
     auto it = bb->instructions.begin();
@@ -73,7 +83,10 @@ VISIT_ALL_PHIS:
     }
 }
 
-// 去除不用的块
+/**
+ * @brief 去除不用的块
+ * @param func 此func中的所有块
+ */
 void removeUnusedBasicBlocks(shared_ptr<Function> &func)
 {
     blockRelationTree.clear();
@@ -126,7 +139,10 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
     }
 }
 
-// 去除不被调用的函数
+/**
+ * @brief 去除不被调用的函数
+ * @param module 此module里的函数
+ */
 void removeUnusedFunctions(shared_ptr<Module> &module)
 {
     auto func = module->functions.begin ();
@@ -142,7 +158,11 @@ void removeUnusedFunctions(shared_ptr<Module> &module)
     }
 }
 
-// 删除pre的后继块bb
+/**
+ * @brief 删除pre的后继块bb
+ * @param bb 后继块
+ * @param pre 前驱块
+ */
 void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre)
 {
     pre->successors.erase(bb);
@@ -158,7 +178,10 @@ void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &
     }
 }
 
-// 块关系树，将后继的块全部插入
+/**
+ * @brief 构建块关系树，将后继的块全部插入
+ * @param bb 开始的块
+ */
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
 {
     blockRelationTree.insert(bb);
@@ -171,7 +194,10 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
     }
 }
 
-// 函数有副作用：修改了自己范围之外的资源    修改全局变量、修改输入参数所引用的对象、做输入输出操作、调用其他有副作用的函数
+/**
+ * @brief 函数有副作用：修改了自己范围之外的资源    修改全局变量、修改输入参数所引用的对象、做输入输出操作、调用其他有副作用的函数
+ * @param module 此module中的函数
+ */
 void countFunctionSideEffect(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -241,6 +267,11 @@ void countFunctionSideEffect(shared_ptr<Module> &module)
     }
 }
 
+/**
+ * @brief 给一个值添加使用的对象
+ * @param user 使用值的对象，一般为指令
+ * @param used 被使用的值
+ */
 void addUser(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> used)
 {
     for (const auto &u : used)
@@ -257,7 +288,10 @@ void addUser(const shared_ptr<Value> &user, const vector<shared_ptr<Value>> &use
     }
 }
 
-// 移除Phi用户块和多重Cmp
+/**
+ * @brief 移除Phi用户块和多重Cmp
+ * @param module 此module
+ */
 void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -289,6 +323,10 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
     }
 }
 
+/**
+ * @brief 右值生成临时左值
+ * @param module 
+ */
 void fixRightValue(shared_ptr<Module> &module)
 {
     // 预处理分配和非用户的函数调用?

@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   ir_output.cpp
+ * @brief  IR输出的函数
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
 #include "ir.h"
 
 #include <iostream>
@@ -8,10 +15,9 @@ unordered_map<unsigned int, string> valueSsaMap;
 unordered_map<unsigned int, string> blockLabelMap;
 
 /**
- * This function helps generate the written name of a Value.
- * @param v is the Value to be written.
- * @return the written name, which can be an ssa-name, a local pointer,
- *         a global pointer or a parameter name.
+ * @brief 生成值的正式名称
+ * @param v 需要写的值
+ * @return 写入的名字，可以是一个ssa-name，一个本地指针，全局指针或参数名称
  */
 string getSsaName(const shared_ptr<Value> &v)
 {
@@ -45,9 +51,9 @@ string getSsaName(const shared_ptr<Value> &v)
 }
 
 /**
- * This function generates the basic block' name.
- * @param bb is the basic block.
- * @return the basic block start label.
+ * @brief 此函数生成基本块的名称
+ * @param bb 此基本块
+ * @return 块的开始label
  */
 string getBasicBlockId(const shared_ptr<BasicBlock> &bb)
 {

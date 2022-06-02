@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   ir.h
+ * @brief  根据IR的不同指令，定义不同的类
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
 #ifndef COMPILER_IR_H
 #define COMPILER_IR_H
 
@@ -118,14 +125,14 @@ enum ResultType
 class Value : public enable_shared_from_this<Value>
 {
 private:
-    static unsigned int valueId;  // 指令的id
+    static unsigned int valueId;  // 指令的总数
 
 public:
-    unsigned int id;
-    ValueType valueType;
+    unsigned int id;      // 指令的ID
+    ValueType valueType;  // 值类型
     unordered_set<shared_ptr<Value>> users;  // 使用对象
 
-    bool valid = true;
+    bool valid = true;  // 有效
 
     static unsigned int getValueId();
 

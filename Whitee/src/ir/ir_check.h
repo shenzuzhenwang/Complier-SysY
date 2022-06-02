@@ -4,9 +4,6 @@
 #include "ir.h"
 #include "ir_utils.h"
 
-/**
- * @return true if IR has no bugs.
- */
 extern bool irCheck(const shared_ptr<Module> &);
 
 extern bool globalIrCorrect;  // 全局IR都正确

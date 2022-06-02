@@ -1,5 +1,4 @@
 #include "ir.h"
-
 #include <cmath>
 
 unsigned int Value::valueId = 0;
@@ -96,7 +95,7 @@ void Function::abandonUse()
     name = "abandon_function_" + name;
 }
 
-// 展开内联函数
+// @deprecated 展开内联函数 
 bool Function::fitInline(unsigned int maxInsCnt, unsigned int maxPointerSituationCnt)
 {
     unsigned int insCnt = 0;
@@ -118,7 +117,7 @@ bool Function::fitInline(unsigned int maxInsCnt, unsigned int maxPointerSituatio
     return insCnt < maxInsCnt && !hasPointerArgument;
 }
 
-// 将localVarSsaMap中的变量替换
+// 替换value
 void BasicBlock::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {
     shared_ptr<Value> self = shared_from_this();
@@ -260,7 +259,8 @@ void JumpInstruction::abandonUse()
     valid = false;
 }
 
-unordered_map<string, InvokeType> InvokeInstruction::sysFuncMap{// NOLINT
+// 自带函数
+unordered_map<string, InvokeType> InvokeInstruction::sysFuncMap{
                                                                 {"getint", InvokeType::GET_INT},
                                                                 {"getch", InvokeType::GET_CHAR},
                                                                 {"getarray", InvokeType::GET_ARRAY},
