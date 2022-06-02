@@ -27,6 +27,7 @@ set<int> invalid_imm;
 Cond cmp_op = NON;  // 比较的失败的条件
 bool true_cmp = false;   // 跳转前是否进行过一次比较
 
+// 汇编指令
 unordered_map<mit::InsType, string> instype2string = {
     {mit::ADD, "ADD"},
     {mit::SUB, "SUB"},
@@ -56,13 +57,15 @@ unordered_map<mit::InsType, string> instype2string = {
     {mit::GLOBAL, "GLOBAL"},
     {mit::COMMENT, "COMMENT"}};
 
-unordered_map<SType, string> stype2string{// NOLINT
+// 移位汇编指令
+unordered_map<SType, string> stype2string{
                                           {NONE, ""},
                                           {ASR, "ASR"},
                                           {LSR, "LSR"},
                                           {LSL, "LSL"}};
  
-unordered_map<Cond, string> cond2string{// NOLINT
+// 条件的汇编指令
+unordered_map<Cond, string> cond2string{
                                         {NON, ""},
                                         {EQ, "EQ"}, 
                                         {NE, "NE"},

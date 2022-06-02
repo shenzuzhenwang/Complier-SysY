@@ -5,7 +5,7 @@
 
 using namespace std;
 
-ofstream machineIrStream;
+ofstream machineIrStream;  // 汇编输出文件
 //string longConstantDnf;  // 无用
 extern int const_pool_id;
 extern int ins_count;
@@ -101,7 +101,11 @@ void MachineBB::toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<
     }
 }
 
-// 可以移位偶数次得到
+/**
+ * @brief 立即数可以移位偶数次得到
+ * @param number 立即数
+ * @return true 可以得到；false 不能
+ */
 bool canRotateShiftEvenTimes(unsigned int number)
 {
     for (int i = 0; i < 16; ++i)
@@ -115,7 +119,12 @@ bool canRotateShiftEvenTimes(unsigned int number)
     return false;
 }
 
-// 判断立即数是否有效   每个立即数都是由一个8位的常循环右移偶数位得到
+/**
+ * @brief 判断立即数是否有效   每个立即数都是由一个8位的常循环右移偶数位得到
+ * @param imm 立即数
+ * @param mov 是否可以取反
+ * @return 
+ */
 bool judgeImmValid(unsigned int imm, bool mov)
 {
     bool valid = canRotateShiftEvenTimes(imm);
@@ -130,6 +139,13 @@ bool judgeImmValid(unsigned int imm, bool mov)
     return valid;
 }
 
+/**
+ * @brief 取出立即数
+ * @param imm 立即数
+ * @param reg 寄存器
+ * @param mov 可以mov指令
+ * @return 寄存器
+ */
 string convertImm(int imm, const string &reg, bool mov)
 {
     bool valid = judgeImmValid(imm, mov);
@@ -158,7 +174,8 @@ string convertImm(int imm, const string &reg)
 {
     return convertImm(imm, reg, false);
 }
-// 无用
+
+// @deprecated
 void insert_reference(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts)
 {
     //generate jump to skip constant pool
