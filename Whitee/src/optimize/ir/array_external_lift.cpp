@@ -1,6 +1,9 @@
 #include "ir_optimize.h"
 
-// 局部常量数组全局化
+/**
+ * @brief 局部常量数组全局化
+ * @param module 
+ */
 void arrayExternalLift(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

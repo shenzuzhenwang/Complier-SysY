@@ -366,7 +366,10 @@ void fixRightValue(shared_ptr<Module> &module)
     }
 }
 
-// 获取函数所需的堆栈大小  只与函数内的局部变量有关
+/**
+ * @brief 获取函数所需的堆栈大小  只与函数内的局部变量有关
+ * @param func 
+ */
 void getFunctionRequiredStackSize(shared_ptr<Function> &func)
 {
     unsigned int size = 4 * _W_LEN;  // 初始为4个字节
@@ -393,7 +396,10 @@ void getFunctionRequiredStackSize(shared_ptr<Function> &func)
     func->requiredStackSize = size;
 }
 
-// phi消除，将phi的可能取值进行copy，phi仅有一个确定值
+/**
+ * @brief phi消除，将phi的可能取值进行copy，phi仅有一个确定值
+ * @param func 
+ */
 void phiElimination(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)
@@ -434,7 +440,10 @@ void phiElimination(shared_ptr<Function> &func)
     }
 }
 
-// 将块中的AliveValues加入ins中
+/**
+ * @brief 将块中的AliveValues加入ins中
+ * @param func 
+ */
 void mergeAliveValuesToInstruction(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)

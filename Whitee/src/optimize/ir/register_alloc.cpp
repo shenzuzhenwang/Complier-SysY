@@ -28,21 +28,20 @@ void buildConflictGraph(shared_ptr<Function> &func);
 
 void allocRegister(shared_ptr<Function> &func);
 
-void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owner,
-                   shared_ptr<BasicBlock> &ownerBlock);
+void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock);
 
-void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner,
-                   shared_ptr<BasicBlock> &ownerBlock);
+void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock);
 
-unordered_set<shared_ptr<BasicBlock>>
-getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to);
+unordered_set<shared_ptr<BasicBlock>> getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to);
 
-void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &cannotArrive,
-                             unordered_set<shared_ptr<BasicBlock>> &ans);
+void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &cannotArrive, unordered_set<shared_ptr<BasicBlock>> &ans);
 
 void outputConflictGraph(const string &funcName);
 
-// ¼Ä´æÆ÷·ÖÅä
+/**
+ * @brief ¼Ä´æÆ÷·ÖÅä
+ * @param func 
+ */
 void registerAlloc(shared_ptr<Function> &func)
 {
     conflictGraph.clear();

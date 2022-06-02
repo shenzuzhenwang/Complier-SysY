@@ -18,7 +18,7 @@ string TokenInfo::getName()
 
 void TokenInfo::setName(string na)
 {
-    this->name = std::move(na);
+    this->name = move(na);
 }
 
 int TokenInfo::getValue() const

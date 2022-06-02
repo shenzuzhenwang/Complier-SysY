@@ -9,10 +9,10 @@
 
 #include <iostream>
 
-bool globalIrCorrect = true;
-bool irUserCheck = false;
+bool globalIrCorrect = true;  // 全局IR都正确
+bool irUserCheck = false;      // 检查是否有使用指令
 
-bool globalWarningPermit = false;
+bool globalWarningPermit = false;  // 启用警告
 
 void irError(string &&);
 

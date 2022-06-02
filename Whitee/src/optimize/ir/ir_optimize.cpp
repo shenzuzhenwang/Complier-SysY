@@ -1,13 +1,25 @@
+/*********************************************************************
+ * @file   ir_optimize.cpp
+ * @brief  IR优化
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
 #include "ir_optimize.h"
 #include "../../basic/std/compile_std.h"
 
 // 未检查IR是否在通过后发生变化。
 
-const unsigned int OPTIMIZE_TIMES = 5;
+const unsigned int OPTIMIZE_TIMES = 5;  // 优化重复次数
 
-extern bool needIrCheck;
-extern bool needIrPassCheck;
+extern bool needIrCheck;      // 需要最后检查IR
+extern bool needIrPassCheck;  // 需要每次检查IR
 
+/**
+ * @brief 优化IR
+ * @param module 优化IR对象
+ * @param level 优化等级
+ */
 void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
 {
     //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ？？？？感觉没用

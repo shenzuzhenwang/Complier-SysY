@@ -1,6 +1,9 @@
 #include "ir_optimize.h"
 
-// 分支条件常数转化
+/**
+ * @brief 分支条件常数转化
+ * @param module 
+ */
 void constantBranchConversion(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

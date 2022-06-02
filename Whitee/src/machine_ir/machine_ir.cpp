@@ -5,7 +5,7 @@
 
 using namespace std;
 
-ofstream machineIrStream; // NOLINT
+ofstream machineIrStream;
 //string longConstantDnf;  // Œﬁ”√
 extern int const_pool_id;
 extern int ins_count;

@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   machine_ir_build.cpp
+ * @brief  机器码构建
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
 #include <iostream>
 #include <utility>
 #include <set>
@@ -20,7 +27,7 @@ set<int> invalid_imm;
 Cond cmp_op = NON;  // 比较的失败的条件
 bool true_cmp = false;   // 跳转前是否进行过一次比较
 
-unordered_map<mit::InsType, string> instype2string = { // NOLINT
+unordered_map<mit::InsType, string> instype2string = {
     {mit::ADD, "ADD"},
     {mit::SUB, "SUB"},
     {mit::RSB, "RSB"},
@@ -107,10 +114,11 @@ unordered_map<shared_ptr<Value>, string> lValRegMap;
 unordered_map<shared_ptr<Value>, string> rValRegMap;
 unordered_set<string> regInUse;  // 已使用寄存器
 
-// 在这一步中我们需要记录变量的地址。
-// 对于本地变量，我们需要记录到SP的偏移量。
-// 对于全局变量，我们需要记录标签
-
+/**
+ * @brief 在这一步中我们需要记录变量的地址，对于本地变量，我们需要记录到SP的偏移量，对于全局变量，我们需要记录标签
+ * @param module 
+ * @return 机器码
+ */
 shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
 {
     shared_ptr<MachineModule> machineModule = make_shared<MachineModule>(); // NOLINT
@@ -305,6 +313,13 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     return machineModule;
 }
 
+/**
+ * @brief 将IR的块转为机器码，加入机器码函数中
+ * @param bb IR的基本块
+ * @param machineFunction 机器码的函数
+ * @param module 
+ * @return 机器码的块，包含汇编
+ */
 shared_ptr<MachineBB> bbToMachineBB(shared_ptr<BasicBlock> &bb, shared_ptr<MachineFunc> &machineFunction, shared_ptr<Module> &module)
 {
     shared_ptr<MachineBB> machineBB = make_shared<MachineBB>(bb->id, machineFunction);
@@ -415,7 +430,13 @@ void releaseTempRegister(const string &reg)
     tempRegPool.insert(reg);
 }
 
-// load一个立即数
+/**
+ * @brief load一个立即数到寄存器
+ * @param num 立即数
+ * @param des 目标寄存器
+ * @param res 汇编指令
+ * @param mov 可否移位
+ */
 void loadImm2Reg(int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>> &res, bool mov)
 {
     shared_ptr<Operand> imm;
@@ -455,6 +476,13 @@ void loadImm2Reg(int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>
     }
 }
 
+/**
+ * @brief 加载一个offset
+ * @param offset offset大小
+ * @param off offset对象
+ * @param reg 寄存器
+ * @param res 汇编指令
+ */
 void loadOffset(int offset, shared_ptr<Operand> &off, string reg, vector<shared_ptr<MachineIns>> &res)
 {
     if (offset < 4096 && offset > -4096)
@@ -466,7 +494,12 @@ void loadOffset(int offset, shared_ptr<Operand> &off, string reg, vector<shared_
     loadImm2Reg(offset, off, res, true);
 }
 
-// load 全局变量
+/**
+ * @brief load 全局变量
+ * @param glob 全局变量
+ * @param des 目标寄存器
+ * @param res 汇编指令
+ */
 void loadGlobVar2Reg(shared_ptr<GlobalValue> &glob, shared_ptr<Operand> &des, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> op;
@@ -482,7 +515,12 @@ void loadGlobVar2Reg(shared_ptr<GlobalValue> &glob, shared_ptr<Operand> &des, ve
     res.push_back(loadAddr);
 }
 
-// load const array
+/**
+ * @brief 加载常量数组
+ * @param cons 常量数组
+ * @param des 目标寄存器
+ * @param res 汇编指令
+ */
 void loadConst2Reg(shared_ptr<ConstantValue> &cons, shared_ptr<Operand> &des, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> op = make_shared<Operand>(GLOB_POINTER, cons->name);
@@ -490,7 +528,13 @@ void loadConst2Reg(shared_ptr<ConstantValue> &cons, shared_ptr<Operand> &des, ve
     res.push_back(loadAddr);
 }
 
-// 以sp为基地址取数
+/**
+ * @brief 以sp为基地址取数
+ * @param var 局部变量
+ * @param des 目标寄存器
+ * @param offset 偏移量相对sp
+ * @param res 汇编指令
+ */
 void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr<Operand> &offset, vector<shared_ptr<MachineIns>> &res)
 {
     shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
@@ -506,8 +550,18 @@ void loadMemory2Reg(shared_ptr<Value> &var, shared_ptr<Operand> &des, shared_ptr
     }
 }
 
-// 加载一个值到register
-void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, bool mov, int compensate, string reg)
+/**
+ * @brief 加载一个值到register
+ * @param val 被加载的值
+ * @param des 目标寄存器
+ * @param machineFunc 所在机器码函数
+ * @param res 汇编指令
+ * @param mov 可否移位
+ * @param compensate 
+ * @param reg 
+ */
+void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc, 
+                 vector<shared_ptr<MachineIns>> &res, bool mov, int compensate, string reg)
 {
     if (val->valueType == NUMBER)
     {
@@ -574,7 +628,14 @@ void loadVal2Reg(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
     }
 }
 
-// 加入一个新的局部变量
+/**
+ * @brief 加入一个新的局部变量
+ * @param des 目标寄存器
+ * @param val_id value的id
+ * @param machineFunc 所在机器码函数
+ * @param res 汇编指令
+ * @param reg 所在寄存器
+ */
 void storeNewValue(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res, string reg = "3")
 {
     shared_ptr<Operand> stack = make_shared<Operand>(REG, "13");
@@ -586,7 +647,13 @@ void storeNewValue(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc>
     machineFunc->stackPointer += 4;
 }
 
-// 存储至内存
+/**
+ * @brief 存储至内存
+ * @param des 
+ * @param val_id 
+ * @param machineFunc 
+ * @param res 
+ */
 void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res)
 {
     // 此局部变量为新
@@ -610,7 +677,16 @@ void store2Memory(shared_ptr<Operand> &des, int val_id, shared_ptr<MachineFunc> 
     }
 }
 
-// 加载operand至reg寄存器
+/**
+ * @brief 加载operand至reg寄存器
+ * @param val 
+ * @param des 
+ * @param machineFunc 
+ * @param res 
+ * @param mov 
+ * @param reg 
+ * @param regRequired 
+ */
 void loadOperand(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<MachineFunc> &machineFunc,
                  vector<shared_ptr<MachineIns>> &res, bool mov, string reg = "3", bool regRequired = true)
 {
@@ -641,7 +717,7 @@ void loadOperand(shared_ptr<Value> &val, shared_ptr<Operand> &des, shared_ptr<Ma
 }
 
 /**
- * 读一个值，查看此值所在寄存器op
+ * @brief 读一个值，查看此值所在寄存器op
  * @param regRequired为true，则是必须是寄存器，否则可以变为imm
  * @return true 如果寄存器需要释放
  */
@@ -747,7 +823,7 @@ bool readRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<Ma
 
 /**
  * 
- * 如果val值已有，则op为此寄存器，否则分配寄存器
+ * @brief 如果val值已有，则op为此寄存器，否则分配寄存器
  * @return true 如果寄存器需要释放
  */
 bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<MachineFunc> &machineFunc, vector<shared_ptr<MachineIns>> &res)
@@ -785,6 +861,12 @@ bool writeRegister(shared_ptr<Value> &val, shared_ptr<Operand> &op, shared_ptr<M
     }
 }
 
+/**
+ * @brief 将return转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -854,18 +936,29 @@ vector<shared_ptr<MachineIns>> genRetIns(shared_ptr<Instruction> &ins, shared_pt
     return res;
 }
 
+/**
+ * @brief 将jump转为机器码
+ * @param ins 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genJmpIns(shared_ptr<Instruction> &ins)
 {
     vector<shared_ptr<MachineIns>> res;
 
-    string label = "block" + std::to_string(s_p_c<JumpInstruction>(ins)->targetBlock->id);
+    string label = "block" + to_string(s_p_c<JumpInstruction>(ins)->targetBlock->id);
     shared_ptr<BIns> b = make_shared<BIns>(NON, NONE, 0, label);
 
     res.push_back(b);
     return res;
 }
 
-// 调用函数
+/**
+ * @brief 将调用函数转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @param module 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc, shared_ptr<Module> &module)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1059,6 +1152,12 @@ vector<shared_ptr<MachineIns>> genInvokeIns2(shared_ptr<Instruction> &ins, share
     return res;
 }
 
+/**
+ * @brief 将一元表达式转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genUnaryIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     shared_ptr<UnaryInstruction> ui = s_p_c<UnaryInstruction>(ins);
@@ -1111,6 +1210,12 @@ vector<shared_ptr<MachineIns>> genUnaryIns(shared_ptr<Instruction> &ins, shared_
     return res;
 }
 
+/**
+ * @brief 将二元表达式转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genBinaryIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1201,6 +1306,12 @@ vector<shared_ptr<MachineIns>> genBinaryIns(shared_ptr<Instruction> &ins, shared
     return res;
 }
 
+/**
+ * @brief 将cmp转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genCmpIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1278,7 +1389,12 @@ vector<shared_ptr<MachineIns>> genCmpIns(shared_ptr<Instruction> &ins, shared_pt
     return res;
 }
 
-// 根据之前比较，选择跳转
+/**
+ * @brief 将branch转为机器码，根据之前比较，选择跳转
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1309,7 +1425,11 @@ vector<shared_ptr<MachineIns>> genBIns(shared_ptr<Instruction> &ins, shared_ptr<
     return res;
 }
 
-// 分配一个局部变量
+/**
+ * @brief 分配一个局部变量
+ * @param machineFunc 
+ * @param ins 
+ */
 void genAlloc(shared_ptr<MachineFunc> &machineFunc, shared_ptr<Instruction> &ins)
 {
     shared_ptr<AllocInstruction> al = s_p_c<AllocInstruction>(ins);
@@ -1317,6 +1437,12 @@ void genAlloc(shared_ptr<MachineFunc> &machineFunc, shared_ptr<Instruction> &ins
     machineFunc->stackPointer += al->bytes;
 }
 
+/**
+ * @brief 将load转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genLoadIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     shared_ptr<LoadInstruction> li = s_p_c<LoadInstruction>(ins);
@@ -1424,6 +1550,12 @@ vector<shared_ptr<MachineIns>> genLoadIns(shared_ptr<Instruction> &ins, shared_p
     return res;
 }
 
+/**
+ * @brief 将store转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genStoreIns(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     shared_ptr<StoreInstruction> si = s_p_c<StoreInstruction>(ins);
@@ -1525,6 +1657,13 @@ vector<shared_ptr<MachineIns>> genStoreIns(shared_ptr<Instruction> &ins, shared_
     return res;
 }
 
+/**
+ * @brief 将phi move转为机器码
+ * @param ins 
+ * @param basicBlock 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genPhiMov(shared_ptr<Instruction> &ins, shared_ptr<BasicBlock> &basicBlock, shared_ptr<MachineFunc> &machineFunc) //PhiMoveIns
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1546,6 +1685,12 @@ vector<shared_ptr<MachineIns>> genPhiMov(shared_ptr<Instruction> &ins, shared_pt
     return res;
 }
 
+/**
+ * @brief 将phi转为机器码
+ * @param ins 
+ * @param machineFunc 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genPhi(shared_ptr<Instruction> &ins, shared_ptr<MachineFunc> &machineFunc)
 {
     vector<shared_ptr<MachineIns>> res;
@@ -1567,7 +1712,11 @@ vector<shared_ptr<MachineIns>> genPhi(shared_ptr<Instruction> &ins, shared_ptr<M
     return res;
 }
 
-// 全局的变量
+/**
+ * @brief 将全局变量转为机器码
+ * @param machineModule 
+ * @return 
+ */
 vector<shared_ptr<MachineIns>> genGlobIns(shared_ptr<MachineModule> &machineModule)
 {
     vector<shared_ptr<MachineIns>> res;

@@ -1,6 +1,10 @@
 #include "ir_optimize.h"
 
-// 查看变量是否有被写入的可能
+/**
+ * @brief 查看变量是否有被写入的可能
+ * @param globalVar 全局变量
+ * @return true 可能被写入；false 不可能被写入
+ */
 bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
 {
     for (auto &user : globalVar->users)
@@ -15,7 +19,11 @@ bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
     }
     return false;
 }
-// 全局变量变为常量
+/**
+ * @brief 全局变量变为常量
+ * @param globalVar 此全局变量
+ * @param module 
+ */
 void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &module)
 {
     for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it) // 删去全局变量
@@ -62,7 +70,10 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
     }
 }
 
-// 只读全局变量转为常数
+/**
+ * @brief 只读全局变量转为常数
+ * @param module 
+ */
 void readOnlyVariableToConstant(shared_ptr<Module> &module)
 {
     vector<shared_ptr<Value>> globalVariables = module->globalVariables;

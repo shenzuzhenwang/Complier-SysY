@@ -1,5 +1,9 @@
 #include "ir_optimize.h"
 
+/**
+ * @brief 计算每个变量的权重
+ * @param func 
+ */
 void calculateVariableWeight(shared_ptr<Function> &func)
 {
     for (auto &arg : func->params)

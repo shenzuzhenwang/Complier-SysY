@@ -1,6 +1,9 @@
 #include "ir_optimize.h"
 
-// 基本块合并
+/**
+ * @brief 基本块合并
+ * @param module 
+ */
 void blockCombination(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

@@ -1,6 +1,9 @@
 #include "ir_optimize.h"
 
-// 折叠alloc局部数组
+/**
+ * @brief 折叠局部数组
+ * @param alloc 局部数组
+ */
 void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
 {
     bool visit = false;
@@ -100,7 +103,10 @@ void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
     }
 }
 
-// 局部数组折叠
+/**
+ * @brief 局部数组折叠
+ * @param module 
+ */
 void localArrayFolding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

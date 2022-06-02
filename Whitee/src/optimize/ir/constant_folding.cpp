@@ -1,7 +1,7 @@
 #include "ir_optimize.h"
 
-string negOp = "-"; // NOLINT
-string notOp = "!"; // NOLINT
+string negOp = "-"; 
+string notOp = "!"; 
 
 void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
 {
@@ -12,6 +12,10 @@ void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
     }
 }
 
+/**
+ * @brief 将此指令中可能折叠的量进行折叠
+ * @param ins 此指令
+ */
 void fold(shared_ptr<Instruction> &ins)
 {
     shared_ptr<Value> newVal;
@@ -328,7 +332,10 @@ void fold(shared_ptr<Instruction> &ins)
     }
 }
 
-// 常量折叠  直接计算出可以被计算的值，作为常量
+/**
+ * @brief 常量折叠  直接计算出可以被计算的值，作为常量
+ * @param module 
+ */
 void constantFolding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)

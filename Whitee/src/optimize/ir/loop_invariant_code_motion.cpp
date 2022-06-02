@@ -6,7 +6,7 @@
 unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> inDominate;  // 前驱块的共有outDominate
 unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> outDominate; // 前驱块的共有outDominate加上此块
 unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> loopBlocks;  // 循环内的块
-unordered_map<shared_ptr<BasicBlock>, shared_ptr<BasicBlock>> newForwardBlocks;
+unordered_map<shared_ptr<BasicBlock>, shared_ptr<BasicBlock>> newForwardBlocks;  // 新的不变量的块
 
 void loopInvariantMotion(shared_ptr<Function> &func);
 
@@ -20,7 +20,10 @@ void fixNewForwardBlock(shared_ptr<Function> &func, shared_ptr<BasicBlock> &firs
 
 inline bool judgeInLoop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop);
 
-// 循环不变量移除
+/**
+ * @brief 循环不变量移除
+ * @param module 
+ */
 void loopInvariantCodeMotion(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -48,7 +51,11 @@ void loopInvariantMotion(shared_ptr<Function> &func)
     }
 }
 
-// 创建支配树
+/**
+ * @brief 创建支配树
+ * @param entryBlock 函数的入口块
+ * @param func 所在函数
+ */
 void buildDominateTree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function> &func)
 {
     unordered_set<shared_ptr<BasicBlock>> uSet;  // 函数中所有的块
@@ -101,7 +108,10 @@ void buildDominateTree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function> 
     } while (outChanged);  // 直到DominateTree不变
 }
 
-// 找到循环块
+/**
+ * @brief 找到循环块
+ * @param func 
+ */
 void findLoopBlocks(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)
@@ -155,7 +165,10 @@ void findLoopBlocks(shared_ptr<Function> &func)
     }
 }
 
-// 寻找不动代码
+/**
+ * @brief 寻找不动代码
+ * @param firstBlock 开始寻找的块
+ */
 void findInvariantCodes(shared_ptr<BasicBlock> &firstBlock)
 {
     if (loopBlocks.count(firstBlock) == 0)
@@ -206,7 +219,11 @@ void findInvariantCodes(shared_ptr<BasicBlock> &firstBlock)
     }
 }
 
-// 插入循环不变量的块
+/**
+ * @brief 插入循环不变量的块
+ * @param func 所在函数
+ * @param firstBlock 循环开始第一个块
+ */
 void fixNewForwardBlock(shared_ptr<Function> &func, shared_ptr<BasicBlock> &firstBlock)
 {
     unordered_set<shared_ptr<BasicBlock>> blocksInLoop = loopBlocks.at(firstBlock);
@@ -291,7 +308,12 @@ void fixNewForwardBlock(shared_ptr<Function> &func, shared_ptr<BasicBlock> &firs
     }
 }
 
-// 判断值是否在循环内
+/**
+ * @brief 判断值是否在循环内
+ * @param value 值
+ * @param blocksInLoop 在循环里的块
+ * @return 
+ */
 inline bool judgeInLoop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop)
 {
     return value->valueType == INSTRUCTION && blocksInLoop.count(s_p_c<Instruction>(value)->block) != 0;

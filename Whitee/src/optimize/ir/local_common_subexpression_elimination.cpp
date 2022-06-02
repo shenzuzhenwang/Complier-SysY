@@ -2,7 +2,10 @@
 
 void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb);
 
-// 局部公共子表达式删除   xx
+/**
+ * @brief 局部公共子表达式删除   非自己写
+ * @param module 
+ */
 void localCommonSubexpressionElimination(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
@@ -14,7 +17,10 @@ void localCommonSubexpressionElimination(shared_ptr<Module> &module)
     }
 }
 
-// 主要在于   对比两个指令的表达式是否相同（hashCode），以及对比相同表达式的两个值相同（equals）
+/**
+ * @brief 主要在于 对比两个指令的表达式是否相同（hashCode），以及对比相同表达式的两个值相同（equals）
+ * @param bb 
+ */
 void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb)
 {
     unordered_map<unsigned long long, unordered_set<shared_ptr<Value>>> hashMap;

@@ -5,6 +5,11 @@
 
 void outputRegisterAllocResult(const shared_ptr<Module> &module);
 
+/**
+ * @brief 最后的优化
+ * @param module 
+ * @param level 优化等级
+ */
 void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
 {
     for (auto &func : module->functions)
@@ -41,6 +46,10 @@ void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
     }
 }
 
+/**
+ * @brief 输出寄存器分配结果
+ * @param module 
+ */
 void outputRegisterAllocResult(const shared_ptr<Module> &module)
 {
     ofstream irStream;
