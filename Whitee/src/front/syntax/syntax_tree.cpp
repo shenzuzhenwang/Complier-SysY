@@ -247,21 +247,20 @@ string PrimaryExpNode::toString (int tabCnt)
 }
 
 // Definition of symbol table item.
-SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, std::vector<std::shared_ptr<ExpNode>>& expressionOfEachDimension, 
-								  std::string& name, std::pair<int, int>& blockId)
+SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, vector<shared_ptr<ExpNode>>& expressionOfEachDimension, string& name, pair<int, int>& blockId)
 	: symbolType (symbolType), dimension (dimension), expressionOfEachDimension (expressionOfEachDimension), name (name), blockId (blockId)
 {
 	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
-		+ std::to_string (blockId.first) + '_' + std::to_string (blockId.second) + '_' + name;
+		+ to_string (blockId.first) + '_' + to_string (blockId.second) + '_' + name;
 	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F$" : "V$") + name;
 }
 
-SymbolTableItem::SymbolTableItem (SymbolType& symbolType, std::string& name, std::pair<int, int>& blockId) 
+SymbolTableItem::SymbolTableItem (SymbolType& symbolType, string& name, pair<int, int>& blockId) 
 	: symbolType (symbolType), name (name), blockId (blockId)
 {
 	this->dimension = 0;
 	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
-		+ std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
+		+ to_string (blockId.first) + "_" + to_string (blockId.second) + '_' + name;
 	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
 	if (symbolType == SymbolType::RET_FUNC && name == "main")
 	{
@@ -270,11 +269,11 @@ SymbolTableItem::SymbolTableItem (SymbolType& symbolType, std::string& name, std
 	}
 };
 
-SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, std::vector<int>& numOfEachDimension, std::string& name, std::pair<int, int>& blockId)
+SymbolTableItem::SymbolTableItem (SymbolType& symbolType, int& dimension, vector<int>& numOfEachDimension, string& name, pair<int, int>& blockId)
 	: symbolType (symbolType), dimension (dimension), numOfEachDimension (numOfEachDimension), name (name), blockId (blockId)
 {
 	this->usageName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F_" : "V_") 
-		+ std::to_string (blockId.first) + "_" + std::to_string (blockId.second) + '_' + name;
+		+ to_string (blockId.first) + "_" + to_string (blockId.second) + '_' + name;
 	this->uniqueName = ((this->symbolType == SymbolType::VOID_FUNC || this->symbolType == SymbolType::RET_FUNC) ? "F*" : "V*") + name;
 }
 

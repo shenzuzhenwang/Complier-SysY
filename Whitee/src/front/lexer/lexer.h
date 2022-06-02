@@ -4,7 +4,6 @@
 #include <cwchar>
 #include <string>
 #include <vector>
-
 using namespace std;
 
 enum TokenType  // 词法类型
@@ -54,9 +53,7 @@ private:
     string name;
     int value;
 
-    // How to deal with different kinds of value?
-    // for each type,
-    // set a unique type_token class
+    // 不同的关键字，不同的type_token
     // which can save message specially and set interface for symbolTable
 public:
     explicit TokenInfo(TokenType sym);
@@ -72,7 +69,7 @@ public:
     void setValue(int i);
 };
 
-extern std::vector<TokenInfo> tokenInfoList;
+extern vector<TokenInfo> tokenInfoList;
 
 void parseSym(FILE *in);
 

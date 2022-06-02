@@ -1,4 +1,39 @@
-﻿#include "syntax_analyze.h"
+﻿/*********************************************************************
+ * @file   syntax_analyze.cpp
+ * @brief  语法分析
+ * CompUnit -> Decl | FuncDef
+ * Decl -> ConstDecl | VarDecl
+ * ConstDecl -> 'const' 'int' ConstDef { ',' ConstDef } ';'
+ * ConstDef -> IdentDef '=' ConstInitVal
+ * ConstInitVal -> ConstExp  |  ConstInitValArr
+ * ConstInitValArr -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+ * VarDecl -> 'int' VarDef { ',' VarDef } ';'
+ * VarDef -> IdentDefine [ '=' InitVal ]
+ * InitVal -> ConstExp  |  Exp  |  ConstInitValArr  |  InitValArr
+ * InitValArr -> '{' [ Exp { ',' Exp } ] '}'
+ * FuncDef -> ('int','void') IdentDefine '(' [FuncFParams] ')' Block
+ * FuncFParams -> FuncFParam { ',' FuncFParam }
+ * FuncFParam -> 'int' IdentDefineInFunction
+ * Block -> '{' { BlockItem } '}'
+ * BlockItem -> Decl | Stmt
+ * Stmt -> LVal '=' Exp ';'  |  [Exp] ';'  |  Block  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  While  |  'break' ';'  |  'continue' ';'  |  'return' [Exp] ';'
+ * Exp -> AddExp
+ * Cond -> LOrExp
+ * LVal -> IdentUsage
+ * PrimaryExp -> '(' Exp ')'  |  IntConst  |  LVal
+ * UnaryExp -> PrimaryExp  |  IdentUsage '(' [FuncRParams] ')'  |  ('+' | '−' | '!') UnaryExp
+ * FuncRParams -> Exp { ',' Exp }
+ * MulExp -> UnaryExp { ('*' | '/' | '%') UnaryExp }
+ * AddExp -> MulExp { ('+' | '−') MulExp }
+ * RelExp -> AddExp { ('<' | '>' | '<=' | '>=') AddExp }
+ * EqExp -> RelExp { ('==' | '!=') RelExp }
+ * LAndExp -> EqExp { '&&' EqExp }
+ * LOrExp -> LAndExp { '||' LAndExp }
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
+#include "syntax_analyze.h"
 #include "symbol_table.h"
 #include "../lexer/lexer.h"
 #include "../../basic/std/compile_std.h"
@@ -15,8 +50,8 @@
 
 /**
  * @brief get const value(int).
- * @details store the value get in symbol table,
- * for next replace all the const var to a single int value.
+ * @details 将得到的值存储在符号表中。
+ * 对于下一步，将所有的const var替换成一个单一的int值。
  */
 int getConstExp();
 
@@ -34,17 +69,17 @@ shared_ptr<ConstDeclNode> analyzeConstDecl();
 // ConstDef -> IdentDef '=' ConstInitVal
 shared_ptr<ConstDefNode> analyzeConstDef();
 // ConstInitVal -> ConstExp  |  ConstInitValArr
-shared_ptr<ConstInitValNode> analyzeConstInitVal(const std::shared_ptr<SymbolTableItem> &ident);
+shared_ptr<ConstInitValNode> analyzeConstInitVal(const shared_ptr<SymbolTableItem> &ident);
 // ConstInitValArr -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, std::vector<int> &numOfEachDimension);
+shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, vector<int> &numOfEachDimension);
 // VarDecl -> 'int' VarDef { ',' VarDef } ';'
 shared_ptr<VarDeclNode> analyzeVarDecl();
 // VarDef -> IdentDefine [ '=' InitVal ]
 shared_ptr<VarDefNode> analyzeVarDef();
 // InitVal -> ConstExp  |  Exp  |  ConstInitValArr  |  InitValArr
-void analyzeInitVal(const std::shared_ptr<SymbolTableItem> &ident);
+void analyzeInitVal(const shared_ptr<SymbolTableItem> &ident);
 // InitValArr -> '{' [ Exp { ',' Exp } ] '}'
-shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, std::vector<int> &numOfEachDimension);
+shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, vector<int> &numOfEachDimension);
 // FuncDef -> ('int','void') IdentDefine '(' [FuncFParams] ')' Block
 shared_ptr<FuncDefNode> analyzeFuncDef();
 // FuncFParams -> FuncFParam { ',' FuncFParam }
@@ -82,9 +117,7 @@ shared_ptr<LAndExpNode> analyzeLAndExp();
 // LOrExp -> LAndExp { '||' LAndExp }
 shared_ptr<LOrExpNode> analyzeLOrExp();
 
-/**
- * 语法分析中词法的序号
- */
+// 语法分析中词法的序号
 static int lexerPosition = 0;
 
 //  当前的语法分析对象
@@ -95,18 +128,18 @@ void popNextLexer()
 {
     if (nowPointerToken->getSym() == TokenType::END)
     {
-        std::cerr << "Out of lexer vector range." << endl;
+        cerr << "Out of lexer vector range." << endl;
     }
     nowPointerToken = &tokenInfoList[++lexerPosition];
     if (_debugSyntax)
     {
         if (tokenInfoList[lexerPosition - 1].getSym() == TokenType::INTCONST)
         {
-            std::cout << tokenInfoList[lexerPosition - 1].getValue() << '\n';
+            cout << tokenInfoList[lexerPosition - 1].getValue() << '\n';
         }
         else
         {
-            std::cout << tokenInfoList[lexerPosition - 1].getName() << '\n';
+            cout << tokenInfoList[lexerPosition - 1].getName() << '\n';
         }
     }
 }
@@ -116,13 +149,13 @@ TokenInfo *peekNextLexer(int num)
 {
     if (lexerPosition + num > tokenInfoList.size())
     {
-        std::cerr << "Out of lexer vector range." << endl;
+        cerr << "Out of lexer vector range." << endl;
     }
     return &tokenInfoList[lexerPosition + num];
 }
 
 static shared_ptr<SymbolTableItem> nowFuncSymbol;  // 当前所在的函数对象
-unordered_map<std::string, std::string> usageNameListOfVarSingleUseInUnRecursionFunction;  // 在非递归函数中单次使用变量名称列表
+unordered_map<string, string> usageNameListOfVarSingleUseInUnRecursionFunction;  // 在非递归函数中单次使用变量名称列表
 
 //static bool isInWhileLockedCond = false;
 //static int step = 0;
@@ -139,7 +172,7 @@ unordered_map<std::string, std::string> usageNameListOfVarSingleUseInUnRecursion
 //static bool getAssignLVal = false;
 static int lastValue = 0;
 
-//bool isExpConstOrIMM(std::shared_ptr<ExpNode> exp)
+//bool isExpConstOrIMM(shared_ptr<ExpNode> exp)
 //{
 //    auto addExp = s_p_c<AddExpNode>(exp);
 //    if (addExp->addExp)
@@ -186,15 +219,15 @@ static int lastValue = 0;
 /**
  * Symbol Table:
  */
-unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable; // NOLINT   块ID<-->块内对象
+unordered_map<pair<int, int>, shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable; // 块ID <--> 块内对象
 
-std::unordered_map<int, int> blockLayerId2LayerNum; // NOLINT 第i层的最大块ID
+unordered_map<int, int> blockLayerId2LayerNum; // 第i层的最大块ID  记录每一层的编号  <2, ...> if ...max is 2, record <2, 2>, next layer2 block id is <2, 3>
 
-static int nowLayer = 0;
+static int nowLayer = 0;  // 块的层数
 
-static pair<int, int> nowLayId = distributeBlockId(0, {0, 0}); // NOLINT 目前的块ID
-static pair<int, int> layIdInFuncFParams;                      // NOLINT 记录函数形参的块ID，不用多次使用
-static pair<int, int> globalLayId = {0, 1};                    // NOLINT 全局变量块
+static pair<int, int> nowLayId = distributeBlockId(0, {0, 0}); // 目前的块ID
+static pair<int, int> layIdInFuncFParams;                      // 记录函数形参的块ID，不用多次使用
+static pair<int, int> globalLayId = {0, 1};                    // 全局变量块
 
 bool isGlobalBlock(pair<int, int> layId)
 {
@@ -202,7 +235,7 @@ bool isGlobalBlock(pair<int, int> layId)
 }
 
  /**
-  * @brief get a ident
+  * @brief get a ident   IdentDef -> Ident { '[' ConstExp ']' }
   * @details 当是一个变量:
   * 1) var是正常的var
   * - var是非Ary var.
@@ -234,25 +267,24 @@ bool isGlobalBlock(pair<int, int> layId)
   * @param isConst 当身份是var时，区分var的类型。CONST & VAR
   * @return a identNode.
   */
-// IdentDef -> Ident { '[' ConstExp ']' }
 shared_ptr<IdentNode> getIdentDefine(bool isF, bool isVoid, bool isConst)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getIdentDefine--------\n";
+        cout << "--------getIdentDefine--------\n";
     }
-    std::string name = nowPointerToken->getName();
+    string name = nowPointerToken->getName();
     popNextLexer();
     if (isF)
     {
         SymbolType symbolType = isVoid ? SymbolType::VOID_FUNC : SymbolType::RET_FUNC;
-        auto symbolTableItem = std::make_shared<SymbolTableItem>(symbolType, name, nowLayId);
+        auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, name, nowLayId);
         nowFuncSymbol = symbolTableItem;
         insertSymbol(nowLayId, symbolTableItem);
-        return std::make_shared<IdentNode>(symbolTableItem);
+        return make_shared<IdentNode>(symbolTableItem);
     }
     int dimension = 0;
-    std::vector<int> numOfEachDimension;
+    vector<int> numOfEachDimension;
     while (nowPointerToken->getSym() == TokenType::LBRACKET)
     {
         popNextLexer(); // LBRACKET
@@ -263,42 +295,41 @@ shared_ptr<IdentNode> getIdentDefine(bool isF, bool isVoid, bool isConst)
     if (dimension == 0)
     {
         SymbolType symbolType = (isConst ? SymbolType::CONST_VAR : SymbolType::VAR);
-        auto symbolTableItem = std::make_shared<SymbolTableItem>(symbolType, name, nowLayId);
+        auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, name, nowLayId);
         //if (openFolder && !lockingOpenFolder)
         //{
         //    lastAssignOrDeclVar = symbolTableItem;
         //}
         insertSymbol(nowLayId, symbolTableItem);
-        return std::make_shared<IdentNode>(symbolTableItem);
+        return make_shared<IdentNode>(symbolTableItem);
     }
     else
     {
         SymbolType symbolType = (isConst ? SymbolType::CONST_ARRAY : SymbolType::ARRAY);
-        auto symbolTableItem = std::make_shared<SymbolTableItem>(symbolType, dimension, numOfEachDimension, name,
+        auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, dimension, numOfEachDimension, name,
                                                                  nowLayId);
         insertSymbol(nowLayId, symbolTableItem);
-        return std::make_shared<IdentNode>(symbolTableItem);
+        return make_shared<IdentNode>(symbolTableItem);
     }
 }
 
 /**
- * @details 在函数中对ident的使用
+ * @brief 在函数中对ident的定义  IdentDefineInFunction -> [ '[' ']' { '[' ConstExp ']' } ]
  * 对于维度>0的身份是一个[][*][*]。
  * 应该考虑第一个[]。
- * @return
+ * @return identNode
  */
-// IdentDefineInFunction -> [ '[' ']' { '[' ConstExp ']' } ]
 shared_ptr<IdentNode> getIdentDefineInFunction()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getIdentDefine--------\n";
+        cout << "--------getIdentDefine--------\n";
     }
-    std::string name = nowPointerToken->getName();
+    string name = nowPointerToken->getName();
     popNextLexer();
     int dimension = 0;
-    std::vector<int> numOfEachDimension;
-    if (nowPointerToken->getSym() == TokenType::LBRACKET)
+    vector<int> numOfEachDimension;  // 数组每个维数的大小
+    if (nowPointerToken->getSym() == TokenType::LBRACKET)  // 有中括号，为数组
     {
         popNextLexer();
         dimension++;
@@ -315,37 +346,36 @@ shared_ptr<IdentNode> getIdentDefineInFunction()
     if (dimension == 0)
     {
         SymbolType symbolType = (SymbolType::VAR);
-        auto symbolTableItem = std::make_shared<SymbolTableItem>(symbolType, name, nowLayId);
+        auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, name, nowLayId);
         insertSymbol(nowLayId, symbolTableItem);
-        return std::make_shared<IdentNode>(symbolTableItem);
+        return make_shared<IdentNode>(symbolTableItem);
     }
     else
     {
         SymbolType symbolType = (SymbolType::ARRAY);
-        auto symbolTableItem = std::make_shared<SymbolTableItem>(symbolType, dimension, numOfEachDimension, name,
-                                                                 nowLayId);
+        auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, dimension, numOfEachDimension, name, nowLayId);
         insertSymbol(nowLayId, symbolTableItem);
-        return std::make_shared<IdentNode>(symbolTableItem);
+        return make_shared<IdentNode>(symbolTableItem);
     }
 }
 
  /**
+  * @brief 使用一个标识符 IdentUsage -> Ident  |  Ident {'[' Exp ']'}
   * @details
   * !!!当 !isF时，应该复制 symbolTableItem, 因为 expressionOfPerDimension 在 symbolTableItem 中。
   * 当使用shared_ptr时，所有的是共享的。在一个地方改变，在另一个地方改变，会导致错误。
   * 应该复制一个新的。
   * 不需要函数。
-  * @param isF
-  * @return
+  * @param isF 标识符是函数
+  * @return IdentNode
   */
-// IdentUsage -> Ident  |  Ident {'[' Exp ']'}
 shared_ptr<IdentNode> getIdentUsage(bool isF)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getIdentUsage--------\n";
+        cout << "--------getIdentUsage--------\n";
     }
-    std::string name = nowPointerToken->getName();
+    string name = nowPointerToken->getName();
     popNextLexer();
     auto symbolInTable = findSymbol(nowLayId, name, isF);
     if (symbolInTable->eachFuncUseNum.find(nowFuncSymbol->usageName) == symbolInTable->eachFuncUseNum.end())
@@ -379,41 +409,38 @@ shared_ptr<IdentNode> getIdentUsage(bool isF)
         //        whileControlVarAssignNum += 2;
         //    }
         //}
-        return std::make_shared<IdentNode>(
-            std::make_shared<SymbolTableItem>(symbolInTable->symbolType, name, symbolInTable->blockId));
+        return make_shared<IdentNode>(make_shared<SymbolTableItem>(symbolInTable->symbolType, name, symbolInTable->blockId));
     }
     else
     {
-        std::vector<std::shared_ptr<ExpNode>> expressionOfEachDimension;
+        vector<shared_ptr<ExpNode>> expressionOfEachDimension;
         while (nowPointerToken->getSym() == TokenType::LBRACKET)
         {
             popNextLexer(); // LBRACKET
             expressionOfEachDimension.push_back(analyzeExp());
             popNextLexer(); // RBRACKET
         }
-        std::shared_ptr<SymbolTableItem> symbolInIdent(
-            new SymbolTableItem(symbolInTable->symbolType, symbolInTable->dimension,
-                                expressionOfEachDimension, name,
-                                symbolInTable->blockId));
-        if (symbolInTable->symbolType == SymbolType::CONST_ARRAY ||
-            symbolInTable->symbolType == SymbolType::CONST_VAR)
+        shared_ptr<SymbolTableItem> symbolInIdent(new SymbolTableItem(symbolInTable->symbolType, symbolInTable->dimension,
+                                expressionOfEachDimension, name, symbolInTable->blockId));
+        if (symbolInTable->symbolType == SymbolType::CONST_ARRAY || symbolInTable->symbolType == SymbolType::CONST_VAR)
         {
             symbolInIdent->constInitVal = symbolInTable->constInitVal;
         }
         symbolInIdent->numOfEachDimension = symbolInTable->numOfEachDimension;
-        return std::make_shared<IdentNode>(symbolInIdent);
+        return make_shared<IdentNode>(symbolInIdent);
     }
 }
 
 /**
  * Definition of analyzeFunctions.
  */
+
 // Decl -> ConstDecl | VarDecl
 shared_ptr<DeclNode> analyzeDecl()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeDecl--------\n";
+        cout << "--------analyzeDecl--------\n";
     }
     shared_ptr<DeclNode> declNode(nullptr);
     //if (openFolder)
@@ -436,7 +463,7 @@ shared_ptr<ConstDeclNode> analyzeConstDecl()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeConstDecl--------\n";
+        cout << "--------analyzeConstDecl--------\n";
     }
     popNextLexer(); // CONST_TK
     popNextLexer(); // INT_TK
@@ -448,7 +475,7 @@ shared_ptr<ConstDeclNode> analyzeConstDecl()
         constDefList.push_back(analyzeConstDef());
     }
     popNextLexer(); // SEMICOLON
-    return std::make_shared<ConstDeclNode>(constDefList);
+    return make_shared<ConstDeclNode>(constDefList);
 }
 
 // ConstDef -> IdentDef '=' ConstInitVal
@@ -456,32 +483,32 @@ shared_ptr<ConstDefNode> analyzeConstDef()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeConstDef--------\n";
+        cout << "--------analyzeConstDef--------\n";
     }
     auto ident = getIdentDefine(false, false, true);
     popNextLexer(); // ASSIGN
     auto constInitVal = analyzeConstInitVal(ident->ident);
-    return std::make_shared<ConstDefNode>(ident, constInitVal);
+    return make_shared<ConstDefNode>(ident, constInitVal);
 }
 
 /**
+ * @brief 一个const对象 ConstInitVal -> ConstExp  |  ConstInitValArr
  * @param ident是一个SymbolTableItem，用它来获得这个const var的尺寸。
  * 判断constInitVal的类型。
  * 1. ConstInitValValNode
  * 2. ConstInitValAryNode
- * @return
+ * @return ConstInitValNode
  */
-// ConstInitVal -> ConstExp  |  ConstInitValArr
-shared_ptr<ConstInitValNode> analyzeConstInitVal(const std::shared_ptr<SymbolTableItem> &ident)
+shared_ptr<ConstInitValNode> analyzeConstInitVal(const shared_ptr<SymbolTableItem> &ident)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeInitVal--------\n";
+        cout << "--------analyzeInitVal--------\n";
     }
     if (ident->dimension == 0)
     {
         int value = getConstExp();
-        ident->constInitVal = std::make_shared<ConstInitValValNode>(value);
+        ident->constInitVal = make_shared<ConstInitValValNode>(value);
     }
     else
     {
@@ -495,7 +522,7 @@ shared_ptr<ConstInitValNode> analyzeConstInitVal(const std::shared_ptr<SymbolTab
  * for case: const int a[10000000] = {1};
  * Time usage is not bearable.
  */
-shared_ptr<ConstInitValArrNode> constZeroDefaultArr(int dimension, std::vector<int> &numOfEachDimension)
+shared_ptr<ConstInitValArrNode> constZeroDefaultArr(int dimension, vector<int> &numOfEachDimension)
 {
     int thisDimensionNum = numOfEachDimension[dimension];
     vector<shared_ptr<ConstInitValNode>> valueList;
@@ -504,7 +531,7 @@ shared_ptr<ConstInitValArrNode> constZeroDefaultArr(int dimension, std::vector<i
         for (int i = 0; i < thisDimensionNum; i++)
         {
             int exp = 0;
-            valueList.push_back(std::make_shared<ConstInitValValNode>(exp));
+            valueList.push_back(make_shared<ConstInitValValNode>(exp));
         }
     }
     else
@@ -514,22 +541,21 @@ shared_ptr<ConstInitValArrNode> constZeroDefaultArr(int dimension, std::vector<i
             valueList.push_back(constZeroDefaultArr(dimension + 1, numOfEachDimension));
         }
     }
-    return std::make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
+    return make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
 }
 
 /**
- * @brief Get Const Arr Init Value.
+ * @brief 获取一个const数组的初始化.  ConstInitValArr -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
  * @details Dimension是一个重要的参数。
  * 对于这个函数来说，它是用于递归的。
  * Dimension = 1意味着Arr是一维的。
  * 数组中的项目应该是ConstInitValValNode而不是ConstInitValArrNode。
  */
-// ConstInitValArr -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, std::vector<int> &numOfEachDimension)
+shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, vector<int> &numOfEachDimension)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeConstInitValArr--------\n";
+        cout << "--------analyzeConstInitValArr--------\n";
     }
     int thisDimensionNum = numOfEachDimension[dimension];
     vector<shared_ptr<ConstInitValNode>> valueList;
@@ -547,7 +573,7 @@ shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, std::vecto
                 else
                 {
                     auto exp = getConstExp();
-                    valueList.push_back(std::make_shared<ConstInitValValNode>(exp));
+                    valueList.push_back(make_shared<ConstInitValValNode>(exp));
                     if (nowPointerToken->getSym() == TokenType::COMMA)
                     {
                         popNextLexer(); // COMMA
@@ -565,14 +591,14 @@ shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, std::vecto
                     break;
                 }
                 auto exp = getConstExp();
-                valueList.push_back(std::make_shared<ConstInitValValNode>(exp));
+                valueList.push_back(make_shared<ConstInitValValNode>(exp));
                 if (nowPointerToken->getSym() == TokenType::COMMA)
                 {
                     popNextLexer(); // COMMA
                 }
             }
         }
-        return std::make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
+        return make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
     }
     if (nowPointerToken->getSym() == TokenType::LBRACE)
     {
@@ -605,7 +631,7 @@ shared_ptr<ConstInitValArrNode> analyzeConstInitValArr(int dimension, std::vecto
             }
         }
     }
-    return std::make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
+    return make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
 }
 
 // ConstExp -> MulExp
@@ -613,7 +639,7 @@ int getConstExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getConstExp--------\n";
+        cout << "--------getConstExp--------\n";
     }
     int value = getMulExp();
     while (nowPointerToken->getSym() == TokenType::PLUS || nowPointerToken->getSym() == TokenType::MINUS)
@@ -637,7 +663,7 @@ int getMulExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getMulExp--------\n";
+        cout << "--------getMulExp--------\n";
     }
     int value = getUnaryExp();
     while (nowPointerToken->getSym() == TokenType::MULT || nowPointerToken->getSym() == TokenType::DIV ||
@@ -667,7 +693,7 @@ int getUnaryExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getUnaryExp--------\n";
+        cout << "--------getUnaryExp--------\n";
     }
     int value;
     if (nowPointerToken->getSym() == TokenType::LPAREN)
@@ -703,9 +729,9 @@ int getConstVarExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------getConstVarExp--------\n";
+        cout << "--------getConstVarExp--------\n";
     }
-    std::string name = nowPointerToken->getName();
+    string name = nowPointerToken->getName();
     popNextLexer(); // IDENT
     auto symbolInTable = findSymbol(nowLayId, name, false);
     int dimension = symbolInTable->dimension;
@@ -753,11 +779,11 @@ int getConstVarExp()
 } // NOLINT
 
 // VarDecl -> 'int' VarDef { ',' VarDef } ';'
-std::shared_ptr<VarDeclNode> analyzeVarDecl()
+shared_ptr<VarDeclNode> analyzeVarDecl()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeVarDecl--------\n";
+        cout << "--------analyzeVarDecl--------\n";
     }
     popNextLexer(); // INT_TK
     vector<shared_ptr<VarDefNode>> varDefList;
@@ -768,15 +794,15 @@ std::shared_ptr<VarDeclNode> analyzeVarDecl()
         varDefList.push_back(analyzeVarDef());
     }
     popNextLexer(); // SEMICOLON
-    return std::make_shared<VarDeclNode>(varDefList);
+    return make_shared<VarDeclNode>(varDefList);
 }
 
 // VarDef -> IdentDefine [ '=' InitVal ]
-std::shared_ptr<VarDefNode> analyzeVarDef()
+shared_ptr<VarDefNode> analyzeVarDef()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeVarDef--------\n";
+        cout << "--------analyzeVarDef--------\n";
     }
     auto ident = getIdentDefine(false, false, false);
     bool hasAssigned = false;
@@ -785,17 +811,17 @@ std::shared_ptr<VarDefNode> analyzeVarDef()
         hasAssigned = true;
         popNextLexer(); // ASSIGN
         analyzeInitVal(ident->ident);
-        std::shared_ptr<InitValNode> initVal;
+        shared_ptr<InitValNode> initVal;
         if (!isGlobalBlock(ident->ident->blockId))
         {
             initVal = ident->ident->initVal;
             if (ident->ident->dimension == 0)
             {
-                return std::make_shared<VarDefNode>(ident, initVal);
+                return make_shared<VarDefNode>(ident, initVal);
             }
             else
             {
-                return std::make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension, initVal);
+                return make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension, initVal);
             }
         }
     }
@@ -804,25 +830,25 @@ std::shared_ptr<VarDefNode> analyzeVarDef()
         if (ident->ident->dimension == 0)
         {
             int value = 0;
-            ident->ident->globalVarInitVal = std::make_shared<ConstInitValValNode>(value);
+            ident->ident->globalVarInitVal = make_shared<ConstInitValValNode>(value);
         }
     }
     if (ident->ident->dimension == 0)
     {
-        return std::make_shared<VarDefNode>(ident);
+        return make_shared<VarDefNode>(ident);
     }
     else
     {
-        return std::make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension);
+        return make_shared<VarDefNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension);
     }
 }
 
 // InitVal -> ConstExp  |  Exp  |  ConstInitValArr  |  InitValArr
-void analyzeInitVal(const std::shared_ptr<SymbolTableItem> &ident)
+void analyzeInitVal(const shared_ptr<SymbolTableItem> &ident)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeInitVal--------\n";
+        cout << "--------analyzeInitVal--------\n";
     }
     if (ident->dimension == 0)
     {
@@ -834,7 +860,7 @@ void analyzeInitVal(const std::shared_ptr<SymbolTableItem> &ident)
             //    lastValue = value;
             //    isLastValueGetableAssignOrDecl = true;
             //}
-            ident->globalVarInitVal = std::make_shared<ConstInitValValNode>(value);
+            ident->globalVarInitVal = make_shared<ConstInitValValNode>(value);
         }
         else
         {
@@ -843,7 +869,7 @@ void analyzeInitVal(const std::shared_ptr<SymbolTableItem> &ident)
             //{
             //    isLastValueGetableAssignOrDecl = true;
             //}
-            ident->initVal = std::make_shared<InitValValNode>(expNode);
+            ident->initVal = make_shared<InitValValNode>(expNode);
         }
     }
     else
@@ -862,7 +888,7 @@ void analyzeInitVal(const std::shared_ptr<SymbolTableItem> &ident)
 /**
  * @deprecated
  */
-std::shared_ptr<InitValArrNode> zeroDefaultArr(int dimension, std::vector<int> &numOfEachDimension)
+shared_ptr<InitValArrNode> zeroDefaultArr(int dimension, vector<int> &numOfEachDimension)
 {
     int thisDimensionNum = numOfEachDimension[dimension];
     vector<shared_ptr<InitValNode>> valueList;
@@ -871,9 +897,9 @@ std::shared_ptr<InitValArrNode> zeroDefaultArr(int dimension, std::vector<int> &
         for (int i = 0; i < thisDimensionNum; i++)
         {
             int value = 0;
-            auto exp = std::make_shared<PrimaryExpNode>(PrimaryExpNode::numberExp(value));
+            auto exp = make_shared<PrimaryExpNode>(PrimaryExpNode::numberExp(value));
             auto expExp = s_p_c<ExpNode>(exp);
-            valueList.push_back(std::make_shared<InitValValNode>(expExp));
+            valueList.push_back(make_shared<InitValValNode>(expExp));
         }
     }
     else
@@ -883,15 +909,15 @@ std::shared_ptr<InitValArrNode> zeroDefaultArr(int dimension, std::vector<int> &
             valueList.push_back(zeroDefaultArr(dimension + 1, numOfEachDimension));
         }
     }
-    return std::make_shared<InitValArrNode>(thisDimensionNum, valueList);
+    return make_shared<InitValArrNode>(thisDimensionNum, valueList);
 }
 
 // InitValArr -> '{' [ Exp { ',' Exp } ] '}'
-std::shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, std::vector<int> &numOfEachDimension)
+shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, vector<int> &numOfEachDimension)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeInitValArr--------\n";
+        cout << "--------analyzeInitValArr--------\n";
     }
     int thisDimensionNum = numOfEachDimension[dimension];
     vector<shared_ptr<InitValNode>> valueList;
@@ -909,7 +935,7 @@ std::shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, std::vector<int
                 else
                 {
                     auto exp = analyzeExp();
-                    valueList.push_back(std::make_shared<InitValValNode>(exp));
+                    valueList.push_back(make_shared<InitValValNode>(exp));
                     if (nowPointerToken->getSym() == TokenType::COMMA)
                     {
                         popNextLexer(); // COMMA
@@ -927,14 +953,14 @@ std::shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, std::vector<int
                     break;
                 }
                 auto exp = analyzeExp();
-                valueList.push_back(std::make_shared<InitValValNode>(exp));
+                valueList.push_back(make_shared<InitValValNode>(exp));
                 if (nowPointerToken->getSym() == TokenType::COMMA)
                 {
                     popNextLexer(); // COMMA
                 }
             }
         }
-        return std::make_shared<InitValArrNode>(thisDimensionNum, valueList);
+        return make_shared<InitValArrNode>(thisDimensionNum, valueList);
     }
     if (nowPointerToken->getSym() == TokenType::LBRACE)
     {
@@ -967,7 +993,7 @@ std::shared_ptr<InitValArrNode> analyzeInitValArr(int dimension, std::vector<int
             }
         }
     }
-    return std::make_shared<InitValArrNode>(thisDimensionNum, valueList);
+    return make_shared<InitValArrNode>(thisDimensionNum, valueList);
 }
 
 // FuncDef -> ('int','void') IdentDefine '(' [FuncFParams] ')' Block
@@ -975,7 +1001,7 @@ shared_ptr<FuncDefNode> analyzeFuncDef()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeFuncDef--------\n";
+        cout << "--------analyzeFuncDef--------\n";
     }
     bool isVoid = nowPointerToken->getSym() == TokenType::VOID_TK;
     popNextLexer(); // VOID_TK || INT_TK
@@ -999,9 +1025,9 @@ shared_ptr<FuncDefNode> analyzeFuncDef()
     auto block = analyzeBlock(true, isVoid, false);
     if (hasParams)
     {
-        return std::make_shared<FuncDefNode>(funcType, ident, funcFParams, block);
+        return make_shared<FuncDefNode>(funcType, ident, funcFParams, block);
     }
-    return std::make_shared<FuncDefNode>(funcType, ident, block);
+    return make_shared<FuncDefNode>(funcType, ident, block);
 }
 
 // FuncFParams -> FuncFParam { ',' FuncFParam }
@@ -1009,7 +1035,7 @@ shared_ptr<FuncFParamsNode> analyzeFuncFParams()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeFuncFParams--------\n";
+        cout << "--------analyzeFuncFParams--------\n";
     }
     vector<shared_ptr<FuncFParamNode>> funcParamList;
     funcParamList.push_back(analyzeFuncFParam());
@@ -1018,7 +1044,7 @@ shared_ptr<FuncFParamsNode> analyzeFuncFParams()
         popNextLexer(); // COMMA
         funcParamList.push_back(analyzeFuncFParam());
     }
-    return std::make_shared<FuncFParamsNode>(funcParamList);
+    return make_shared<FuncFParamsNode>(funcParamList);
 }
 
 // FuncFParam -> 'int' IdentDefineInFunction
@@ -1026,28 +1052,26 @@ shared_ptr<FuncFParamNode> analyzeFuncFParam()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeFuncFParam--------\n";
+        cout << "--------analyzeFuncFParam--------\n";
     }
     popNextLexer(); // INT_TK
     auto ident = getIdentDefineInFunction();
-    return std::make_shared<FuncFParamNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension);
+    return make_shared<FuncFParamNode>(ident, ident->ident->dimension, ident->ident->numOfEachDimension);
 }
 
 /**
- * @brief 获取一个块的代码
+ * @brief 获取一个块的代码  Block -> '{' { BlockItem } '}'
  * @details 当进入一个区块时，应该注意到blockId。
  * 需要做的是添加层，并得到一个新的layerId。
  * 当从块中出来时，将layerId设置为现在的layer的父亲。
- * @param isFuncBlock 如果是FuncBlock，则使用layIdInFuncParam。
- * 因为它是在同一个块中。不要再生成一个块。
- * @return
+ * @param isFuncBlock 如果是FuncBlock，则使用layIdInFuncParam。因为它是在同一个块中。不要再生成一个块。
+ * @return BlockNode
  */
-// Block -> '{' { BlockItem } '}'
 shared_ptr<BlockNode> analyzeBlock(bool isFuncBlock, bool isVoid, bool isInWhileFirstBlock)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeBlock--------\n";
+        cout << "--------analyzeBlock--------\n";
     }
     pair<int, int> fatherLayId = nowLayId;
     nowLayer++;
@@ -1084,13 +1108,13 @@ shared_ptr<BlockNode> analyzeBlock(bool isFuncBlock, bool isVoid, bool isInWhile
     }
     if (isVoid)
     {
-        auto defaultReturn = std::make_shared<StmtNode>(StmtNode::returnStmt());
+        auto defaultReturn = make_shared<StmtNode>(StmtNode::returnStmt());
         blockItems.push_back(defaultReturn);
     }
     popNextLexer(); // RBRACE
     nowLayer--;
     nowLayId = fatherLayId;
-    return std::make_shared<BlockNode>(itemCnt, blockItems);
+    return make_shared<BlockNode>(itemCnt, blockItems);
 }
 
 // BlockItem -> Decl | Stmt
@@ -1098,7 +1122,7 @@ shared_ptr<BlockItemNode> analyzeBlockItem(bool isInWhileFirstBlock)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeBlockItem--------\n";
+        cout << "--------analyzeBlockItem--------\n";
     }
     if (nowPointerToken->getSym() == TokenType::INT_TK || nowPointerToken->getSym() == TokenType::CONST_TK)
     {
@@ -1126,7 +1150,7 @@ bool isAssign()
 }
 
 
-//bool isSingleCondAddExpThisSymbol(std::shared_ptr<AddExpNode> addExp, std::shared_ptr<SymbolTableItem> symbol)
+//bool isSingleCondAddExpThisSymbol(shared_ptr<AddExpNode> addExp, shared_ptr<SymbolTableItem> symbol)
 //{
 //    if (addExp->addExp)
 //    {
@@ -1155,11 +1179,9 @@ bool isAssign()
 //    }
 //    return false;
 //}
-
 //static int whileControlVarEndValue = 0;
 //static TokenType relation = TokenType::EQUAL;
-
-//bool isCondSingleAndUseLastInitOrDeclVar(std::shared_ptr<CondNode> cond, std::shared_ptr<SymbolTableItem> symbol)
+//bool isCondSingleAndUseLastInitOrDeclVar(shared_ptr<CondNode> cond, shared_ptr<SymbolTableItem> symbol)
 //{
 //    auto lOrExp = cond->lOrExp;
 //    if (lOrExp->lOrExp)
@@ -1196,7 +1218,6 @@ bool isAssign()
 //    }
 //    return false;
 //}
-
 /**
  * @brief lVal已经被判断出来了
  * 只有whileControlVar的lVal赋值应该被记录并使用这个判断。
@@ -1351,7 +1372,7 @@ shared_ptr<StmtNode> analyzeWhile()
     //        }
     //        isInDirectWhile = false;
     //        lockingOpenFolder = false;
-    //        return std::make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
+    //        return make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
     //    }
     //    lockingOpenFolder = false;
     //}
@@ -1366,7 +1387,7 @@ shared_ptr<StmtNode> analyzeWhile()
     //{
     //    isInDirectWhile = tmp;
     //}
-    return std::make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
+    return make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
 }
 
 // Stmt -> Block  |  'break' ';'  |  'continue' ';'  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  While  |  'return' [Exp] ';'  |  ';'  |  LVal '=' Exp ';'  |  Exp
@@ -1374,7 +1395,7 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeStmt--------\n";
+        cout << "--------analyzeStmt--------\n";
     }
     if (nowPointerToken->getSym() == TokenType::LBRACE)
     {
@@ -1383,7 +1404,7 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         //    isLastValueGetableAssignOrDecl = false;
         //}
         auto blockNode = analyzeBlock(false, false, isInWhileFirstBlock);
-        return std::make_shared<StmtNode>(StmtNode::blockStmt(blockNode));
+        return make_shared<StmtNode>(StmtNode::blockStmt(blockNode));
     }
     else if (nowPointerToken->getSym() == TokenType::BREAK_TK)
     {
@@ -1397,7 +1418,7 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         //}
         popNextLexer();
         popNextLexer();
-        return std::make_shared<StmtNode>(StmtNode::breakStmt());
+        return make_shared<StmtNode>(StmtNode::breakStmt());
     }
     else if (nowPointerToken->getSym() == TokenType::CONTINUE_TK)
     {
@@ -1411,7 +1432,7 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         //}
         popNextLexer();
         popNextLexer();
-        return std::make_shared<StmtNode>(StmtNode::continueStmt());
+        return make_shared<StmtNode>(StmtNode::continueStmt());
     }
     else if (nowPointerToken->getSym() == TokenType::IF_TK)
     {
@@ -1438,13 +1459,13 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
             //{
             //    isInDirectWhile = tmp;
             //}
-            return std::make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt, elseBranchStmt));
+            return make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt, elseBranchStmt));
         }
         //if (openFolder)
         //{
         //    isInDirectWhile = tmp;
         //}
-        return std::make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt));
+        return make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt));
     }
     else if (nowPointerToken->getSym() == TokenType::WHILE_TK)
     {
@@ -1460,16 +1481,16 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         if (nowPointerToken->getSym() == TokenType::SEMICOLON)
         {
             popNextLexer();
-            return std::make_shared<StmtNode>(StmtNode::returnStmt());
+            return make_shared<StmtNode>(StmtNode::returnStmt());
         }
         auto exp = analyzeExp();
         popNextLexer();
-        return std::make_shared<StmtNode>(StmtNode::returnStmt(exp));
+        return make_shared<StmtNode>(StmtNode::returnStmt(exp));
     }
     else if (nowPointerToken->getSym() == TokenType::SEMICOLON)
     {
         popNextLexer();
-        return std::make_shared<StmtNode>(StmtNode::emptyStmt());
+        return make_shared<StmtNode>(StmtNode::emptyStmt());
     }
     else if (isAssign())
     {
@@ -1505,7 +1526,7 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         //    }
         //}
         popNextLexer();
-        auto assignStmt = std::make_shared<StmtNode>(StmtNode::assignStmt(lVal, exp));
+        auto assignStmt = make_shared<StmtNode>(StmtNode::assignStmt(lVal, exp));
         //if (openFolder && lockingOpenFolder && isAssignLValWhileControlVar)
         //{
         //    whileBlockAssignStmt = assignStmt;
@@ -1520,71 +1541,64 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
         //}
         auto exp = analyzeExp();
         popNextLexer();
-        return std::make_shared<StmtNode>(StmtNode::expStmt(exp));
+        return make_shared<StmtNode>(StmtNode::expStmt(exp));
     }
 }
 
-/**
- * @brief Exp -> AddExp
- * @details Calling Exp, return AddExp.
- * @return
- */
 // Exp -> AddExp
-std::shared_ptr<ExpNode> analyzeExp()
+shared_ptr<ExpNode> analyzeExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeExp--------\n";
+        cout << "--------analyzeExp--------\n";
     }
     return analyzeAddExp();
 }
 
 // AddExp -> MulExp { ('+' | '−') MulExp }
-std::shared_ptr<AddExpNode> analyzeAddExp()
+shared_ptr<AddExpNode> analyzeAddExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeAddExp--------\n";
+        cout << "--------analyzeAddExp--------\n";
     }
     auto mulExp = analyzeMulExp();
-    auto addExp = std::make_shared<AddExpNode>(mulExp);
+    auto addExp = make_shared<AddExpNode>(mulExp);
     while (nowPointerToken->getSym() == TokenType::MINUS || nowPointerToken->getSym() == TokenType::PLUS)
     {
         string op = nowPointerToken->getSym() == TokenType::MINUS ? "-" : "+";
         popNextLexer();
         mulExp = analyzeMulExp();
-        addExp = std::make_shared<AddExpNode>(mulExp, addExp, op);
+        addExp = make_shared<AddExpNode>(mulExp, addExp, op);
     }
     return addExp;
 }
 
 // MulExp -> UnaryExp { ('*' | '/' | '%') UnaryExp }
-std::shared_ptr<MulExpNode> analyzeMulExp()
+shared_ptr<MulExpNode> analyzeMulExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeMulExp--------\n";
+        cout << "--------analyzeMulExp--------\n";
     }
     auto unaryExp = analyzeUnaryExp();
-    auto relExp = std::make_shared<MulExpNode>(unaryExp);
-    while (nowPointerToken->getSym() == TokenType::MULT || nowPointerToken->getSym() == TokenType::DIV ||
-           nowPointerToken->getSym() == TokenType::REMAIN)
+    auto relExp = make_shared<MulExpNode>(unaryExp);
+    while (nowPointerToken->getSym() == TokenType::MULT || nowPointerToken->getSym() == TokenType::DIV || nowPointerToken->getSym() == TokenType::REMAIN)
     {
-        string op = nowPointerToken->getSym() == TokenType::MULT ? "*" : nowPointerToken->getSym() == TokenType::DIV ? "/"
-                                                                                                                     : "%";
+        string op = nowPointerToken->getSym() == TokenType::MULT ? "*" : nowPointerToken->getSym() == TokenType::DIV ? "/" : "%";
         popNextLexer();
         unaryExp = analyzeUnaryExp();
-        relExp = std::make_shared<MulExpNode>(unaryExp, relExp, op);
+        relExp = make_shared<MulExpNode>(unaryExp, relExp, op);
     }
     return relExp;
 }
 
 // UnaryExp -> IdentUsage '(' [FuncRParams] ')'  |  ('+' | '−' | '!') UnaryExp  |  PrimaryExp
-std::shared_ptr<UnaryExpNode> analyzeUnaryExp()
+shared_ptr<UnaryExpNode> analyzeUnaryExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeUnaryExp--------\n";
+        cout << "--------analyzeUnaryExp--------\n";
     }
     if (nowPointerToken->getSym() == TokenType::IDENT && peekNextLexer(1)->getSym() == TokenType::LPAREN)
     {
@@ -1594,77 +1608,76 @@ std::shared_ptr<UnaryExpNode> analyzeUnaryExp()
         if (nowPointerToken->getSym() == TokenType::RPAREN)
         {
             popNextLexer();
-            return std::make_shared<UnaryExpNode>(UnaryExpNode::funcCallUnaryExp(ident, op));
+            return make_shared<UnaryExpNode>(UnaryExpNode::funcCallUnaryExp(ident, op));
         }
         auto funcRParams = analyzeFuncRParams();
         popNextLexer(); // RPAREN
-        return std::make_shared<UnaryExpNode>(UnaryExpNode::funcCallUnaryExp(ident, funcRParams, op));
+        return make_shared<UnaryExpNode>(UnaryExpNode::funcCallUnaryExp(ident, funcRParams, op));
     }
     else if (nowPointerToken->getSym() == TokenType::PLUS || nowPointerToken->getSym() == TokenType::MINUS ||
              nowPointerToken->getSym() == TokenType::NOT)
     {
-        string op = nowPointerToken->getSym() == TokenType::PLUS ? "+" : nowPointerToken->getSym() == TokenType::MINUS ? "-"
-                                                                                                                       : "!";
+        string op = nowPointerToken->getSym() == TokenType::PLUS ? "+" : nowPointerToken->getSym() == TokenType::MINUS ? "-" : "!";
         popNextLexer();
         auto unaryExp = analyzeUnaryExp();
-        return std::make_shared<UnaryExpNode>(UnaryExpNode::unaryUnaryExp(unaryExp, op));
+        return make_shared<UnaryExpNode>(UnaryExpNode::unaryUnaryExp(unaryExp, op));
     }
     else
     {
         string op = "+";
         auto primaryExp = analyzePrimaryExp();
-        return std::make_shared<UnaryExpNode>(UnaryExpNode::primaryUnaryExp(primaryExp, op));
+        return make_shared<UnaryExpNode>(UnaryExpNode::primaryUnaryExp(primaryExp, op));
     }
 }
 
 // PrimaryExp -> '(' Exp ')'  |  IntConst  |  LVal
-std::shared_ptr<PrimaryExpNode> analyzePrimaryExp()
+shared_ptr<PrimaryExpNode> analyzePrimaryExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzePrimaryExp--------\n";
+        cout << "--------analyzePrimaryExp--------\n";
     }
     if (nowPointerToken->getSym() == TokenType::LPAREN)
     {
         popNextLexer(); // LPAREN
         auto exp = analyzeExp();
         popNextLexer(); // RPAREN
-        return std::make_shared<PrimaryExpNode>(PrimaryExpNode::parentExp(exp));
+        return make_shared<PrimaryExpNode>(PrimaryExpNode::parentExp(exp));
     }
     else if (nowPointerToken->getSym() == TokenType::INTCONST)
     {
         int value = nowPointerToken->getValue();
         popNextLexer();
-        return std::make_shared<PrimaryExpNode>(PrimaryExpNode::numberExp(value));
+        return make_shared<PrimaryExpNode>(PrimaryExpNode::numberExp(value));
     }
     else
     {
         auto lVal = analyzeLVal();
-        return std::make_shared<PrimaryExpNode>(PrimaryExpNode::lValExp(lVal));
+        return make_shared<PrimaryExpNode>(PrimaryExpNode::lValExp(lVal));
     }
 }
 
 // LVal -> IdentUsage
-std::shared_ptr<LValNode> analyzeLVal()
+shared_ptr<LValNode> analyzeLVal()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeLVal--------\n";
+        cout << "--------analyzeLVal--------\n";
     }
     auto ident = getIdentUsage(false);
     if (ident->ident->dimension == 0)
     {
-        return std::make_shared<LValNode>(ident);
+        return make_shared<LValNode>(ident);
     }
-    return std::make_shared<LValNode>(ident, ident->ident->dimension, ident->ident->expressionOfEachDimension);
+    return make_shared<LValNode>(ident, ident->ident->dimension, ident->ident->expressionOfEachDimension);
 }
 
 // CompUnit -> Decl | FuncDef
-std::shared_ptr<CompUnitNode> analyzeCompUnit()
+shared_ptr<CompUnitNode> analyzeCompUnit()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeCompUnit--------\n";
+        cout << "--------analyzeCompUnit--------\n";
     }
     vector<shared_ptr<DeclNode>> declList;
     vector<shared_ptr<FuncDefNode>> funcDefList;
@@ -1686,15 +1699,15 @@ std::shared_ptr<CompUnitNode> analyzeCompUnit()
             usageNameListOfVarSingleUseInUnRecursionFunction[symbolTableItem.second->usageName] = symbolTableItem.second->eachFunc[0]->usageName;
         }
     }
-    return std::make_shared<CompUnitNode>(declList, funcDefList);
+    return make_shared<CompUnitNode>(declList, funcDefList);
 }
 
 // FuncRParams -> Exp { ',' Exp }
-std::shared_ptr<FuncRParamsNode> analyzeFuncRParams()
+shared_ptr<FuncRParamsNode> analyzeFuncRParams()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeFuncRParams--------\n";
+        cout << "--------analyzeFuncRParams--------\n";
     }
     vector<shared_ptr<ExpNode>> exps;
     auto exp = analyzeExp();
@@ -1705,18 +1718,18 @@ std::shared_ptr<FuncRParamsNode> analyzeFuncRParams()
         exp = analyzeExp();
         exps.push_back(exp);
     }
-    return std::make_shared<FuncRParamsNode>(exps);
+    return make_shared<FuncRParamsNode>(exps);
 }
 
 // Cond -> LOrExp
-std::shared_ptr<CondNode> analyzeCond()
+shared_ptr<CondNode> analyzeCond()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeCond--------\n";
+        cout << "--------analyzeCond--------\n";
     }
     auto lOrExp = analyzeLOrExp();
-    auto condExp = std::make_shared<CondNode>(lOrExp);
+    auto condExp = make_shared<CondNode>(lOrExp);
     //if (openFolder)
     //{
     //    changeCondDivideIntoMul(condExp);
@@ -1725,71 +1738,71 @@ std::shared_ptr<CondNode> analyzeCond()
 }
 
 // LOrExp -> LAndExp { '||' LAndExp }
-std::shared_ptr<LOrExpNode> analyzeLOrExp()
+shared_ptr<LOrExpNode> analyzeLOrExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeLOrExp--------\n";
+        cout << "--------analyzeLOrExp--------\n";
     }
     auto lAndExp = analyzeLAndExp();
-    auto lOrExp = std::make_shared<LOrExpNode>(lAndExp);
+    auto lOrExp = make_shared<LOrExpNode>(lAndExp);
     while (nowPointerToken->getSym() == TokenType::OR)
     {
         string op = "||";
         popNextLexer();
         lAndExp = analyzeLAndExp();
-        lOrExp = std::make_shared<LOrExpNode>(lAndExp, lOrExp, op);
+        lOrExp = make_shared<LOrExpNode>(lAndExp, lOrExp, op);
     }
     return lOrExp;
 }
 
 // LAndExp -> EqExp { '&&' EqExp }
-std::shared_ptr<LAndExpNode> analyzeLAndExp()
+shared_ptr<LAndExpNode> analyzeLAndExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeLAndExp--------\n";
+        cout << "--------analyzeLAndExp--------\n";
     }
     auto eqExp = analyzeEqExp();
-    auto lAndExp = std::make_shared<LAndExpNode>(eqExp);
+    auto lAndExp = make_shared<LAndExpNode>(eqExp);
     while (nowPointerToken->getSym() == TokenType::AND)
     {
         string op = "&&";
         popNextLexer();
         eqExp = analyzeEqExp();
-        lAndExp = std::make_shared<LAndExpNode>(eqExp, lAndExp, op);
+        lAndExp = make_shared<LAndExpNode>(eqExp, lAndExp, op);
     }
     return lAndExp;
 }
 
 // EqExp -> RelExp { ('==' | '!=') RelExp }
-std::shared_ptr<EqExpNode> analyzeEqExp()
+shared_ptr<EqExpNode> analyzeEqExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeEqExp--------\n";
+        cout << "--------analyzeEqExp--------\n";
     }
     auto relExp = analyzeRelExp();
-    auto eqExp = std::make_shared<EqExpNode>(relExp);
+    auto eqExp = make_shared<EqExpNode>(relExp);
     while (nowPointerToken->getSym() == TokenType::EQUAL || nowPointerToken->getSym() == TokenType::NEQUAL)
     {
         string op = nowPointerToken->getSym() == TokenType::EQUAL ? "==" : "!=";
         popNextLexer();
         relExp = analyzeRelExp();
-        eqExp = std::make_shared<EqExpNode>(relExp, eqExp, op);
+        eqExp = make_shared<EqExpNode>(relExp, eqExp, op);
     }
     return eqExp;
 }
 
 // RelExp -> AddExp { ('<' | '>' | '<=' | '>=') AddExp }
-std::shared_ptr<RelExpNode> analyzeRelExp()
+shared_ptr<RelExpNode> analyzeRelExp()
 {
     if (_debugSyntax)
     {
-        std::cout << "--------analyzeRelExp--------\n";
+        cout << "--------analyzeRelExp--------\n";
     }
     auto addExp = analyzeAddExp();
-    auto relExp = std::make_shared<RelExpNode>(addExp);
+    auto relExp = make_shared<RelExpNode>(addExp);
     while (nowPointerToken->getSym() == TokenType::LARGE || nowPointerToken->getSym() == TokenType::LAQ ||
            nowPointerToken->getSym() == TokenType::LESS || nowPointerToken->getSym() == TokenType::LEQ)
     {
@@ -1799,32 +1812,35 @@ std::shared_ptr<RelExpNode> analyzeRelExp()
         //    isInWhileLockedCond = false;
         //}
         string op = nowPointerToken->getSym() == TokenType::LARGE ? ">" : nowPointerToken->getSym() == TokenType::LAQ ? ">="
-                                                                      : nowPointerToken->getSym() == TokenType::LESS  ? "<"
-                                                                                                                      : "<=";
+            : nowPointerToken->getSym() == TokenType::LESS  ? "<" : "<=";
         popNextLexer();
         addExp = analyzeAddExp();
-        relExp = std::make_shared<RelExpNode>(addExp, relExp, op);
+        relExp = make_shared<RelExpNode>(addExp, relExp, op);
     }
     return relExp;
 }
 
-// 开始语法分析
-std::shared_ptr<CompUnitNode> syntaxAnalyze()
+/**
+ * @brief 开始语法分析
+ * @return 分析完成的结果CompUnitNode
+ */
+shared_ptr<CompUnitNode> syntaxAnalyze()
 {
     nowPointerToken = &tokenInfoList[0];
     auto retFuncType = SymbolType::RET_FUNC;
     auto voidFuncType = SymbolType::VOID_FUNC;
-    // 添加SysY语法自带函数
+
+    // 添加运行时函数
     string retNames[] = {"getint", "getch", "getarray"};
     string voidNames[] = {"putint", "putch", "putarray", "putf", "starttime", "stoptime"};
     for (string &retName : retNames)
     {
-        auto retFunc = std::make_shared<SymbolTableItem>(retFuncType, retName, nowLayId);
+        auto retFunc = make_shared<SymbolTableItem>(retFuncType, retName, nowLayId);
         insertSymbol(nowLayId, retFunc);
     }
     for (string &voidName : voidNames)
     {
-        auto voidFunc = std::make_shared<SymbolTableItem>(voidFuncType, voidName, nowLayId);
+        auto voidFunc = make_shared<SymbolTableItem>(voidFuncType, voidName, nowLayId);
         insertSymbol(nowLayId, voidFunc);
     }
     return analyzeCompUnit();

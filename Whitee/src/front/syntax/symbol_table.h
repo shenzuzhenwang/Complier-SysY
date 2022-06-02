@@ -18,37 +18,23 @@
 class SymbolTablePerBlock
 {
 public:
-    std::pair<int, int> blockId;
-    bool isTop; // blockId.first == 0
-    std::pair<int, int> fatherBlockId;
-    std::unordered_map<std::string, std::shared_ptr<SymbolTableItem>> symbolTableThisBlock; // 名字<-->对象
+    pair<int, int> blockId;
+    bool isTop;                        // blockId.first == 0
+    pair<int, int> fatherBlockId;  // 上一层块的ID
+    unordered_map<string, shared_ptr<SymbolTableItem>> symbolTableThisBlock; // 名字<-->对象
 
-    SymbolTablePerBlock(std::pair<int, int> &blockId, bool &isTop, std::pair<int, int> &fatherBlockId)
+    SymbolTablePerBlock(pair<int, int> &blockId, bool &isTop, pair<int, int> &fatherBlockId)
         : blockId(blockId), isTop(isTop), fatherBlockId(fatherBlockId){};
 };
 
-extern std::unordered_map<std::pair<int, int>, std::shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // 块ID<-->块内对象
+extern unordered_map<pair<int, int>, shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // 块ID<-->块内对象
 
-/**
- * @brief 用于按名字依次向外查找某个变量
- * @details 通过起始块的id来查找符号，递归查找到最上面的块。
- * 应该区分函数和变量，因为它们在一个块中可能有相同的名字。
- * @param startBlockId: 寻找起始块的ID，在递归过程中改变这个函数。
- * @param symbolName: 查找符号的名称。
- * @return SymbolTableItem 找到的符号
- */
-extern std::shared_ptr<SymbolTableItem> findSymbol(std::pair<int, int> startBlockId, std::string &symbolName, bool isF);
+extern shared_ptr<SymbolTableItem> findSymbol(pair<int, int> startBlockId, string &symbolName, bool isF);
 
-// // 根据block的ID来将SymbolTableItem加入symbolTable
-extern void insertSymbol(std::pair<int, int> blockId, std::shared_ptr<SymbolTableItem> symbol);
+extern void insertSymbol(pair<int, int> blockId, shared_ptr<SymbolTableItem> symbol);
 
-// 记录每一层的编号
-// <2, ...> if ...max is 2, record <2, 2>, next layer2 block id is <2, 3>
-extern std::unordered_map<int, int> blockLayerId2LayerNum;
+extern unordered_map<int, int> blockLayerId2LayerNum;
 
-/**
- * @brief 根据blockId并将symbolTablePerBlock插入symbolTable中。
- */
-extern std::pair<int, int> distributeBlockId(int layerId, std::pair<int, int> fatherBlockId);
+extern pair<int, int> distributeBlockId(int layerId, pair<int, int> fatherBlockId);
 
 #endif

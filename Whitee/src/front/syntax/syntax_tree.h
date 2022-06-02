@@ -1,3 +1,10 @@
+/*********************************************************************
+ * @file   syntax_tree.h
+ * @brief  根据不同的类型，定义了不同的类
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
 #ifndef COMPILER_SYNTAX_TREE_H
 #define COMPILER_SYNTAX_TREE_H
 
@@ -113,18 +120,18 @@ public:
     SymbolType symbolType;
 
     int dimension;  // 数组维数
-    std::vector<int> numOfEachDimension;  // 数组各维大小
-    std::vector<std::shared_ptr<ExpNode>> expressionOfEachDimension;  // 数组各维大小（非常数）
-    std::string name;
-    std::string uniqueName;
-    std::string usageName;
-    std::pair<int, int> blockId;
+    vector<int> numOfEachDimension;  // 数组各维大小
+    vector<shared_ptr<ExpNode>> expressionOfEachDimension;  // 数组各维大小（非常数）
+    string name;
+    string uniqueName;  // 用来区分在IR中可能有相同名称的符号。
+    string usageName;   // 设置为区分同一块中的F和V的关键。
+    pair<int, int> blockId;
     shared_ptr<ConstInitValNode> constInitVal;  // const初始化
     shared_ptr<InitValNode> initVal;  // 初始化
     shared_ptr<ConstInitValNode> globalVarInitVal;  // globalVarInitVal 对于所有全局变量的val是0或可计算。使用ConstInitValNode来计算它。
-    bool isRecursion = false;  // 函数递归
-    std::unordered_map<std::string, int> eachFuncUseNum;  // 此变量或函数被使用的次数
-    std::vector<std::shared_ptr<SymbolTableItem>> eachFunc; // 此变量被使用的函数
+    bool isRecursion = false;    // 函数递归
+    unordered_map<string, int> eachFuncUseNum;  // 此变量或函数被使用的次数
+    vector<shared_ptr<SymbolTableItem>> eachFunc; // 此变量被使用的函数
 
     /**
      *
@@ -132,10 +139,7 @@ public:
      * 使用时，括号内的所有数值[]肯定不是constExp。
      * 用Exp代替。
      */
-    SymbolTableItem(SymbolType &symbolType, int &dimension,
-                    std::vector<std::shared_ptr<ExpNode>> &expressionOfEachDimension,
-                    std::string &name,
-                    std::pair<int, int> &blockId);
+    SymbolTableItem(SymbolType &symbolType, int &dimension, vector<shared_ptr<ExpNode>> &expressionOfEachDimension, string &name, pair<int, int> &blockId);
 
     /**
      * @brief 用来定义。
@@ -147,15 +151,12 @@ public:
      * 同时，在FuncFParam中的Id应该使用这个，现在假设所有的exp都是constExp。
      * 其他情况应该使用expressionOfEachDimension。
      */
-    SymbolTableItem(SymbolType &symbolType, int &dimension,
-                    std::vector<int> &numOfEachDimension,
-                    std::string &name,
-                    std::pair<int, int> &blockId);
+    SymbolTableItem(SymbolType &symbolType, int &dimension, vector<int> &numOfEachDimension, string &name, pair<int, int> &blockId);
 
     /**
-     * @brief only for non ary variable.
+     * @brief 用于非数组
      */
-    SymbolTableItem(SymbolType &symbolType, std::string &name, std::pair<int, int> &blockId);
+    SymbolTableItem(SymbolType &symbolType, string &name, pair<int, int> &blockId);
 
     // 变量单次用于非递归函数
     bool isVarSingleUseInUnRecursionFunction();
@@ -221,8 +222,8 @@ public:
 class CompUnitNode : public SyntaxNode
 {
 public:
-    vector<shared_ptr<DeclNode>> declList;
-    vector<shared_ptr<FuncDefNode>> funcDefList;
+    vector<shared_ptr<DeclNode>> declList;  // 变量定义表
+    vector<shared_ptr<FuncDefNode>> funcDefList;  // 函数定义表
 
     explicit CompUnitNode(vector<shared_ptr<DeclNode>> &declList, vector<shared_ptr<FuncDefNode>> &funcDefList)
         : declList(declList), funcDefList(funcDefList){};
@@ -233,8 +234,8 @@ public:
 class BlockNode : public SyntaxNode
 {
 public:
-    int itemCnt;
-    vector<shared_ptr<BlockItemNode>> blockItems;
+    int itemCnt;  // block内blockItem数量
+    vector<shared_ptr<BlockItemNode>> blockItems;  // blockItem表
 
     BlockNode(int itemCnt, vector<shared_ptr<BlockItemNode>> &blockItems) 
         : itemCnt(itemCnt), blockItems(blockItems){};
@@ -259,7 +260,7 @@ public:
 class ConstDeclNode : public DeclNode
 {
 public:
-    vector<shared_ptr<ConstDefNode>> constDefList;
+    vector<shared_ptr<ConstDefNode>> constDefList;  // const变量定义表
 
     explicit ConstDeclNode(vector<shared_ptr<ConstDefNode>> &constDefList)
         : constDefList(constDefList){};
@@ -270,7 +271,7 @@ public:
 class VarDeclNode : public DeclNode
 {
 public:
-    vector<shared_ptr<VarDefNode>> varDefList;
+    vector<shared_ptr<VarDefNode>> varDefList;  // 变量定义表
 
     explicit VarDeclNode(vector<shared_ptr<VarDefNode>> &varDefList)
         : varDefList(varDefList){};
@@ -281,9 +282,9 @@ public:
 class ConstDefNode : public SyntaxNode
 {
 public:
-    shared_ptr<IdentNode> ident;
-    shared_ptr<ConstInitValNode> constInitVal;
-
+    shared_ptr<IdentNode> ident;  // 变量标识符
+    shared_ptr<ConstInitValNode> constInitVal;  // 初始情况化
+     
     ConstDefNode(shared_ptr<IdentNode> &ident, shared_ptr<ConstInitValNode> &constInitVal)
         : ident(ident), constInitVal(constInitVal){};
 
@@ -295,7 +296,7 @@ class ConstInitValNode : public SyntaxNode
 public:
     string toString(int tabCnt) override = 0;
 
-    virtual vector<pair<int, int>> toOneDimensionArray(int start, int size) = 0;
+    virtual vector<pair<int, int>> toOneDimensionArray(int start, int size) = 0;  // 将多维数组转换成一维
 };
 
 class ConstInitValValNode : public ConstInitValNode
@@ -329,11 +330,11 @@ public:
 class VarDefNode : public SyntaxNode
 {
 public:
-    shared_ptr<IdentNode> ident;
-    InitType type;
-    int dimension;
-    vector<int> dimensions;  // 维数
-    shared_ptr<InitValNode> initVal;
+    shared_ptr<IdentNode> ident;  // 变量标识符
+    InitType type;    // 初始化情况
+    int dimension;    // 维数
+    vector<int> dimensions;  // 各维大小
+    shared_ptr<InitValNode> initVal;  // 初始化情况
 
     VarDefNode(shared_ptr<IdentNode> &ident, int dimension, vector<int> &dimensions, shared_ptr<InitValNode> &initVal)
         : ident(ident), type(InitType::INIT), dimension(dimension), dimensions(dimensions), initVal(initVal){};
@@ -355,46 +356,45 @@ class InitValNode : public SyntaxNode
 public:
     string toString(int tabCnt) override = 0;
 
-    virtual vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) = 0;
+    virtual vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) = 0;// 将多维数组转换成一维
 };
 
 class InitValValNode : public InitValNode
 {
 public:
-    shared_ptr<ExpNode> exp;
+    shared_ptr<ExpNode> exp;  // 初始化时的表达式
 
     explicit InitValValNode(shared_ptr<ExpNode> &exp) 
         : exp(exp){};
 
     string toString(int tabCnt) override;
 
-    vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) override;
+    vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) override; // 将多维数组转换成一维
 };
 
 class InitValArrNode : public InitValNode
 {
 public:
-    int expectedSize;
-    vector<shared_ptr<InitValNode>> valList;
+    int expectedSize;  // 数组总共大小
+    vector<shared_ptr<InitValNode>> valList;  // 数组每个地方的元素值
 
     InitValArrNode(int expectedSize, vector<shared_ptr<InitValNode>> &valList)
         : expectedSize(expectedSize), valList(valList){};
 
     string toString(int tabCnt) override;
 
-    vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) override;
+    vector<pair<int, shared_ptr<ExpNode>>> toOneDimensionArray(int start, int size) override; // 将多维数组转换成一维
 };
 
 class FuncDefNode : public SyntaxNode
 {
 public:
-    FuncType funcType;
-    shared_ptr<IdentNode> ident;
-    shared_ptr<FuncFParamsNode> funcFParams;
-    shared_ptr<BlockNode> block;
+    FuncType funcType;  // 函数类型
+    shared_ptr<IdentNode> ident;  // 标识符
+    shared_ptr<FuncFParamsNode> funcFParams;  // 函数参数
+    shared_ptr<BlockNode> block;  // 函数内部块
 
-    FuncDefNode(FuncType funcType, shared_ptr<IdentNode> &ident, shared_ptr<FuncFParamsNode> &funcFParams,
-                shared_ptr<BlockNode> &block)
+    FuncDefNode(FuncType funcType, shared_ptr<IdentNode> &ident, shared_ptr<FuncFParamsNode> &funcFParams, shared_ptr<BlockNode> &block)
         : funcType(funcType), ident(ident), funcFParams(funcFParams), block(block){};
 
     FuncDefNode(FuncType funcType, shared_ptr<IdentNode> &ident, shared_ptr<BlockNode> &block)
@@ -406,7 +406,7 @@ public:
 class FuncFParamsNode : public SyntaxNode
 {
 public:
-    vector<shared_ptr<FuncFParamNode>> funcParamList;
+    vector<shared_ptr<FuncFParamNode>> funcParamList;  // 参数表
 
     explicit FuncFParamsNode(vector<shared_ptr<FuncFParamNode>> &funcParamList)
         : funcParamList(funcParamList){};
@@ -417,14 +417,14 @@ public:
 class FuncFParamNode : public SyntaxNode
 {
 public:
-    shared_ptr<IdentNode> ident;
-    int dimension;
+    shared_ptr<IdentNode> ident;  // 标识符
+    int dimension;  // 维数
     /*
      * NOTE:
      * 1. The first dimensions[0] can be any number.
      * 2. The rest dimensions must be a constant.
      */
-    vector<int> dimensions;
+    vector<int> dimensions;  // 各维大小
 
     FuncFParamNode(shared_ptr<IdentNode> &ident, int dimension, vector<int> &dimensions)
         : ident(ident), dimension(dimension), dimensions(dimensions){};
@@ -444,7 +444,7 @@ public:
      * 2. 'return' may use 0 member.
      * 3. Other type use at least 1 member.
      */
-    StmtType type;
+    StmtType type;  // 语句的类型
     shared_ptr<LValNode> lVal;
     shared_ptr<ExpNode> exp;
     shared_ptr<BlockNode> block;
@@ -497,7 +497,7 @@ public:
     /*
      * NOTE: This primaryExpNode can be type of (Exp), LVal or Number or string.
      */
-    PrimaryExpType type;
+    PrimaryExpType type;  // PrimaryExp 类型
     shared_ptr<ExpNode> exp;
     shared_ptr<LValNode> lVal;
     int number;
@@ -532,9 +532,9 @@ public:
 class LValNode : public ExpNode
 {
 public:
-    shared_ptr<IdentNode> ident;
-    int dimension;
-    vector<shared_ptr<ExpNode>> exps;
+    shared_ptr<IdentNode> ident;  // 标识符
+    int dimension;  // 维数
+    vector<shared_ptr<ExpNode>> exps;  // 各元素大小
 
     LValNode(shared_ptr<IdentNode> &ident, int dimension, vector<shared_ptr<ExpNode>> &exps)
         : ident(ident), dimension(dimension), exps(exps){};
@@ -695,10 +695,10 @@ public:
 class IdentNode : public SyntaxNode
 {
 public:
-    std::shared_ptr<SymbolTableItem> ident;
+    shared_ptr<SymbolTableItem> ident;
 
     explicit IdentNode(shared_ptr<SymbolTableItem> ident) 
-        : ident(std::move(ident)){};
+        : ident(move(ident)){};
 
     string toString(int tabCnt) override;
 };

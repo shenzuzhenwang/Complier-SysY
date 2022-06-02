@@ -1,21 +1,26 @@
+/*********************************************************************
+ * @file   lexer.cpp
+ * @brief  词法分析，将每个词标志为相应的token
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
 #include "lexer.h"
 #include "../../basic/std/compile_std.h"
 
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-
 using namespace std;
 
 int c;  // 缓冲区
 string token;  // 词法单元
 
-std::vector<TokenInfo> tokenInfoList;  // 词法分析完生成的结果
+vector<TokenInfo> tokenInfoList;  // 词法分析完生成的结果
 
 extern string debugMessageDirectory;
 
-std::unordered_map<string, TokenType>
-    reverseTable{// NOLINT
+unordered_map<string, TokenType> reverseTable{   // 词语token转换表
                  {"int", INT_TK},
                  {"const", CONST_TK},
                  {"void", VOID_TK},
@@ -49,7 +54,12 @@ std::unordered_map<string, TokenType>
                  {"&&", AND},
                  {"||", OR}};
 
-// type1:/* */ type2:// // 去除注释
+// type1:/* */ type2://
+/**
+ * @brief 消去注释  
+ * @param type 
+ * @param in 词法分析的源文件
+ */
 void skipComment(int type, FILE *in)
 {
     if (type == 1)
@@ -80,7 +90,10 @@ void skipComment(int type, FILE *in)
     }
 }
 
-// 去除空格换行等字符
+/**
+ * @brief 去除空格换行等字符
+ * @param in 词法分析的源文件
+ */
 void skipSpaceOrNewlineOrTab(FILE *in)
 {
     while (isSpace() || isNewline() || isTab())
@@ -89,6 +102,10 @@ void skipSpaceOrNewlineOrTab(FILE *in)
     }
 }
 
+/**
+ * @brief 处理关键字或标识符
+ * @param in 词法分析的源文件
+ */
 void dealWithKeywordOrIdent(FILE *in)
 {
     while ((isLetter() || isDigit()))
@@ -106,7 +123,7 @@ void dealWithKeywordOrIdent(FILE *in)
         tmp.setName(name);
         tokenInfoList.push_back(tmp);
     }
-    else  // 为表示符
+    else  // 为标识符
     {
         TokenInfo tmp(IDENT);
         tmp.setName(token);
@@ -114,6 +131,10 @@ void dealWithKeywordOrIdent(FILE *in)
     }
 }
 
+/**
+ * @brief 处理连续的数字
+ * @param in 词法分析的源文件
+ */
 void dealWithConstDigit(FILE *in)
 {
     // deal with 0Xxxx
@@ -162,6 +183,10 @@ void dealWithConstDigit(FILE *in)
     tokenInfoList.push_back(tmp);
 }
 
+/**
+ * @brief 处理字符串
+ * @param in 词法分析的源文件
+ */
 void dealWithStr(FILE *in)
 {
     while (true)
@@ -178,7 +203,10 @@ void dealWithStr(FILE *in)
     tokenInfoList.push_back(tmp);
 }
 
-// 部分其他字符
+/**
+ * @brief 处理部分其他字符
+ * @param in 词法分析的源文件
+ */
 void dealWithOtherTk(FILE *in)
 {
     switch (c)
@@ -238,7 +266,10 @@ void dealWithOtherTk(FILE *in)
     }
 }
 
-// 去除不合规则字符
+/**
+ * @brief 去除不合规则字符
+ * @param in 词法分析的源文件
+ */
 void skipIllegalChar(FILE *in)
 {
     while (!isNewline() && c < 32)
@@ -251,7 +282,11 @@ void skipIllegalChar(FILE *in)
     }
 }
 
-// 词法分析
+/**
+ * @brief 词法分析
+ * @param file 词法分析的源文件
+ * @return true 成功；false 失败
+ */
 bool lexicalAnalyze(const string &file)
 {
     FILE *in = fopen(file.c_str(), "r");
@@ -279,6 +314,10 @@ bool lexicalAnalyze(const string &file)
     return true;
 }
 
+/**
+ * @brief 词法分析
+ * @param in 词法分析的源文件
+ */
 void parseSym(FILE *in)
 {
     while (c != EOF)
@@ -331,11 +370,11 @@ void parseSym(FILE *in)
     tokenInfoList.emplace_back(TokenType::END);
 }
 
+// 空格
 bool isSpace()
 {
     return c == ' ';
 }
-
 // 英文字符或_
 bool isLetter()
 {
@@ -346,41 +385,50 @@ bool isDigit()
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
 }
-
+// tab
 bool isTab()
 {
     return c == '\t';
 }
-
+// 换行
 bool isNewline()
 {
     return c == '\n';
 }
-
+// 清除词法单元
 void clearToken()
 {
     token.clear();
 }
-
+// 词法单元后添加
 void catToken()
 {
     token.push_back(c);
 }
 
+/**
+ * @brief 数字字符串转int64_t
+ * @param isHex 是否为16进制
+ * @param isOct 是否为8进制
+ * @return 返回int64_t
+ */
 long long strToInt(bool isHex, bool isOct)
 {
     long long integer;
     if (isHex)
     {
-        sscanf(token.c_str(), "%llx", &integer);
+        integer = strtoll (token.c_str (), NULL, 16);
+        //sscanf(token.c_str(), "%llx", &integer);
     }
     else if (isOct)
     {
-        sscanf(token.c_str(), "%llo", &integer);
+        integer = strtoll (token.c_str (), NULL, 8);
+        //sscanf(token.c_str(), "%llo", &integer);
     }
     else
     {
-        sscanf(token.c_str(), "%lld", &integer);
+        integer = strtoll (token.c_str (), NULL, 10);
+        //sscanf(token.c_str(), "%lld", &integer);
     }
     return integer;
 }

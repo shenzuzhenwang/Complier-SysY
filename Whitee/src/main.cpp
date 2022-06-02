@@ -1,24 +1,33 @@
+/*******************************************************************
+ * @file   main.cpp
+ * @brief  运行的入口，运行的主要流程  
+ *         
+ * 
+ * @author 神祖
+ * @date   May 2022
+ *********************************************************************/
+
 #include <iostream>
 #include <fstream>
 #include <cstring>
 #include <io.h> 
 #include <process.h> 
+
 #define R_OK 4 /* Test for read permission. */
 #define W_OK 2 /* Test for write permission. */
 #define F_OK 0 /* Test for existence. */
+
 #include "front/lexer/lexer.h"
 #include "front/syntax/syntax_analyze.h"
 #include "ir/ir_build.h"
 #include "ir/ir_check.h"
 #include "optimize/ir/ir_optimize.h"
 #include "machine_ir/machine_ir_build.h"
-
 using namespace std;
 
 OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
 bool needIrCheck = false;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
-//bool openFolder = false;  // ? 循环展开  O2
 
 string sourceCodeFile;  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
@@ -30,6 +39,13 @@ int setCompileOptions(int argc, char **argv);
 
 int initConfig();
 
+/**
+ * @brief setCompileOptions -> initConfig -> lexicalAnalyze -> syntaxAnalyze -> buildIrModule -> optimizeIr -> buildMachineModule
+ *        设置编译选项 -> 编译设置 -> 词法分析 -> 语法分析 -> 构建中间IR -> 优化IR -> 构建机器码
+ * @param argc  命令行参数的个数
+ * @param argv  命令行参数  第一个为执行文件的路径
+ * @return 程序返回值
+ */
 int main(int argc, char **argv)
 {
     int r;
@@ -137,6 +153,13 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/**
+ * @brief 通过读取命令行的参数，来对今后的动作进行设置
+ * @param argc  命令行参数的个数
+ * @param argv  命令行参数  第一个为执行文件的路径
+ * @return _SCO_ARG_ERR 参数格式不正确，停止执行，并打印help说明；_SCO_HELP 打印help；_SCO_DBG_ERR debug参数出错；_SCO_OP_ERR optimize参数出错；
+ *         _SCO_CHK_ERR check参数出错；_SCO_DBG_PATH_ERR debug path不正确；_SCO_SUCCESS 成功
+ */
 int setCompileOptions(int argc, char **argv)
 {
     bool argOptimizeFlag = false; 
@@ -223,10 +246,10 @@ int setCompileOptions(int argc, char **argv)
             }
             if (argv[i] == "1"s)
                 optimizeLevel = OptimizeLevel::O1;
-            else if (argv[i] == "2"s)
-                optimizeLevel = OptimizeLevel::O2;
-            else if (argv[i] == "3"s)
-                optimizeLevel = OptimizeLevel::O3;
+            //else if (argv[i] == "2"s)
+            //    optimizeLevel = OptimizeLevel::O2;
+            //else if (argv[i] == "3"s)
+            //    optimizeLevel = OptimizeLevel::O3;
             if (optimizeLevel >= OptimizeLevel::O1)
             {
                 _optimizeMachineIr = true;
@@ -296,6 +319,10 @@ int setCompileOptions(int argc, char **argv)
     return _SCO_SUCCESS;
 }
 
+/**
+ * @brief 打印help说明，因为参数不符合规则
+ * @param exec 执行文件的路径
+ */
 void printHelp(const char *exec)
 {
     cout << "Usage: " + string(exec) + " [-S] [-o] [-h | --help] [-d | --debug <level>]";
@@ -340,11 +367,16 @@ void printHelp(const char *exec)
     cout << endl;
 }
 
+/**
+ * @brief 创建一个文件夹
+ * @param path 文件夹的路径
+ * @return true 成功；false 失败
+ */
 bool createFolder(const char *path)
 {
-    if (_access(path, F_OK) != -1)
+    if (_access(path, F_OK) != -1) // 已有此文件夹
         return true;
-    if (strlen(path) > FILENAME_MAX)
+    if (strlen(path) > FILENAME_MAX)  // 文件路径过长
     {
         cout << "Error: debug path is too long." << endl;
         return false;
@@ -356,12 +388,16 @@ bool createFolder(const char *path)
         if ((tempPath[i] == _SLASH_CHAR) && _access(tempPath, F_OK) == -1)
         {
             string command = "mkdir " + string(tempPath);
-            system(command.c_str());
+            system(command.c_str());  // 系统执行创建文件夹命令
         }
     }
     return true;
 }
 
+/**
+ * @brief 将文件的路径名统一为标准格式（根据不同的平台），并创建应创建的文件夹
+ * @return _INIT_CRT_ERR 创建文件夹失败；_INIT_SUCCESS 成功
+ */
 int initConfig()
 {
     if (_debugIr)
