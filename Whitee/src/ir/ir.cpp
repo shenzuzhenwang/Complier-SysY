@@ -95,28 +95,6 @@ void Function::abandonUse()
     name = "abandon_function_" + name;
 }
 
-// @deprecated 展开内联函数 
-bool Function::fitInline(unsigned int maxInsCnt, unsigned int maxPointerSituationCnt)
-{
-    unsigned int insCnt = 0;
-    for (auto &bb : blocks)
-    {
-        insCnt += bb->instructions.size() + bb->phis.size();
-    }
-    if (insCnt < maxPointerSituationCnt)
-        return true;
-    bool hasPointerArgument = false;
-    for (auto &arg : params)
-    {
-        if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)
-        {
-            hasPointerArgument = true;
-            break;
-        }
-    }
-    return insCnt < maxInsCnt && !hasPointerArgument;
-}
-
 // 替换value
 void BasicBlock::replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue)
 {

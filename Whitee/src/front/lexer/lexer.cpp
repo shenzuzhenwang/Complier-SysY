@@ -113,7 +113,6 @@ void dealWithKeywordOrIdent(FILE *in)
         catToken();
         c = fgetc(in); // if c is not a whitespace, then jump to error
     }
-    // fseek(in, -1L, 1);
     ungetc(c, in);
 
     string name(token);
@@ -151,7 +150,6 @@ void dealWithConstDigit(FILE *in)
         else
         {
             isOct = true;
-            // fseek(in, -1L, 1);
             ungetc(c, in);
             c = '0';
         }
@@ -161,12 +159,11 @@ void dealWithConstDigit(FILE *in)
         catToken();
         c = fgetc(in);
     }
-    // fseek(in, -1L, 1);
     ungetc(c, in);
     long long integer = strToInt(isHex, isOct);
     TokenInfo tmp(INTCONST);
     tmp.setName(token);
-    //if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  ????
+    //if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  £¿£¿£¿£¿
     //{
     //    tokenInfoList.pop_back ();
     //    tmp.setValue (-integer);
@@ -253,7 +250,6 @@ void dealWithOtherTk(FILE *in)
         }
         else
         {
-            // fseek(in, -1L, 1);
             ungetc(c, in);
         }
         TokenInfo tmp(reverseTable.at(token));
@@ -302,10 +298,6 @@ bool lexicalAnalyze(const string &file)
         for (TokenInfo tokenInfo : tokenInfoList)
         {
             fprintf(out, "%s", tokenInfo.getName().c_str());
-            // if (tokenInfo.getSym() == INTCONST)
-            // {
-            //     fprintf(out, " %d", tokenInfo.getValue());
-            // }
             fprintf(out, "\n");
         }
         fclose(out);
@@ -344,7 +336,6 @@ void parseSym(FILE *in)
             }
             else
             {
-                // fseek(in, -1L, 1);
                 ungetc(c, in);
                 c = '/';
             }

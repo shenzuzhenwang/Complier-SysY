@@ -157,65 +157,6 @@ TokenInfo *peekNextLexer(int num)
 static shared_ptr<SymbolTableItem> nowFuncSymbol;  // 当前所在的函数对象
 unordered_map<string, string> usageNameListOfVarSingleUseInUnRecursionFunction;  // 在非递归函数中单次使用变量名称列表
 
-//static bool isInWhileLockedCond = false;
-//static int step = 0;
-//static bool folderShouldBeOpen = false;
-//static int folderOpenNum = 0;
-//static bool isInDirectWhile = false;
-//static shared_ptr<StmtNode> whileBlockAssignStmt;
-//static bool lockingOpenFolder = false;
-//static bool isAssignLValWhileControlVar = false;
-//static bool judgeWhetherAssignLValWhileControlVar = false;
-//static int whileControlVarAssignNum = 0;
-//static shared_ptr<SymbolTableItem> lastAssignOrDeclVar;
-//static bool isLastValueGetableAssignOrDecl = false;
-//static bool getAssignLVal = false;
-static int lastValue = 0;
-
-//bool isExpConstOrIMM(shared_ptr<ExpNode> exp)
-//{
-//    auto addExp = s_p_c<AddExpNode>(exp);
-//    if (addExp->addExp)
-//    {
-//        return false;
-//    }
-//    auto mulExp = addExp->mulExp;
-//    if (mulExp->mulExp)
-//    {
-//        return false;
-//    }
-//    auto unaryExp = mulExp->unaryExp;
-//    bool isOpPlus = true;
-//    while (unaryExp->type == UnaryExpType::UNARY_DEEP)
-//    {
-//        if (unaryExp->op == "-")
-//        {
-//            isOpPlus = !isOpPlus;
-//        }
-//        unaryExp = unaryExp->unaryExp;
-//    }
-//    if (unaryExp->type == UnaryExpType::UNARY_PRIMARY)
-//    {
-//        auto primaryExp = unaryExp->primaryExp;
-//        if (primaryExp->type == PrimaryExpType::PRIMARY_NUMBER)
-//        {
-//            lastValue = isOpPlus ? primaryExp->number : -primaryExp->number;
-//            return true;
-//        }
-//        if (primaryExp->type == PrimaryExpType::PRIMARY_L_VAL)
-//        {
-//            auto lValExp = primaryExp->lVal;
-//            if (lValExp->ident->ident->symbolType == SymbolType::CONST_VAR)
-//            {
-//                lastValue = s_p_c<ConstInitValValNode>(lValExp->ident->ident->constInitVal)->value;
-//                lastValue = isOpPlus ? lastValue : -lastValue;
-//                return true;
-//            }
-//        }
-//    }
-//    return false;
-//}
-
 /**
  * Symbol Table:
  */
@@ -296,10 +237,6 @@ shared_ptr<IdentNode> getIdentDefine(bool isF, bool isVoid, bool isConst)
     {
         SymbolType symbolType = (isConst ? SymbolType::CONST_VAR : SymbolType::VAR);
         auto symbolTableItem = make_shared<SymbolTableItem>(symbolType, name, nowLayId);
-        //if (openFolder && !lockingOpenFolder)
-        //{
-        //    lastAssignOrDeclVar = symbolTableItem;
-        //}
         insertSymbol(nowLayId, symbolTableItem);
         return make_shared<IdentNode>(symbolTableItem);
     }
@@ -384,16 +321,6 @@ shared_ptr<IdentNode> getIdentUsage(bool isF)
         symbolInTable->eachFunc.push_back(nowFuncSymbol);
     }
     symbolInTable->eachFuncUseNum[nowFuncSymbol->usageName]++;
-    //if (openFolder && getAssignLVal && !lockingOpenFolder)
-    //{
-    //    lastAssignOrDeclVar = symbolInTable;
-    //    getAssignLVal = false;
-    //}
-    //if (openFolder && lockingOpenFolder && judgeWhetherAssignLValWhileControlVar)
-    //{
-    //    isAssignLValWhileControlVar = (symbolInTable == lastAssignOrDeclVar);
-    //    judgeWhetherAssignLValWhileControlVar = false;
-    //}
     if (isF)
     {
         unordered_set<string> sysFunc({"getint", "getch", "getarray", "putint", "putch", "putarray", "putf", "starttime", "stoptime"});
@@ -402,13 +329,6 @@ shared_ptr<IdentNode> getIdentUsage(bool isF)
         {
             symbolInTable->isRecursion = true;
         }
-        //if (openFolder)
-        //{
-        //    if (sysFunc.find(nowFuncSymbol->name) == sysFunc.end())
-        //    {
-        //        whileControlVarAssignNum += 2;
-        //    }
-        //}
         return make_shared<IdentNode>(make_shared<SymbolTableItem>(symbolInTable->symbolType, name, symbolInTable->blockId));
     }
     else
@@ -443,10 +363,6 @@ shared_ptr<DeclNode> analyzeDecl()
         cout << "--------analyzeDecl--------\n";
     }
     shared_ptr<DeclNode> declNode(nullptr);
-    //if (openFolder)
-    //{
-    //    whileControlVarAssignNum += 2;
-    //}
     if (nowPointerToken->getSym() == TokenType::CONST_TK)
     {
         declNode = analyzeConstDecl();
@@ -515,33 +431,6 @@ shared_ptr<ConstInitValNode> analyzeConstInitVal(const shared_ptr<SymbolTableIte
         ident->constInitVal = analyzeConstInitValArr(0, ident->numOfEachDimension);
     }
     return ident->constInitVal;
-}
-
-/**
- * @deprecated
- * for case: const int a[10000000] = {1};
- * Time usage is not bearable.
- */
-shared_ptr<ConstInitValArrNode> constZeroDefaultArr(int dimension, vector<int> &numOfEachDimension)
-{
-    int thisDimensionNum = numOfEachDimension[dimension];
-    vector<shared_ptr<ConstInitValNode>> valueList;
-    if (dimension + 1 == numOfEachDimension.size())
-    {
-        for (int i = 0; i < thisDimensionNum; i++)
-        {
-            int exp = 0;
-            valueList.push_back(make_shared<ConstInitValValNode>(exp));
-        }
-    }
-    else
-    {
-        for (int i = 0; i < thisDimensionNum; i++)
-        {
-            valueList.push_back(constZeroDefaultArr(dimension + 1, numOfEachDimension));
-        }
-    }
-    return make_shared<ConstInitValArrNode>(thisDimensionNum, valueList);
 }
 
 /**
@@ -855,20 +744,11 @@ void analyzeInitVal(const shared_ptr<SymbolTableItem> &ident)
         if (isGlobalBlock(ident->blockId))
         {
             int value = getConstExp();
-            //if (openFolder && !lockingOpenFolder)
-            //{
-            //    lastValue = value;
-            //    isLastValueGetableAssignOrDecl = true;
-            //}
             ident->globalVarInitVal = make_shared<ConstInitValValNode>(value);
         }
         else
         {
             auto expNode = analyzeExp();
-            //if (openFolder && isExpConstOrIMM(expNode) && !lockingOpenFolder)
-            //{
-            //    isLastValueGetableAssignOrDecl = true;
-            //}
             ident->initVal = make_shared<InitValValNode>(expNode);
         }
     }
@@ -883,33 +763,6 @@ void analyzeInitVal(const shared_ptr<SymbolTableItem> &ident)
             ident->initVal = analyzeInitValArr(0, ident->numOfEachDimension);
         }
     }
-}
-
-/**
- * @deprecated
- */
-shared_ptr<InitValArrNode> zeroDefaultArr(int dimension, vector<int> &numOfEachDimension)
-{
-    int thisDimensionNum = numOfEachDimension[dimension];
-    vector<shared_ptr<InitValNode>> valueList;
-    if (dimension + 1 == numOfEachDimension.size())
-    {
-        for (int i = 0; i < thisDimensionNum; i++)
-        {
-            int value = 0;
-            auto exp = make_shared<PrimaryExpNode>(PrimaryExpNode::numberExp(value));
-            auto expExp = s_p_c<ExpNode>(exp);
-            valueList.push_back(make_shared<InitValValNode>(expExp));
-        }
-    }
-    else
-    {
-        for (int i = 0; i < thisDimensionNum; i++)
-        {
-            valueList.push_back(zeroDefaultArr(dimension + 1, numOfEachDimension));
-        }
-    }
-    return make_shared<InitValArrNode>(thisDimensionNum, valueList);
 }
 
 // InitValArr -> '{' [ Exp { ',' Exp } ] '}'
@@ -1089,20 +942,6 @@ shared_ptr<BlockNode> analyzeBlock(bool isFuncBlock, bool isVoid, bool isInWhile
     while (nowPointerToken->getSym() != TokenType::RBRACE)
     {
         auto blockItem = analyzeBlockItem(isInWhileFirstBlock);
-        //if (openFolder && folderShouldBeOpen)
-        //{
-        //    for (int i = 0; i < folderOpenNum; i++)
-        //    {
-        //        blockItems.push_back(blockItem);
-        //        ++itemCnt;
-        //    }
-        //    folderShouldBeOpen = false;
-        //}
-        //else
-        //{
-        //    blockItems.push_back(blockItem);
-        //    ++itemCnt;
-        //}
         blockItems.push_back(blockItem);
         ++itemCnt;
     }
@@ -1149,244 +988,15 @@ bool isAssign()
     return false;
 }
 
-
-//bool isSingleCondAddExpThisSymbol(shared_ptr<AddExpNode> addExp, shared_ptr<SymbolTableItem> symbol)
-//{
-//    if (addExp->addExp)
-//    {
-//        return false;
-//    }
-//    auto mulExp = addExp->mulExp;
-//    if (mulExp->mulExp)
-//    {
-//        return false;
-//    }
-//    auto unaryExp = mulExp->unaryExp;
-//    if (unaryExp->type == UnaryExpType::UNARY_PRIMARY)
-//    {
-//        auto primaryExp = unaryExp->primaryExp;
-//        if (primaryExp->type == PrimaryExpType::PRIMARY_L_VAL)
-//        {
-//            auto lValExp = primaryExp->lVal;
-//            if (lValExp->ident->ident->symbolType == SymbolType::VAR)
-//            {
-//                if (lValExp->ident->ident->name == symbol->name)
-//                {
-//                    return true;
-//                }
-//            }
-//        }
-//    }
-//    return false;
-//}
-//static int whileControlVarEndValue = 0;
-//static TokenType relation = TokenType::EQUAL;
-//bool isCondSingleAndUseLastInitOrDeclVar(shared_ptr<CondNode> cond, shared_ptr<SymbolTableItem> symbol)
-//{
-//    auto lOrExp = cond->lOrExp;
-//    if (lOrExp->lOrExp)
-//    {
-//        return false;
-//    }
-//    auto lAndExp = lOrExp->lAndExp;
-//    if (lAndExp->lAndExp)
-//    {
-//        return false;
-//    }
-//    auto eqExp = lAndExp->eqExp;
-//    if (eqExp->eqExp)
-//    {
-//        return false;
-//    }
-//    auto relExp = eqExp->relExp;
-//    if (relExp->relExp && relExp->addExp)
-//    {
-//        if (relExp->relExp->relExp)
-//        {
-//            return false;
-//        }
-//        if (!isSingleCondAddExpThisSymbol(relExp->relExp->addExp, symbol))
-//        {
-//            return false;
-//        }
-//        if (!isExpConstOrIMM(relExp->addExp))
-//        {
-//            return false;
-//        }
-//        whileControlVarEndValue = lastValue;
-//        return true;
-//    }
-//    return false;
-//}
-/**
- * @brief lVal已经被判断出来了
- * 只有whileControlVar的lVal赋值应该被记录并使用这个判断。
- * mulExp应该是一个 "num"。
- */
-//bool isAssignStepStyle(shared_ptr<StmtNode> assignStmt)
-//{
-//    auto exp = assignStmt->exp;
-//    auto addExp = dynamic_pointer_cast<AddExpNode>(exp);
-//    bool isStepPlus = true;
-//    if (!addExp->addExp)
-//    {
-//        return false;
-//    }
-//    if (addExp->op == "-")
-//    {
-//        isStepPlus = !isStepPlus;
-//    }
-//    auto mulExp = addExp->mulExp;
-//    addExp = addExp->addExp;
-//    if (mulExp->mulExp)
-//    {
-//        return false;
-//    }
-//    auto unaryExp = mulExp->unaryExp;
-//    while (unaryExp->type == UnaryExpType::UNARY_DEEP)
-//    {
-//        if (unaryExp->op == "-")
-//        {
-//            isStepPlus = !isStepPlus;
-//            unaryExp = unaryExp->unaryExp;
-//        }
-//    }
-//    if (unaryExp->type != UnaryExpType::UNARY_PRIMARY)
-//    {
-//        return false;
-//    }
-//    auto primaryExp = unaryExp->primaryExp;
-//    if (primaryExp->type == PrimaryExpType::PRIMARY_NUMBER)
-//    {
-//        step = isStepPlus ? primaryExp->number : -primaryExp->number;
-//    }
-//    else
-//    {
-//        return false;
-//    }
-//    if (addExp->addExp)
-//    {
-//        return false;
-//    }
-//    mulExp = addExp->mulExp;
-//    if (mulExp->mulExp)
-//    {
-//        return false;
-//    }
-//    unaryExp = mulExp->unaryExp;
-//    if (unaryExp->type != UnaryExpType::UNARY_PRIMARY)
-//    {
-//        return false;
-//    }
-//    primaryExp = unaryExp->primaryExp;
-//    return primaryExp->type == PrimaryExpType::PRIMARY_L_VAL && primaryExp->lVal->ident->ident->usageName == lastAssignOrDeclVar->usageName;
-//}
-
 // While -> 'while' '(' Cond ')' Stmt
 shared_ptr<StmtNode> analyzeWhile()
 {
-    int whileControlStartValue = lastValue;
     popNextLexer(); // While
     popNextLexer();
-    //if (openFolder)
-    //{
-    //    isInWhileLockedCond = true;
-    //}
     auto cond = analyzeCond();
     popNextLexer();
     shared_ptr<StmtNode> whileInsideStmt;
-    //if (openFolder && !lockingOpenFolder && isLastValueGetableAssignOrDecl)
-    //{
-    //    isLastValueGetableAssignOrDecl = false;
-    //    auto whileControlVar = lastAssignOrDeclVar;
-    //    lockingOpenFolder = true;
-    //    if (isCondSingleAndUseLastInitOrDeclVar(cond, whileControlVar))
-    //    {
-    //        whileControlVarAssignNum = 0;
-    //        isInDirectWhile = true;
-    //        whileInsideStmt = analyzeStmt(true);
-    //        if (whileControlVarAssignNum == 1)
-    //        {
-    //            if (isAssignStepStyle(whileBlockAssignStmt))
-    //            {
-    //                if (relation == TokenType::LARGE || relation == TokenType::LEQ || relation == TokenType::LESS ||
-    //                    relation == TokenType::LAQ)
-    //                {
-    //                    if (relation == TokenType::LARGE)
-    //                    {
-    //                        if (whileControlStartValue <= whileControlVarEndValue)
-    //                        {
-    //                            folderOpenNum = 0;
-    //                            return whileInsideStmt;
-    //                        }
-    //                        else
-    //                        {
-    //                            folderOpenNum = (whileControlVarEndValue - whileControlStartValue) / step;
-    //                        }
-    //                    }
-    //                    if (relation == TokenType::LAQ)
-    //                    {
-    //                        if (whileControlStartValue < whileControlVarEndValue)
-    //                        {
-    //                            folderOpenNum = 0;
-    //                            return whileInsideStmt;
-    //                        }
-    //                        else
-    //                        {
-    //                            folderOpenNum = (whileControlVarEndValue - whileControlStartValue - 1) / step;
-    //                        }
-    //                    }
-    //                    if (relation == TokenType::LESS)
-    //                    {
-    //                        if (whileControlStartValue > whileControlVarEndValue)
-    //                        {
-    //                            folderOpenNum = 0;
-    //                            return whileInsideStmt;
-    //                        }
-    //                        else
-    //                        {
-    //                            folderOpenNum = (whileControlVarEndValue - whileControlStartValue) / step;
-    //                        }
-    //                    }
-    //                    if (relation == TokenType::LEQ)
-    //                    {
-    //                        if (whileControlStartValue >= whileControlVarEndValue)
-    //                        {
-    //                            folderOpenNum = 0;
-    //                            return whileInsideStmt;
-    //                        }
-    //                        else
-    //                        {
-    //                            folderOpenNum = (whileControlVarEndValue - whileControlStartValue + 1) / step;
-    //                        }
-    //                    }
-    //                    isInDirectWhile = false;
-    //                    lockingOpenFolder = false;
-    //                    if (folderOpenNum >= 0 && folderOpenNum < 1000)
-    //                    {
-    //                        folderShouldBeOpen = true;
-    //                        return whileInsideStmt;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        isInDirectWhile = false;
-    //        lockingOpenFolder = false;
-    //        return make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
-    //    }
-    //    lockingOpenFolder = false;
-    //}
-    //auto tmp = isInDirectWhile;
-    //if (openFolder)
-    //{
-    //    isLastValueGetableAssignOrDecl = false;
-    //    isInDirectWhile = false;
-    //}
     whileInsideStmt = analyzeStmt(false);
-    //if (openFolder)
-    //{
-    //    isInDirectWhile = tmp;
-    //}
     return make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
 }
 
@@ -1399,72 +1009,35 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
     }
     if (nowPointerToken->getSym() == TokenType::LBRACE)
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
         auto blockNode = analyzeBlock(false, false, isInWhileFirstBlock);
         return make_shared<StmtNode>(StmtNode::blockStmt(blockNode));
     }
     else if (nowPointerToken->getSym() == TokenType::BREAK_TK)
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
-        //if (openFolder && isInWhileFirstBlock)
-        //{
-        //    whileControlVarAssignNum = 2;
-        //}
         popNextLexer();
         popNextLexer();
         return make_shared<StmtNode>(StmtNode::breakStmt());
     }
     else if (nowPointerToken->getSym() == TokenType::CONTINUE_TK)
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
-        //if (openFolder && isInWhileFirstBlock)
-        //{
-        //    whileControlVarAssignNum = 2;
-        //}
         popNextLexer();
         popNextLexer();
         return make_shared<StmtNode>(StmtNode::continueStmt());
     }
     else if (nowPointerToken->getSym() == TokenType::IF_TK)
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
         popNextLexer();
         popNextLexer(); // LPAREN
         auto cond = analyzeCond();
         popNextLexer(); // RPAREN
 
-        //auto tmp = isInDirectWhile;
-        //if (openFolder)
-        //{
-        //    isInDirectWhile = false;
-        //}
         auto ifBranchStmt = analyzeStmt(isInWhileFirstBlock);
         if (nowPointerToken->getSym() == TokenType::ELSE_TK)
         {
             popNextLexer();
             auto elseBranchStmt = analyzeStmt(isInWhileFirstBlock);
-            //if (openFolder)
-            //{
-            //    isInDirectWhile = tmp;
-            //}
             return make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt, elseBranchStmt));
         }
-        //if (openFolder)
-        //{
-        //    isInDirectWhile = tmp;
-        //}
         return make_shared<StmtNode>(StmtNode::ifStmt(cond, ifBranchStmt));
     }
     else if (nowPointerToken->getSym() == TokenType::WHILE_TK)
@@ -1473,10 +1046,6 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
     }
     else if (nowPointerToken->getSym() == TokenType::RETURN_TK)
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
         popNextLexer();
         if (nowPointerToken->getSym() == TokenType::SEMICOLON)
         {
@@ -1494,51 +1063,15 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
     }
     else if (isAssign())
     {
-        //if (openFolder && !lockingOpenFolder)
-        //{
-        //    getAssignLVal = true;
-        //    isLastValueGetableAssignOrDecl = true;
-        //}
-        //if (openFolder && lockingOpenFolder)
-        //{
-        //    judgeWhetherAssignLValWhileControlVar = true;
-        //}
         auto lVal = analyzeLVal();
-        //if (openFolder && lockingOpenFolder)
-        //{
-        //    judgeWhetherAssignLValWhileControlVar = false;
-        //    if (isAssignLValWhileControlVar)
-        //    {
-        //        whileControlVarAssignNum += 1;
-        //        if (!isInDirectWhile)
-        //        {
-        //            whileControlVarAssignNum += 1;
-        //        }
-        //    }
-        //}
         popNextLexer(); // ASSIGN
         auto exp = analyzeExp();
-        //if (openFolder && !lockingOpenFolder)
-        //{
-        //    if (!isExpConstOrIMM(exp))
-        //    {
-        //        isLastValueGetableAssignOrDecl = false;
-        //    }
-        //}
         popNextLexer();
         auto assignStmt = make_shared<StmtNode>(StmtNode::assignStmt(lVal, exp));
-        //if (openFolder && lockingOpenFolder && isAssignLValWhileControlVar)
-        //{
-        //    whileBlockAssignStmt = assignStmt;
-        //}
         return assignStmt;
     }
     else
     {
-        //if (openFolder)
-        //{
-        //    isLastValueGetableAssignOrDecl = false;
-        //}
         auto exp = analyzeExp();
         popNextLexer();
         return make_shared<StmtNode>(StmtNode::expStmt(exp));
@@ -1730,10 +1263,6 @@ shared_ptr<CondNode> analyzeCond()
     }
     auto lOrExp = analyzeLOrExp();
     auto condExp = make_shared<CondNode>(lOrExp);
-    //if (openFolder)
-    //{
-    //    changeCondDivideIntoMul(condExp);
-    //}
     return condExp;
 }
 
@@ -1806,11 +1335,6 @@ shared_ptr<RelExpNode> analyzeRelExp()
     while (nowPointerToken->getSym() == TokenType::LARGE || nowPointerToken->getSym() == TokenType::LAQ ||
            nowPointerToken->getSym() == TokenType::LESS || nowPointerToken->getSym() == TokenType::LEQ)
     {
-        //if (openFolder && isInWhileLockedCond)
-        //{
-        //    relation = nowPointerToken->getSym();
-        //    isInWhileLockedCond = false;
-        //}
         string op = nowPointerToken->getSym() == TokenType::LARGE ? ">" : nowPointerToken->getSym() == TokenType::LAQ ? ">="
             : nowPointerToken->getSym() == TokenType::LESS  ? "<" : "<=";
         popNextLexer();

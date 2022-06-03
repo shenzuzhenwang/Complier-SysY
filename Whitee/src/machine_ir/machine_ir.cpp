@@ -6,7 +6,6 @@
 using namespace std;
 
 ofstream machineIrStream;  // 汇编输出文件
-//string longConstantDnf;  // 无用
 extern int const_pool_id;
 extern int ins_count;
 extern int pre_ins_count;
@@ -78,9 +77,6 @@ void MachineModule::toARM()
     for (const auto &func : machineFunctions)
     {
         func->toARM(this->globalVariables, this->globalConstants);
-
-        //machineIrStream << longConstantDnf;  ？？？？没用
-        //longConstantDnf = "";
     }
 }
 

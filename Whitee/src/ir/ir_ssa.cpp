@@ -26,7 +26,6 @@ shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
     return readLocalVariableRecursively(bb, varName);
 }
 
-// 将变量写入块的SSA MAP
 /**
  * @brief 将变量写入块的SSA MAP
  * @param bb 变量所在的块
@@ -50,21 +49,21 @@ void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const
  */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
-    if (!bb->sealed)
+    if (!bb->sealed)  // 不完整 CFG
     {
         shared_ptr<PhiInstruction> emptyPhi = make_shared<PhiInstruction>(varName, bb);
         bb->incompletePhis[varName] = emptyPhi;
         writeLocalVariable(bb, varName, emptyPhi);
         return emptyPhi;
     }
-    else if (bb->predecessors.size() == 1)
+    else if (bb->predecessors.size() == 1)  // 优化只有一个前驱的情况：不需要 phi
     {
         shared_ptr<BasicBlock> predecessor = *(bb->predecessors.begin());
         shared_ptr<Value> val = readLocalVariable(predecessor, varName);
         writeLocalVariable(bb, varName, val);
         return val;
     }
-    else
+    else  // 用无操作数的 phi 破坏潜在的循环
     {
         shared_ptr<Value> val = make_shared<PhiInstruction>(varName, bb);
         writeLocalVariable(bb, varName, val);
@@ -85,7 +84,7 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
  */
 shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, shared_ptr<PhiInstruction> &phi)
 {
-    for (auto &it : bb->predecessors)
+    for (auto &it : bb->predecessors)  // 从前驱中确定操作数
     {
         shared_ptr<BasicBlock> pred = it;
         shared_ptr<Value> v = readLocalVariable(pred, varName);

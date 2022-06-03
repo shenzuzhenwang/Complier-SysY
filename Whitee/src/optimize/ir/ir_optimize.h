@@ -22,7 +22,7 @@ void constantFolding(shared_ptr<Module> &module);
 
 void deadCodeElimination(shared_ptr<Module> &module);
 
-void functionInline(shared_ptr<Module> &module);
+//void functionInline(shared_ptr<Module> &module);
 
 void constantBranchConversion(shared_ptr<Module> &module);
 
@@ -36,7 +36,7 @@ void deadArrayDelete(shared_ptr<Module> &module);
 
 void arrayExternalLift(shared_ptr<Module> &module);
 
-void deadBlockCodeGroupDelete(shared_ptr<Module> &module);
+//void deadBlockCodeGroupDelete(shared_ptr<Module> &module);
 
 void loopInvariantCodeMotion(shared_ptr<Module> &module);
 

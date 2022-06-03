@@ -68,14 +68,6 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Array External Lift." << endl;
         }
 
-        //if (level >= O2)
-        //{
-        //    deadBlockCodeGroupDelete(module);
-        //    deadCodeElimination(module);
-        //    if (needIrPassCheck && !irCheck(module))
-        //        cerr << "Error: Dead Block Code Group Delete." << endl;
-        //}
-
         if (level >= O1)
         {
             loopInvariantCodeMotion(module);
@@ -107,14 +99,6 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Block Combination." << endl;
         }
-
-        //if (level >= O2)
-        //{
-        //    functionInline(module);
-        //    deadCodeElimination(module);
-        //    if (needIrPassCheck && !irCheck(module))
-        //        cerr << "Error: Function Inline." << endl;
-        //}
 
         if (_debugIrOptimize)
         {
