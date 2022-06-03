@@ -105,8 +105,6 @@ int main(int argc, char **argv)
         return _IR_CHK_ERR;
     }
 
-    _isBuildingIr = false;
-
     if (optimizeLevel != OptimizeLevel::O0)
     {
         cout << "[Optimize]" << endl

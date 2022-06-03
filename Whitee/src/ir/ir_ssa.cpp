@@ -42,21 +42,21 @@ void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const
 }
 
 /**
- * @brief 递归向外层的块寻找变量
+ * @brief 递归向前驱的块寻找变量
  * @param bb 开始寻找的块
  * @param varName 变量的名字
  * @return 变量的值
  */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
-    if (!bb->sealed)  // 不完整 CFG
+    if (!bb->sealed)  // 块不封闭，仅为循环体
     {
         shared_ptr<PhiInstruction> emptyPhi = make_shared<PhiInstruction>(varName, bb);
         bb->incompletePhis[varName] = emptyPhi;
         writeLocalVariable(bb, varName, emptyPhi);
         return emptyPhi;
     }
-    else if (bb->predecessors.size() == 1)  // 优化只有一个前驱的情况：不需要 phi
+    else if (bb->predecessors.size() == 1)  // 只有一个前驱的情况：不需要 phi
     {
         shared_ptr<BasicBlock> predecessor = *(bb->predecessors.begin());
         shared_ptr<Value> val = readLocalVariable(predecessor, varName);
@@ -108,7 +108,7 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     {
         if (it.second == same || it.second == self)  // 只有一个唯一值或引用自己
             continue;
-        if (same != nullptr)
+        if (same != nullptr)  // phi有两个可能，重要
             return phi;
         same = it.second;
     }
@@ -122,19 +122,8 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     {
         it->replaceUse(toBeReplaced, same);  // 将所有用到 phi 的地方替代为 same 并移除 phi
     }
-    if (_isBuildingIr)   // 试去递归移除用到 phi 的 φ 函数，因为它可能变得不重要（trivial）
-    {
-        for (auto &it : phi->operands)
-        {
-            it.second->users.erase(phi);
-        }
-        phi->valid = false;
-    }
-    else
-    {
-        phi->abandonUse();
-    }
-    for (auto &it : users)
+    phi->abandonUse();
+    for (auto &it : users)// 试去递归移除用到 phi 的 φ 函数，因为它可能变得不重要（trivial）
     {
         if (dynamic_cast<PhiInstruction *>(it.get()))
         {

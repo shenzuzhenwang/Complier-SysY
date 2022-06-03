@@ -224,7 +224,7 @@ public:
 
     unordered_map<string, shared_ptr<Value>> localVarSsaMap;  // SSA MAP
 
-    bool sealed = true;                                               // 标记此basic block是否密封：没有前驱
+    bool sealed = true;                                               // 标记此basic block是否密封：没有前驱会被添加进来
     unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // 存储不完整的 phis
 
     BasicBlock() 
