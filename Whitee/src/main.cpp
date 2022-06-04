@@ -27,7 +27,7 @@ using namespace std;
 
 OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
 bool needIrCheck = false;  // 初始IR和最终优化后IR检查
-bool needIrPassCheck = false;  // 每一遍优化后都进行检查
+bool needIrPassCheck = true;  // 每一遍优化后都进行检查
 
 string sourceCodeFile;  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
@@ -163,8 +163,6 @@ int setCompileOptions(int argc, char **argv)
     bool argOptimizeFlag = false; 
     bool argSourceFlag = false;
     bool argOutputFlag = false;
-    bool argDebugFlag = false;
-    bool argCheckFlag = false;
     bool argDebugDirectoryFlag = false;
 
     if (argc < 1)
@@ -188,47 +186,6 @@ int setCompileOptions(int argc, char **argv)
         {
             argOutputFlag = true;
         }
-        else if (!argDebugFlag && (string(argv[i]).find("-d") == 0 || string(argv[i]).find("--debug") == 0))  // -d
-        {
-            argDebugFlag = true;
-            if (argv[i][1] == '-')
-                argv[i] += 7;
-            else
-                argv[i] += 2;
-            if (*argv[i] == '\0')
-            {
-                if (i + 1 == argc)
-                {
-                    printHelp(argv[0]);
-                    return _SCO_DBG_ERR;
-                }
-                ++i;
-            }
-            int debugLevel = strtol(argv[i], argv + i, 10);
-            if (debugLevel == 0 || debugLevel > 3)
-            {
-                cout << "Error: The debug mode only has 3 levels: 1 2 or 3." << endl;
-                printHelp(argv[0]);
-                return _SCO_DBG_ERR;
-            }
-            else
-            {
-                if (debugLevel > 0)
-                {
-                    _debugIr = true;
-                    _debugMachineIr = true;
-                }
-                if (debugLevel > 1)
-                {
-                    _debugAst = true;
-                }
-                if (debugLevel > 2)
-                {
-                    _debugIrOptimize = true;
-                    _debugLexer = true;
-                }
-            }
-        }
         else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))
         {
             argOptimizeFlag = true;
@@ -244,50 +201,11 @@ int setCompileOptions(int argc, char **argv)
             }
             if (argv[i] == "1"s)
                 optimizeLevel = OptimizeLevel::O1;
-            //else if (argv[i] == "2"s)
-            //    optimizeLevel = OptimizeLevel::O2;
-            //else if (argv[i] == "3"s)
-            //    optimizeLevel = OptimizeLevel::O3;
-            if (optimizeLevel >= OptimizeLevel::O1)
+            else if (argv[i] == "2"s)
+                optimizeLevel = OptimizeLevel::O2;
+            if (optimizeLevel >= OptimizeLevel::O2)
             {
                 _optimizeMachineIr = true;
-            }
-            //if (optimizeLevel >= OptimizeLevel::O2)
-            //{
-            //    openFolder = true;
-            //    _optimizeDivAndMul = true;
-            //}
-        }
-        else if (!argCheckFlag && (string(argv[i]).find("-c") == 0 || string(argv[i]).find("--check") == 0))
-        {
-            argCheckFlag = true;
-            if (argv[i][1] == '-')
-                argv[i] += 7;
-            else
-                argv[i] += 2;
-            if (*argv[i] == '\0')
-            {
-                if (i + 1 == argc)
-                {
-                    printHelp(argv[0]);
-                    return _SCO_CHK_ERR;
-                }
-                ++i;
-            }
-            int debugLevel = strtol(argv[i], argv + i, 10);
-            if (debugLevel == 0 || debugLevel > 2)
-            {
-                cout << "Error: The IR check mode only has 2 levels: 1 or 2." << endl;
-                printHelp(argv[0]);
-                return _SCO_CHK_ERR;
-            }
-            if (debugLevel > 0)
-            {
-                needIrCheck = true;
-            }
-            if (debugLevel > 1)
-            {
-                needIrPassCheck = true;
             }
         }
         else if (!argDebugDirectoryFlag && string(argv[i]).find("--set-debug-path=") == 0)

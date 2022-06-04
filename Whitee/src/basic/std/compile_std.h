@@ -9,7 +9,6 @@ extern bool _debugIrOptimize;
 extern bool _debugMachineIr;
 
 extern bool _optimizeMachineIr;
-extern bool _optimizeDivAndMul;
 
 //enum OptimizeLevel
 //{
@@ -22,6 +21,7 @@ enum OptimizeLevel
 {
     O0,  // SSA IR生成优化 常量传播、复制传播，FIR优化 临时寄存器分配
     O1,  // SSA IR优化 死代码删除、常量折叠、局部数组传播、常量数组全局化
+    O2,  // MIR优化 汇编窥孔优化
 };
 
 #define s_p_c static_pointer_cast  // 静态指针类型转换

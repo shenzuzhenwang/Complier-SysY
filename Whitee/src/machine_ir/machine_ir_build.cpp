@@ -304,14 +304,14 @@ shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
     machineBB->MachineInstructions.insert(machineBB->MachineInstructions.end(), res.begin(), res.end());
     pre_ins_count = ins_count;
 
-    //if (_optimizeMachineIr)
-    //{
-    //    delete_imm_jump(machineModule);
-    //    delete_useless_compute(machineModule);
-    //    reduce_redundant_move(machineModule);
-    //    merge_mla_and_mls(machineModule);
-    //    exchange_branch_ins(machineModule);
-    //}
+    if (_optimizeMachineIr)
+    {
+        delete_imm_jump(machineModule);
+        delete_useless_compute(machineModule);
+        reduce_redundant_move(machineModule);
+        merge_mla_and_mls(machineModule);
+        exchange_branch_ins(machineModule);
+    }
 
     return machineModule;
 }
@@ -1259,18 +1259,6 @@ vector<shared_ptr<MachineIns>> genBinaryIns(shared_ptr<Instruction> &ins, shared
             s_p_c<BinaryInstruction>(ins)->op == "==" || s_p_c<BinaryInstruction>(ins)->op == "!=")
         {
             return genCmpIns(ins, machineFunc);
-        }
-        if (_optimizeDivAndMul && s_p_c<BinaryInstruction>(ins)->rhs->valueType == NUMBER)
-        {
-            shared_ptr<BinaryInstruction> binaryIns = s_p_c<BinaryInstruction>(ins);
-            if (s_p_c<BinaryInstruction>(ins)->op == "*")
-            {
-                return mulOptimization(binaryIns, machineFunc);
-            }
-            else if (s_p_c<BinaryInstruction>(ins)->op == "/")
-            {
-                return divOptimization(binaryIns, machineFunc);
-            }
         }
         shared_ptr<Operand> op1 = make_shared<Operand>(REG, "2");
         shared_ptr<Value> lhs = s_p_c<BinaryInstruction>(ins)->lhs;
