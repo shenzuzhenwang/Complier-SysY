@@ -313,7 +313,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
                 unordered_set<shared_ptr<Value>> users = phi->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者 ？？？？没见过
+                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者，因为当时phi多加了user
                     {
                         phi->users.erase(user);
                     }

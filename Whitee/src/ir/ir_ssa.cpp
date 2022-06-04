@@ -49,7 +49,7 @@ void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const
  */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
-    if (!bb->sealed)  // 块不封闭，仅为循环体
+    if (!bb->sealed)  // 块不封闭，仅存在于循环体
     {
         shared_ptr<PhiInstruction> emptyPhi = make_shared<PhiInstruction>(varName, bb);
         bb->incompletePhis[varName] = emptyPhi;
