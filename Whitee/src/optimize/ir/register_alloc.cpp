@@ -5,13 +5,20 @@
 #include <ctime>
 #include <set>
 
-time_t startAllocTime;
-bool conflictGraphBuildSuccess;
-unsigned long CONFLICT_GRAPH_TIMEOUT = 10;
+time_t startAllocTime;  // 开始构建冲突图时间
+bool conflictGraphBuildSuccess;   // 冲突图成功构建
+unsigned long CONFLICT_GRAPH_TIMEOUT = 10;  // 冲突图构建超时限度：10s
 
-unordered_map<shared_ptr<Value>, shared_ptr<unordered_set<shared_ptr<Value>>>> conflictGraph;
+unordered_map<shared_ptr<Value>, shared_ptr<unordered_set<shared_ptr<Value>>>> conflictGraph;  // 冲突图  V <--> 冲突对象
+// 块的路径  起始块 <--> 中止块 <--> 路径块
 unordered_map<shared_ptr<BasicBlock>, shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>>> blockPath;
 
+/**
+ * @brief 冲突图是否构建超时
+ * @param startTime 开始时间
+ * @param timeout 超时限度
+ * @return true 超时；false 未超时
+ */
 inline bool checkRegAllocTimeout(time_t startTime, unsigned long timeout)
 {
     if (time(nullptr) - startTime > timeout)
@@ -52,7 +59,8 @@ void registerAlloc(shared_ptr<Function> &func)
     buildConflictGraph(func);
     if (_debugIrOptimize)
         outputConflictGraph(func->name);
-    if (conflictGraphBuildSuccess)
+
+    if (conflictGraphBuildSuccess)  // 冲突图构建成功
         allocRegister(func);
     else
     {
@@ -60,10 +68,13 @@ void registerAlloc(shared_ptr<Function> &func)
     }
 }
 
-// 给每个左值赋予一个空set
+/**
+ * @brief 初始化冲突图，给每个左值赋予一个空set，即每个值目前无冲突
+ * @param func 
+ */
 void initConflictGraph(shared_ptr<Function> &func)
 {
-    for (auto &arg : func->params)
+    for (auto &arg : func->params)  // 函数参数冲突初始化为空
     {
         shared_ptr<unordered_set<shared_ptr<Value>>> tempSet = make_shared<unordered_set<shared_ptr<Value>>>();
         conflictGraph[arg] = tempSet;
@@ -72,7 +83,7 @@ void initConflictGraph(shared_ptr<Function> &func)
     {
         for (auto &ins : bb->instructions)
         {
-            if (ins->resultType == L_VAL_RESULT && conflictGraph.count(ins) == 0)
+            if (ins->resultType == L_VAL_RESULT && conflictGraph.count(ins) == 0)  // 所有左值的冲突初始化为空
             {
                 shared_ptr<unordered_set<shared_ptr<Value>>> tempSet = make_shared<unordered_set<shared_ptr<Value>>>();
                 conflictGraph[ins] = tempSet;
@@ -82,13 +93,12 @@ void initConflictGraph(shared_ptr<Function> &func)
 }
 
 /**
- * These codes maybe redundant.
- * @param func
+ * @brief 构建冲突图
+ * @param func 
  */
 void buildConflictGraph(shared_ptr<Function> &func)
 {
-    /// judge parameters.
-    for (auto &ins : func->params)
+    for (auto &ins : func->params)  // 函数参数，从函数开始，至使用完毕，都是保持活跃的
     {
         if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
             return;
@@ -104,9 +114,9 @@ void buildConflictGraph(shared_ptr<Function> &func)
             if (userIns->type == PHI)
             {
                 shared_ptr<PhiMoveInstruction> phiMov = s_p_c<PhiInstruction>(userIns)->phiMove;
-                for (auto &op : phiMov->phi->operands)
+                for (auto &op : phiMov->phi->operands)  // 此phi对应的所有操作数
                 {
-                    if (op.second == ins)
+                    if (op.second == ins)  // 操作数为ins
                     {
                         shared_ptr<BasicBlock> phiMovLocation = op.first;
                         if (phiMovLocation->aliveValues.count(ins) != 0)
@@ -115,6 +125,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                             continue;
                         auto it = func->entryBlock->instructions.begin();
                         bool searchOtherBlocks = true;
+                        // userIns在insVal块内，entryBlock至phiMov设为活跃
                         while (it != func->entryBlock->instructions.end())
                         {
                             addAliveValue(ins, *it, func->entryBlock);
@@ -127,6 +138,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                         }
                         if (searchOtherBlocks)
                         {
+                            // 维护路径块，并将它们添加到活跃节点中：路径为entryBlock所在块至phiMovLocation的对应指令
                             unordered_set<shared_ptr<BasicBlock>> pathNodes;
                             if (blockPath.count(func->entryBlock) != 0)
                             {
@@ -157,34 +169,35 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                 }
             }
-            else
+            else  // 非phi指令
             {
                 if (userIns->block->aliveValues.count(ins) != 0 || userIns->aliveValues.count(ins) != 0)
                 {
                     continue;
                 }
-                else
-                { // mark this instruction alive all along the path to userIns.
+                else  // 此指令未将ins设为活跃，则在通往userIns的所有路径上都将ins标记为活跃。
+                {
                     auto it = func->entryBlock->instructions.begin();
-                    bool searchOtherBlocks = true;
+                    bool searchOtherBlocks = true;  // userIns不再entryBlock中
+                    // 从头至userIns将ins设为活跃
                     while (it != func->entryBlock->instructions.end())
                     {
                         addAliveValue(ins, *it, func->entryBlock);
-                        if (*it == userIns)
+                        if (*it == userIns)     // 直到在entryBlock找到userIns
                         {
                             searchOtherBlocks = false;
                             break;
                         }
                         ++it;
                     }
-                    // the user is not just after the insVal, search for block paths.
+                    // userIns在entryBlock外
                     if (searchOtherBlocks)
                     {
-                        // maintain the passing block and add them to alive nodes.
+                        // 维护路径块，并将它们添加到活跃节点中：路径为entryBlock至userIns->block的对应指令
                         unordered_set<shared_ptr<BasicBlock>> pathNodes;
-                        if (blockPath.count(func->entryBlock) != 0)
+                        if (blockPath.count(func->entryBlock) != 0)  // entryBlock已加入blockPath
                         {
-                            if (blockPath.at(func->entryBlock)->count(userIns->block) != 0)
+                            if (blockPath.at(func->entryBlock)->count(userIns->block) != 0)  // 已计算entryBlock至userIns->block路径
                             {
                                 pathNodes = blockPath.at(func->entryBlock)->at(userIns->block);
                             }
@@ -193,20 +206,20 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 pathNodes = getBlockPathPoints(func->entryBlock, userIns->block);
                             }
                         }
-                        else
+                        else  // entryBlock未加入blockPath，即未作为起点
                         {
                             pathNodes = getBlockPathPoints(func->entryBlock, userIns->block);
                         }
-                        for (auto &b : pathNodes)
+                        for (auto &b : pathNodes)  // 路径块中的每个块，将ins视为活跃
                         {
                             b->aliveValues.insert(ins);
                         }
-                        // search the user block and mark alive.
+                        // 搜索userIns->block并标记为活跃
                         it = userIns->block->instructions.begin();
                         while (it != userIns->block->instructions.end())
                         {
                             addAliveValue(ins, *it, userIns->block);
-                            if (*it == userIns)
+                            if (*it == userIns)  // 将userIns->block中直到userIns均为活跃
                             {
                                 break;
                             }
@@ -217,17 +230,16 @@ void buildConflictGraph(shared_ptr<Function> &func)
             }
         }
     }
-    /// judge instructions.
     for (auto &bb : func->blocks)
     {
         if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
             return;
-        for (auto ins = bb->instructions.begin(); ins != bb->instructions.end(); ++ins)
+        for (auto ins = bb->instructions.begin(); ins != bb->instructions.end(); ++ins)  // 遍历每条指令
         {
             if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
                 return;
             shared_ptr<Instruction> insVal = *ins;
-            if (insVal->type != PHI_MOV && insVal->resultType == L_VAL_RESULT)
+            if (insVal->type != PHI_MOV && insVal->resultType == L_VAL_RESULT)  // 左值
             {
                 for (auto &user : insVal->users)
                 {
@@ -239,14 +251,14 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                     shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
                     if (userIns->type == PHI)
-                    { // deal with phi user.
-                        // find the phi move location(can be many).
+                    {
+                        // 找到所有的phi_mov位置
                         shared_ptr<PhiMoveInstruction> phiMov = s_p_c<PhiInstruction>(userIns)->phiMove;
                         for (auto &op : phiMov->phi->operands)
                         {
                             if (op.second == insVal)
                             {
-                                shared_ptr<BasicBlock> phiMovLocation = op.first;
+                                shared_ptr<BasicBlock> phiMovLocation = op.first;  // phi操作数为insVal所在的块phiMovLocation
                                 if (phiMovLocation->aliveValues.count(insVal) != 0)
                                 {
                                     continue;
@@ -257,6 +269,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 }
                                 auto it = ins + 1;
                                 bool searchOtherBlocks = true;
+                                // userIns在insVal块内，ins至userIns设为活跃
                                 while (it != bb->instructions.end())
                                 {
                                     addAliveValue(insVal, *it, bb);
@@ -267,8 +280,10 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                     }
                                     ++it;
                                 }
+                                // userIns不是在phiMovLocation块内，搜索整个块路径。
                                 if (searchOtherBlocks)
                                 {
+                                    // 维护路径块，并将它们添加到活跃节点中：路径为insVal所在块至phiMovLocation的对应指令
                                     unordered_set<shared_ptr<BasicBlock>> pathNodes;
                                     if (blockPath.count(bb) != 0)
                                     {
@@ -301,15 +316,15 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                     else
                     {
-                        // if the user block or the instruction has mark this instruction alive, continue.
                         if (userIns->block->aliveValues.count(insVal) != 0 || userIns->aliveValues.count(insVal) != 0)
                         {
                             continue;
                         }
-                        else
-                        { // mark this instruction alive all along the path to userIns.
+                        else  // 此指令未将ins设为活跃，则在通往userIns的所有路径上都将ins标记为活跃。
+                        {
                             auto it = ins + 1;
                             bool searchOtherBlocks = true;
+                            // userIns在insVal块内，ins至userIns设为活跃
                             while (it != bb->instructions.end())
                             {
                                 addAliveValue(insVal, *it, bb);
@@ -320,10 +335,10 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 }
                                 ++it;
                             }
-                            // the user is not just after the insVal, search for block paths.
+                            // userIns不是在insVal块内，搜索整个块路径。
                             if (searchOtherBlocks)
                             {
-                                // maintain the passing block and add them to alive nodes.
+                                // 维护路径块，并将它们添加到活跃节点中：路径为insVal所在块至userIns->block的对应指令
                                 unordered_set<shared_ptr<BasicBlock>> pathNodes;
                                 if (blockPath.count(bb) != 0)
                                 {
@@ -361,11 +376,11 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 }
             }
             else if (insVal->type == PHI_MOV)
-            { // deal with phi move.
+            {
                 shared_ptr<PhiMoveInstruction> phiMove = s_p_c<PhiMoveInstruction>(insVal);
-                shared_ptr<BasicBlock> targetPhiBlock = phiMove->phi->block;
+                shared_ptr<BasicBlock> targetPhiBlock = phiMove->phi->block;  // phi所在的目标块
                 auto it = ins + 1;
-                while (it != bb->instructions.end())
+                while (it != bb->instructions.end())  // 将insVal至块末尾指令，将insVal设为活跃
                 {
                     addAliveValue(insVal, *it, bb);
                     ++it;
@@ -373,7 +388,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 if (targetPhiBlock->aliveValues.count(insVal) != 0 || phiMove->phi->aliveValues.count(insVal) != 0)
                     continue;
                 it = targetPhiBlock->instructions.begin();
-                while (it != targetPhiBlock->instructions.end())
+                while (it != targetPhiBlock->instructions.end())   // 将phi所在的目标块内从头至phi指令，将insVal设为活跃
                 {
                     addAliveValue(insVal, *it, targetPhiBlock);
                     if (*it == phiMove->phi)
@@ -383,19 +398,18 @@ void buildConflictGraph(shared_ptr<Function> &func)
             }
         }
     }
-    for (auto &bb : func->blocks)
+    // 计算完了所有值的活跃期
+    for (auto &bb : func->blocks)  // bb运行期间
     {
         for (auto &aliveVal : bb->aliveValues)
         {
-            for (auto &aliveValInside : bb->aliveValues)
+            for (auto &aliveValInside : bb->aliveValues)  // bb期间活跃的值相互冲突，aliveValInside和aliveValInside都在bb期间活跃
             {
-                if (aliveVal != aliveValInside)
+                if (aliveVal != aliveValInside)  // 如果两个值不一样，则冲突
                 {
                     if (conflictGraph.count(aliveVal) == 0)
                     {
-                        cerr << "Error occurs in process register alloc: "
-                                "conflict graph does not have a l-value."
-                             << endl;
+                        cerr << "Error occurs in process register alloc: conflict graph does not have a l-value." << endl;
                     }
                     else
                     {
@@ -403,7 +417,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                 }
             }
-            for (auto &ins : bb->instructions)
+            for (auto &ins : bb->instructions)  // aliveValInside在bb期间活跃，则与bb内指令冲突
             {
                 if (ins->resultType == L_VAL_RESULT)
                 {
@@ -412,9 +426,9 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 }
             }
         }
-        for (auto &ins : bb->instructions)
+        for (auto &ins : bb->instructions)  // ins期间
         {
-            unordered_set<shared_ptr<Value>> aliveValues;
+            unordered_set<shared_ptr<Value>> aliveValues;  // ins期间活跃的值
             if (ins->type != PHI_MOV)
             {
                 aliveValues = ins->aliveValues;
@@ -427,13 +441,11 @@ void buildConflictGraph(shared_ptr<Function> &func)
             {
                 for (auto &aliveValInside : aliveValues)
                 {
-                    if (aliveVal != aliveValInside)
+                    if (aliveVal != aliveValInside)   // ins期间活跃的值相互冲突
                     {
                         if (conflictGraph.count(aliveVal) == 0)
                         {
-                            cerr << "Error occurs in process register alloc: "
-                                    "conflict graph does not have a l-value."
-                                 << endl;
+                            cerr << "Error occurs in process register alloc: conflict graph does not have a l-value." << endl;
                         }
                         else
                         {
@@ -446,6 +458,10 @@ void buildConflictGraph(shared_ptr<Function> &func)
     }
 }
 
+/**
+ * @brief 分配物理寄存器，图着色
+ * @param func 
+ */
 void allocRegister(shared_ptr<Function> &func)
 {
     stack<shared_ptr<Value>> variableWithRegs;
@@ -454,23 +470,24 @@ ALLOC_REGISTER_START:
     for (auto &it : tempGraph)
     {
         shared_ptr<Value> var = it.first;
-        if (it.second->size() < _GLB_REG_CNT)
+        if (it.second->size() < _GLB_REG_CNT)  // 与_GLB_REG_CNT以下值冲突
         {
             for (auto &val : *it.second)
             {
-                tempGraph.at(val)->erase(var);
+                tempGraph.at(val)->erase(var);  // 减去与var连接的边
             }
             tempGraph.erase(var);
-            variableWithRegs.push(var);
+            variableWithRegs.push(var);  // 将var入栈
             goto ALLOC_REGISTER_START;
         }
     }
-    if (!tempGraph.empty())
+    if (!tempGraph.empty())  // 其中有着溢出的值，即最终也与_GLB_REG_CNT以上值冲突
     {
-        shared_ptr<Value> abandon = tempGraph.begin()->first;
+        shared_ptr<Value> abandon = tempGraph.begin()->first;  // 选取一个必须舍弃的值，即放入内存的值
         for (auto &it : tempGraph)
         {
             shared_ptr<Value> ins = it.first;
+            // 选取权重最小的值
             if (func->variableWeight.at(ins) < func->variableWeight.at(abandon) || (func->variableWeight.at(ins) == func->variableWeight.at(abandon) && ins->id < abandon->id))
             {
                 abandon = ins;
@@ -486,59 +503,63 @@ ALLOC_REGISTER_START:
             conflictGraph.at(it)->erase(abandon);
         }
         conflictGraph.erase(abandon);
-        func->variableWithoutReg.insert(abandon);
-        goto ALLOC_REGISTER_START;
+        func->variableWithoutReg.insert(abandon);  // 将此值计划放入内存
+        goto ALLOC_REGISTER_START;   // 重新分配
     }
+
     unordered_set<string> validRegs;
     for (int i = 0; i < _GLB_REG_CNT; ++i)
-        validRegs.insert(to_string(i + _GLB_REG_START));
+        validRegs.insert(to_string(i + _GLB_REG_START));  // 寄存器R4-R12为有效寄存器
     while (!variableWithRegs.empty())
     {
         unordered_set<string> regs = validRegs;
-        shared_ptr<Value> ins = variableWithRegs.top();
+        shared_ptr<Value> value = variableWithRegs.top();  // 依次出栈分配寄存器
         variableWithRegs.pop();
-        for (auto &it : *conflictGraph.at(ins))
+        for (auto &it : *conflictGraph.at(value))  // 避免冲突
         {
             if (func->variableRegs.count(it) != 0)
                 regs.erase(func->variableRegs.at(it));
         }
-        func->variableRegs[ins] = *regs.begin();
+        func->variableRegs[value] = *regs.begin();  // 分配成功寄存器
     }
 }
 
-unordered_set<shared_ptr<BasicBlock>>
-getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to)
+/**
+ * @brief 获得从from至to的经过的块
+ * @param from 起始块
+ * @param to 终点快
+ * @return 路径
+ */
+unordered_set<shared_ptr<BasicBlock>> getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to)
 {
     unordered_set<shared_ptr<BasicBlock>> fromReachable;
     unordered_set<shared_ptr<BasicBlock>> ans;
     unordered_set<shared_ptr<BasicBlock>> tempReachable;
-    getBlockReachableBlocks(from, from, fromReachable);
+    getBlockReachableBlocks(from, from, fromReachable);  // 从from开始的路径，如果回到from则是循环的路径，如果不循环是到函数尾的路径
     for (auto bb : fromReachable)
     {
         tempReachable.clear();
-        getBlockReachableBlocks(bb, from, tempReachable);
+        getBlockReachableBlocks(bb, from, tempReachable);  // 从from开始路径的每个块开始，如果路径包含to，则ans加上此块
         if (tempReachable.count(to) != 0)
         {
             ans.insert(bb);
         }
     }
     ans.erase(from);
-    if (blockPath.count(from) != 0)
+    if (blockPath.count(from) != 0)  // from做过起点
     {
-        shared_ptr<unordered_map<shared_ptr<BasicBlock>,
-                                 unordered_set<shared_ptr<BasicBlock>>>>
-            tempMap = blockPath.at(from);
+        shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>> tempMap = blockPath.at(from);
         if (tempMap->count(to) != 0)
         {
             cerr << "Error occurs in process register alloc: search path twice." << endl;
         }
         else
         {
-            tempMap->insert({to, ans});
+            tempMap->insert({to, ans});  // 将路径加入blockPath
             blockPath[from] = tempMap;
         }
     }
-    else
+    else  // from未做过起点
     {
         shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>> tempMap = make_shared<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>>();
         tempMap->insert({to, ans});
@@ -547,8 +568,13 @@ getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to)
     return ans;
 }
 
-void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &cannotArrive,
-                             unordered_set<shared_ptr<BasicBlock>> &ans)
+/**
+ * @brief 获得从bb至cannotArrive的可能经过的块，如果bb不经过cannotArrive，则ans为从bb开始的所有路径
+ * @param bb 起始块
+ * @param cannotArrive 终点块
+ * @param ans 路径块
+ */
+void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &cannotArrive, unordered_set<shared_ptr<BasicBlock>> &ans)
 {
     queue<shared_ptr<BasicBlock>> blockQueue;
     blockQueue.push(bb);
@@ -567,12 +593,17 @@ void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> 
     }
 }
 
-void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owner,
-                   shared_ptr<BasicBlock> &ownerBlock)
+/**
+ * @brief 将ownerBlock中owner时，value设为活跃
+ * @param value 活跃的值
+ * @param owner 活跃期间的指令
+ * @param ownerBlock 活跃期间指令存在的块
+ */
+void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock)
 {
     if (value->resultType == L_VAL_RESULT)
     {
-        if (owner->type == PHI_MOV)
+        if (owner->type == PHI_MOV)  // phi_move指令，在blockALiveValues加入活跃value
         {
             s_p_c<PhiMoveInstruction>(owner)->blockALiveValues.at(ownerBlock).insert(value);
         }
@@ -581,8 +612,13 @@ void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owne
     }
 }
 
-void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner,
-                   shared_ptr<BasicBlock> &ownerBlock)
+/**
+ * @brief 将ownerBlock中owner时，value设为活跃
+ * @param value 活跃的值
+ * @param owner 活跃期间的指令
+ * @param ownerBlock 活跃期间指令存在的块
+ */
+void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock)
 {
     if (value->valueType == INSTRUCTION)
     {
@@ -591,7 +627,7 @@ void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner,
     }
     else if (value->valueType == PARAMETER)
     {
-        if (owner->type == PHI_MOV)
+        if (owner->type == PHI_MOV)  // phi_move指令，在blockALiveValues加入活跃value
         {
             s_p_c<PhiMoveInstruction>(owner)->blockALiveValues.at(ownerBlock).insert(value);
         }

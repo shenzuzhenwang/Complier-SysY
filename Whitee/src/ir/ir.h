@@ -186,7 +186,7 @@ public:
 
     unordered_map<shared_ptr<Value>, unsigned int> variableWeight; // value <--> weight.
     unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.
-    unordered_set<shared_ptr<Value>> variableWithoutReg;
+    unordered_set<shared_ptr<Value>> variableWithoutReg;   // 必须存在内存中的，寄存器放不下的变量
     unsigned int requiredStackSize = 0; // required size in bytes.
 
     bool hasSideEffect = true;
@@ -252,7 +252,7 @@ public:
 
     ResultType resultType;
     string caughtVarName;                         // Lvalue 局部变量名
-    unordered_set<shared_ptr<Value>> aliveValues; // 此instruction中活跃的变量.
+    unordered_set<shared_ptr<Value>> aliveValues; // 此instruction时活跃的变量.
     
     Instruction(InstructionType type, shared_ptr<BasicBlock> &block, ResultType resultType)
         : Value(ValueType::INSTRUCTION), type(type), resultType(resultType), block(block){};
@@ -704,7 +704,7 @@ class PhiMoveInstruction : public Instruction
 public:
     shared_ptr<PhiInstruction> phi;  // phi指令
 
-    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // 块中活跃的变量
+    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // 所在块中活跃的变量
 
     explicit PhiMoveInstruction(shared_ptr<PhiInstruction> &phi);
 

@@ -826,7 +826,7 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, s
             {
                 offset = mul;
             }
-            if (i + 1 < identItem->numOfEachDimension.size())
+            if (i + 1 < identItem->numOfEachDimension.size())   // size更新为此指针一次指向的元素个数
                 size /= identItem->numOfEachDimension.at(i + 1);
         }
         if (lVal->exps.size() < identItem->numOfEachDimension.size())  // []数小于维数，为指针
