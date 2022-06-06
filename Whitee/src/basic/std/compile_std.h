@@ -7,7 +7,7 @@ extern bool _debugIr;
 extern bool _debugAst;
 extern bool _debugIrOptimize;
 extern bool _debugMachineIr;
-
+extern bool _isBuildingIr;
 extern bool _optimizeMachineIr;
 
 //enum OptimizeLevel

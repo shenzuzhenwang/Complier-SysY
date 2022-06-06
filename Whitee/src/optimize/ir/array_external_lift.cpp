@@ -41,7 +41,7 @@ void arrayExternalLift(shared_ptr<Module> &module)
                                 break;
                             }
                         }
-                        else if (!dynamic_cast<LoadInstruction *>(user.get()))  // 如果其中有load指令，则不能
+                        else if (!dynamic_cast<LoadInstruction *>(user.get()))  // 如果其中有非load和store指令（即当做数组使用），则不能
                         {
                             canExternalLift = false;
                             break;

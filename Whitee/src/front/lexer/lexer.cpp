@@ -163,15 +163,10 @@ void dealWithConstDigit(FILE *in)
     long long integer = strToInt(isHex, isOct);
     TokenInfo tmp(INTCONST);
     tmp.setName(token);
-    //if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  ？？？？
-    //{
-    //    tokenInfoList.pop_back ();
-    //    tmp.setValue (-integer);
-    //}
-    if (tokenInfoList[tokenInfoList.size() - 1].getSym() == MINUS && tokenInfoList[tokenInfoList.size () - 2].getSym () != INTCONST && tokenInfoList[tokenInfoList.size () - 2].getSym () != IDENT)  // 为负数？？
+    if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  // 超过int上限
     {
-        tokenInfoList.pop_back();
-        tmp.setValue(-integer);
+        tokenInfoList.pop_back ();
+        tmp.setValue (-integer);
     }
     else
     {

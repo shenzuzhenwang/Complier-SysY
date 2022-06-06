@@ -37,7 +37,7 @@ void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
         else if ((*ins)->type == InstructionType::BINARY)
         {
             shared_ptr<BinaryInstruction> bin = s_p_c<BinaryInstruction>(*ins);
-            if (bin->lhs == alloc || bin->rhs == alloc)  // 如果视为指针作为操作数
+            if (bin->lhs == alloc || bin->rhs == alloc)  // 如果视为指针作为操作数，无法折叠
                 return;
         }
         else if ((*ins)->type == InstructionType::STORE)

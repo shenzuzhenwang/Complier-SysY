@@ -10,15 +10,16 @@ void deadCodeElimination(shared_ptr<Module> &module)
     countFunctionSideEffect(module);
     for (auto var = module->globalStrings.begin(); var != module->globalStrings.end();)
     {
-        if ((*var)->users.empty())  // 删除没有被使用的值
+        if ((*var)->users.empty())  // 删除没有被使用的string
         {
-            var = module->globalConstants.erase(var);
+            var = module->globalStrings.erase(var);
         }
         else
         {
             auto it = (*var)->users.begin();
             while (it != (*var)->users.end())
             {
+                // 删除已经失效的使用
                 if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);
@@ -52,7 +53,7 @@ void deadCodeElimination(shared_ptr<Module> &module)
     }
     for (auto var = module->globalConstants.begin(); var != module->globalConstants.end();)
     {
-        if ((*var)->users.empty())
+        if ((*var)->users.empty())  // 删除没有被使用的常数值
         {
             var = module->globalConstants.erase(var);
         }
@@ -61,6 +62,7 @@ void deadCodeElimination(shared_ptr<Module> &module)
             auto it = (*var)->users.begin();
             while (it != (*var)->users.end())
             {
+                // 删除已经失效的使用
                 if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);

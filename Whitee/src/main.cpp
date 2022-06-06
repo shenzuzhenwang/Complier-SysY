@@ -25,11 +25,11 @@
 #include "machine_ir/machine_ir_build.h"
 using namespace std;
 
-OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
-bool needIrCheck = false;  // 初始IR和最终优化后IR检查
-bool needIrPassCheck = true;  // 每一遍优化后都进行检查
+OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // 代码优化等级
+bool needIrCheck = true;  // 初始IR和最终优化后IR检查
+bool needIrPassCheck = false;  // 每一遍优化后都进行检查
 
-string sourceCodeFile;  // 源程序路径
+string sourceCodeFile = "D:\\complier_test\\Whitee-main\\function\\sl1.sy";  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
 string debugMessageDirectory;  // debug信息路径
 
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     if ((r = setCompileOptions(argc, argv)) != 0)
         return r;
 
-    if (sourceCodeFile.empty() || targetCodeFile.empty())
+    if (sourceCodeFile.empty())
     {
         printHelp(argv[0]);
         return _SCO_ST_ERR;
@@ -105,6 +105,8 @@ int main(int argc, char **argv)
         return _IR_CHK_ERR;
     }
 
+    _isBuildingIr = false;
+
     if (optimizeLevel != OptimizeLevel::O0)
     {
         cout << "[Optimize]" << endl
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
         if (_debugIr)
         {
             ofstream irStream;
-            irStream.open(debugMessageDirectory + "ir_final.txt", ios::out | ios::trunc);
+            irStream.open(debugMessageDirectory + "final_ir.txt", ios::out | ios::trunc);
             irStream << module->toString() << endl;
             irStream.close();
         }
@@ -163,7 +165,6 @@ int setCompileOptions(int argc, char **argv)
     bool argOptimizeFlag = false; 
     bool argSourceFlag = false;
     bool argOutputFlag = false;
-    bool argDebugDirectoryFlag = false;
 
     if (argc < 1)
     {
@@ -173,12 +174,12 @@ int setCompileOptions(int argc, char **argv)
 
     for (int i = 1; i < argc; ++i)
     {
-        if (argv[i] == "-h"s || argv[i] == "--help"s)  // -h
+        if (argv[i] == "-h"s || argv[i] == "--help"s)  // -h  显示帮助
         {
             printHelp(argv[0]);
             return _SCO_HELP;
         }
-        else if (argv[i] == "-S"s && !argSourceFlag)  // -s
+        else if (argv[i] == "-S"s && !argSourceFlag)  // -s  生成汇编
         {
             argSourceFlag = true;
         }
@@ -186,7 +187,7 @@ int setCompileOptions(int argc, char **argv)
         {
             argOutputFlag = true;
         }
-        else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))
+        else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))  // -O  优化等级
         {
             argOptimizeFlag = true;
             argv[i] += 2;
@@ -206,29 +207,6 @@ int setCompileOptions(int argc, char **argv)
             if (optimizeLevel >= OptimizeLevel::O2)
             {
                 _optimizeMachineIr = true;
-            }
-        }
-        else if (!argDebugDirectoryFlag && string(argv[i]).find("--set-debug-path=") == 0)
-        {
-            argDebugDirectoryFlag = true;
-            argv[i] += 17;
-            if (*argv[i] == '\0')
-            {
-                printHelp(argv[0]);
-                return _SCO_DBG_PATH_ERR;
-            }
-            debugMessageDirectory = argv[i];
-        }
-        else
-        {
-            if (targetCodeFile.empty())
-                targetCodeFile = argv[i];
-            else if (sourceCodeFile.empty())
-                sourceCodeFile = argv[i];
-            else
-            {
-                printHelp(argv[0]);
-                return _SCO_ARG_ERR;
             }
         }
     }
@@ -316,9 +294,17 @@ bool createFolder(const char *path)
  */
 int initConfig()
 {
+    if (targetCodeFile.empty ())
+    {
+        if (sourceCodeFile.find_last_of ('.') != string::npos)
+        {
+            targetCodeFile = sourceCodeFile.substr (0, sourceCodeFile.find_last_of ('.') + 1);
+            targetCodeFile += 's';
+        }
+    }
     if (_debugIr)
     {
-        //将文件目录的'\'换为'\\'
+        //将文件目录的'/'换为'\\'
         while (debugMessageDirectory.find(_O_SLASH_CHAR) != string::npos)
         {
             debugMessageDirectory.replace(debugMessageDirectory.find(_O_SLASH_CHAR), 1, _SLASH_STRING);
@@ -328,7 +314,7 @@ int initConfig()
             targetCodeFile.replace(targetCodeFile.find(_O_SLASH_CHAR), 1, _SLASH_STRING);
         }
     }
-    if (_debugIr && debugMessageDirectory.empty())
+    if (_debugIr && debugMessageDirectory.empty())  // 如果没有debug目录，则在dirPath + "whitee-debug-" + targetPath 路径创建目录
     {
         string targetPath = string(targetCodeFile);
         string dirPath;
@@ -337,17 +323,17 @@ int initConfig()
             dirPath = targetPath.substr(0, targetPath.find_last_of(_SLASH_CHAR) + 1);
             targetPath = targetPath.substr(targetPath.find_last_of(_SLASH_CHAR) + 1, targetPath.size());
         }
-        debugMessageDirectory = dirPath + "whitee-debug-" + targetPath + _SLASH_STRING;
+        debugMessageDirectory = dirPath + "-debug-" + targetPath + _SLASH_STRING;
     }
     if (_debugIr && debugMessageDirectory.at(debugMessageDirectory.size() - 1) != _SLASH_CHAR)
     {
         debugMessageDirectory += _SLASH_STRING;
     }
-    if (_debugIr && !createFolder(debugMessageDirectory.c_str()))
+    if (_debugIr && !createFolder(debugMessageDirectory.c_str()))  // debug目录生成
     {
         return _INIT_CRT_ERR;
     }
-    if (optimizeLevel > O0 && _debugIrOptimize && !createFolder((debugMessageDirectory + "optimize" + _SLASH_STRING).c_str()))
+    if (optimizeLevel > O0 && _debugIrOptimize && !createFolder((debugMessageDirectory + "optimize" + _SLASH_STRING).c_str())) // optimize目录生成
     {
         return _INIT_CRT_ERR;
     }

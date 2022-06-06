@@ -10,7 +10,7 @@
 
 // 未检查IR是否在通过后发生变化。
 
-const unsigned int OPTIMIZE_TIMES = 5;  // 优化重复次数
+const unsigned int OPTIMIZE_TIMES = 2;  // 优化重复次数
 
 extern bool needIrCheck;      // 需要最后检查IR
 extern bool needIrPassCheck;  // 需要每次检查IR
@@ -25,7 +25,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
     //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ？？？？感觉没用
     //    deadCodeElimination(module);
 
-    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // 连续优化10次
+    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // 连续优化2次
     {
         globalIrCorrect = true;
         if (level >= O1)
@@ -119,13 +119,6 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
     for (int i = 0; i < OPTIMIZE_TIMES; ++i)
         deadCodeElimination(module);
 
-    if (_debugIr)
-    {
-        const string fileName = debugMessageDirectory + "ir_optimize.txt";
-        ofstream irOptimizeStream(fileName, ios::out | ios::trunc);
-        irOptimizeStream << module->toString() << endl;
-        irOptimizeStream.close();
-    }
     irUserCheck = true;
     if (needIrCheck && !irCheck(module))
     {

@@ -76,7 +76,7 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
 }
 
 /**
- * @brief 加入变量的phi可能值
+ * @brief 加入变量的phi的操作数
  * @param bb phi所在的块
  * @param varName 变量的名字
  * @param phi phi对象
@@ -104,17 +104,17 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
 {
     shared_ptr<Value> same;
     shared_ptr<Value> self = phi->shared_from_this();
-    for (auto &it : phi->operands)
+    for (auto &it : phi->operands)     // 操作数为自己和另一个值的时候，此phi可以用另一个值代替
     {
         if (it.second == same || it.second == self)  // 只有一个唯一值或引用自己
             continue;
-        if (same != nullptr)  // phi有两个可能，重要
+        if (same != nullptr)  // phi有两个非自己的操作数，重要
             return phi;
         same = it.second;
     }
-    if (same == nullptr)  // 不可达或在开始块中
+    if (same == nullptr)     // 不可达或在开始块中
         same = make_shared<UndefinedValue>(phi->localVarName);
-    phi->users.erase(phi);  // 找出所有以这个 phi 为操作数的 φ 函数，除了它本身
+    phi->users.erase(phi);    // 找出所有使用这个 phi 的值，除了它本身
     unordered_set<shared_ptr<Value>> users = phi->users;
     shared_ptr<Value> toBeReplaced = phi;
     phi->block->phis.erase(phi);
@@ -122,8 +122,19 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     {
         it->replaceUse(toBeReplaced, same);  // 将所有用到 phi 的地方替代为 same 并移除 phi
     }
-    phi->abandonUse();
-    for (auto &it : users)// 试去递归移除用到 phi 的 φ 函数，因为它可能变得不重要（trivial）
+    if (_isBuildingIr)
+    {
+        for (auto& it : phi->operands)
+        {
+            it.second->users.erase (phi);
+        }
+        phi->valid = false;
+    }
+    else
+    {
+        phi->abandonUse ();
+    }
+    for (auto &it : users)   // 试去递归移除使用此 phi 的 phi 指令，因为它可能变得不重要（trivial）
     {
         if (dynamic_cast<PhiInstruction *>(it.get()))
         {

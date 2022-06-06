@@ -94,7 +94,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
     auto it = func->blocks.begin();
     while (it != func->blocks.end())
     {
-        if (blockRelationTree.count(*it) == 0)
+        if (blockRelationTree.count(*it) == 0)  // 如果此块不可能运行
         {
             for (int i = (*it)->instructions.size() - 1; i >= 0; --i)
             {
@@ -102,12 +102,12 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                 unordered_set<shared_ptr<Value>> users = selfIns->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::INSTRUCTION)
+                    if (user->valueType == ValueType::INSTRUCTION)  
                     {
                         shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
                         if (userIns->block != *it && userIns->block->valid)
                         {
-                            if (userIns->type == InstructionType::PHI)
+                            if (userIns->type == InstructionType::PHI)  // phi指令删除操作数
                             {
                                 shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(userIns);
                                 unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands = phi->operands;
@@ -120,7 +120,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                                 }
                                 removeTrivialPhi(phi);
                             }
-                            else
+                            else  // 里面的值全部变为UndefinedValue
                             {
                                 string undefinedName = "unused block's instruction " + to_string(selfIns->id);
                                 shared_ptr<Value> newVal = make_shared<UndefinedValue>(undefinedName);
@@ -148,7 +148,7 @@ void removeUnusedFunctions(shared_ptr<Module> &module)
     auto func = module->functions.begin ();
     while (func != module->functions.end ())
     {
-        if ((*func)->callers.empty () && (*func)->name != "main")
+        if ((*func)->callers.empty () && (*func)->name != "main")   // 去除没有调用的main以外的函数
         {
             (*func)->abandonUse ();
             func = module->functions.erase (func);
@@ -353,8 +353,9 @@ void fixRightValue(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)  // 如果此右值仅被一个指令使用，则临时 LVal 名称
+                if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)
                 {
+                    // 如果此右值仅被一次使用，且使用与此指令不在同一个块
                     if (ins->users.begin()->get()->valueType == ValueType::INSTRUCTION && ins->block != s_p_c<Instruction>(*ins->users.begin())->block)
                     {
                         ins->resultType = L_VAL_RESULT;
@@ -413,11 +414,11 @@ void phiElimination(shared_ptr<Function> &func)
                 if (!pred->instructions.empty())
                 {
                     auto it = pred->instructions.end() - 1;
-                    if ((*it)->type == JMP)
+                    if ((*it)->type == JMP)        // 在jump前copy
                     {
                         pred->instructions.insert(it, phiMov);
                     }
-                    else if ((*it)->type == BR)
+                    else if ((*it)->type == BR)   // 在branch前插入
                     {
                         if (it != pred->instructions.begin() && (*(it - 1))->type == CMP)
                         {

@@ -494,7 +494,7 @@ public:
     shared_ptr<Function> targetFunction;   // 调用的函数
     vector<shared_ptr<Value>> params;    // 参数
     InvokeType invokeType;
-    string targetName; // 仅用于运行时函数
+    string targetName;         // 仅用于运行时函数
 
     InvokeInstruction(shared_ptr<Function> &targetFunction, vector<shared_ptr<Value>> &params, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::INVOKE, bb, targetFunction->funcType == FuncType::FUNC_INT ? R_VAL_RESULT : OTHER_RESULT),

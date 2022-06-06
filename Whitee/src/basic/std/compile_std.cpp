@@ -8,3 +8,5 @@ bool _debugIrOptimize = true;  // IR优化
 bool _debugMachineIr = true;  // 机器IR
 
 bool _optimizeMachineIr = false;  // 机器IR优化 O2
+
+bool _isBuildingIr = true; // Used for IR Phi.

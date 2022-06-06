@@ -11,9 +11,9 @@ bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
     {
         if (dynamic_cast<StoreInstruction *>(user.get()))
             return true;
-        if (dynamic_cast<InvokeInstruction *>(user.get()))
+        if (dynamic_cast<InvokeInstruction *>(user.get())) // 调用全局变量数组，作为指针
             return true;
-        if (dynamic_cast<BinaryInstruction *>(user.get()))
+        if (dynamic_cast<BinaryInstruction *>(user.get()))  // 作为指针，可能被改变
             if (globalVarHasWriteUser(user))
                 return true;
     }
@@ -41,7 +41,7 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
         unordered_set<shared_ptr<Value>> users = global->users;
         for (auto user : users)
         {
-            if (!dynamic_cast<LoadInstruction *>(user.get()))
+            if (!dynamic_cast<LoadInstruction *>(user.get()))  // int全局变量，仅允许load
             {
                 cerr << "Error occurs in process global variable to constant: global has other type users except load."<< endl;
             }
@@ -52,12 +52,12 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
                 {
                     loadUser->replaceUse(user, constantNumber);
                 }
-                user->abandonUse();
+                user->abandonUse();  // 全局变量转为了常数，无需load操作
             }
         }
-        global->abandonUse();
+        global->abandonUse();  // 全局变量弃用
     }
-    else  // 全局数组
+    else  // 全局数组变为const array
     {
         shared_ptr<Value> constantArray = make_shared<ConstantValue>(global);
         unordered_set<shared_ptr<Value>> users = global->users;

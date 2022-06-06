@@ -124,7 +124,7 @@ unordered_set<string> regInUse;  // ÒÑÊ¹ÓÃ¼Ä´æÆ÷
  */
 shared_ptr<MachineModule> buildMachineModule(shared_ptr<Module> &module)
 {
-    shared_ptr<MachineModule> machineModule = make_shared<MachineModule>(); // NOLINT
+    shared_ptr<MachineModule> machineModule = make_shared<MachineModule>();
     machineModule->globalConstants = module->globalConstants;
     machineModule->globalVariables = module->globalVariables;
 

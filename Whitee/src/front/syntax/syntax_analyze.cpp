@@ -16,7 +16,7 @@
  * FuncFParam -> 'int' IdentDefineInFunction
  * Block -> '{' { BlockItem } '}'
  * BlockItem -> Decl | Stmt
- * Stmt -> LVal '=' Exp ';'  |  [Exp] ';'  |  Block  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  While  |  'break' ';'  |  'continue' ';'  |  'return' [Exp] ';'
+ * Stmt -> LVal '=' Exp ';'  |  [Exp] ';'  |  Block  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  'while' '(' Cond ')' Stmt  |  'break' ';'  |  'continue' ';'  |  'return' [Exp] ';'
  * Exp -> AddExp
  * Cond -> LOrExp
  * LVal -> IdentUsage
@@ -90,7 +90,7 @@ shared_ptr<FuncFParamNode> analyzeFuncFParam();
 shared_ptr<BlockNode> analyzeBlock(bool isFuncBlock, bool isVoid, bool isInWhileFirstBlock);
 // BlockItem -> Decl | Stmt
 shared_ptr<BlockItemNode> analyzeBlockItem(bool isInWhileFirstBlock);
-// Stmt -> LVal '=' Exp ';'  |  [Exp] ';'  |  Block  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  While  |  'break' ';'  |  'continue' ';'  |  'return' [Exp] ';'
+// Stmt -> LVal '=' Exp ';'  |  [Exp] ';'  |  Block  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  'while' '(' Cond ')' Stmt  |  'break' ';'  |  'continue' ';'  |  'return' [Exp] ';'
 shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock);
 // Exp -> AddExp
 shared_ptr<ExpNode> analyzeExp();
@@ -988,19 +988,7 @@ bool isAssign()
     return false;
 }
 
-// While -> 'while' '(' Cond ')' Stmt
-shared_ptr<StmtNode> analyzeWhile()
-{
-    popNextLexer(); // While
-    popNextLexer();
-    auto cond = analyzeCond();
-    popNextLexer();
-    shared_ptr<StmtNode> whileInsideStmt;
-    whileInsideStmt = analyzeStmt(false);
-    return make_shared<StmtNode>(StmtNode::whileStmt(cond, whileInsideStmt));
-}
-
-// Stmt -> Block  |  'break' ';'  |  'continue' ';'  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  While  |  'return' [Exp] ';'  |  ';'  |  LVal '=' Exp ';'  |  Exp
+// Stmt -> Block  |  'break' ';'  |  'continue' ';'  |  'if' '( Cond ')' Stmt [ 'else' Stmt ]  |  'while' '(' Cond ')' Stmt  |  'return' [Exp] ';'  |  ';'  |  LVal '=' Exp ';'  |  Exp
 shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
 {
     if (_debugSyntax)
@@ -1042,7 +1030,13 @@ shared_ptr<StmtNode> analyzeStmt(bool isInWhileFirstBlock)
     }
     else if (nowPointerToken->getSym() == TokenType::WHILE_TK)
     {
-        return analyzeWhile();
+        popNextLexer (); // While
+        popNextLexer ();
+        auto cond = analyzeCond ();
+        popNextLexer ();
+        shared_ptr<StmtNode> whileInsideStmt;
+        whileInsideStmt = analyzeStmt (false);
+        return make_shared<StmtNode> (StmtNode::whileStmt (cond, whileInsideStmt));
     }
     else if (nowPointerToken->getSym() == TokenType::RETURN_TK)
     {

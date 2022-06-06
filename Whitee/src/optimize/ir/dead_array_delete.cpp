@@ -8,23 +8,27 @@ void deadArrayDelete(shared_ptr<Module> &module)
 {
     for (auto glb = module->globalVariables.begin(); glb != module->globalVariables.end();)
     {
+        bool all_store = true;
         unordered_set<shared_ptr<Value>> users = (*glb)->users;
         for (auto &user : users)
         {
             if (!dynamic_cast<StoreInstruction *>(user.get()))  // 不是store指令，则换下一个全局变量
             {
-                goto GLOBAL_USER_STORE_JUDGE;
+                all_store = false;
+                break;
             }
         }
-        for (auto &user : users)  // 只有store指令，则将store指令去除，并将此全局变量去除
+        if (all_store)
         {
-            user->abandonUse();
+            for (auto& user : users)  // 只有store指令，则将store指令去除，并将此全局变量去除
+            {
+                user->abandonUse ();
+            }
+            (*glb)->abandonUse ();
+            glb = module->globalVariables.erase (glb);
         }
-        (*glb)->abandonUse();
-        glb = module->globalVariables.erase(glb);
-        continue;
-    GLOBAL_USER_STORE_JUDGE:
-        ++glb;
+        else
+            ++glb;
     }
     for (auto &func : module->functions)
     {
