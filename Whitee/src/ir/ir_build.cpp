@@ -237,7 +237,7 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sh
  * @param stmt 语法树stmt
  * @param loopJudge 循环判断
  * @param loopEnd 循环结束
- * @param afterJump 是否有跳出
+ * @param afterJump 是否一定跳出
  */
 void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shared_ptr<StmtNode> &stmt,
               shared_ptr<BasicBlock> &loopJudge, shared_ptr<BasicBlock> &loopEnd, bool &afterJump)
@@ -337,7 +337,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         bb = endIf;
         // ifstmt状态加入block
         func->blocks.push_back(ifStmt);
-        // 标记if是否有跳出
+        // 标记if是否一定跳出
         bool ifAfterJump = false;
         // 分析ifstmt
         stmtToIr(func, ifStmt, stmt->stmt, loopJudge, loopEnd, ifAfterJump);
@@ -351,11 +351,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             endIf->predecessors.insert(ifStmt);
         }
 
-        func->blocks.push_back (endIf);
-        //if (ifAfterJump)  // if和else都发生跳转
-        //    afterJump = true;
-        //else
-        //    func->blocks.push_back (endIf);
+        func->blocks.push_back (endIf);   // 不一定跳出
 
         return;
     }
@@ -394,7 +390,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             elseStmt->successors.insert(endIf);
             endIf->predecessors.insert(elseStmt);
         }
-        if (ifAfterJump && elseAfterJump)  // if和else都发生跳转
+        if (ifAfterJump && elseAfterJump)  // if和else都发生跳转，即必然跳转
             afterJump = true;
         else
             func->blocks.push_back(endIf);

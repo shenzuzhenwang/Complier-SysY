@@ -43,12 +43,12 @@ void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb)
                         {
                             cerr << "Error occurs in process LCSE: non-instruction value in map." << endl;
                         }
-                        //shared_ptr<Instruction> insInMap = s_p_c<Instruction>(i);    ？？？？
-                        //if (insInMap->resultType == R_VAL_RESULT)
-                        //{
-                        //    insInMap->resultType = L_VAL_RESULT;
-                        //    insInMap->caughtVarName = generateTempLeftValueName();
-                        //}
+                        shared_ptr<Instruction> insInMap = s_p_c<Instruction>(i);    
+                        if (insInMap->resultType == R_VAL_RESULT)
+                        {
+                            insInMap->resultType = L_VAL_RESULT;
+                            insInMap->caughtVarName = generateTempLeftValueName();
+                        }
                         unordered_set<shared_ptr<Value>> users = ins->users;  // 将此指令ins转换已有的表达式i指令
                         shared_ptr<Value> toBeReplaced = ins;
                         for (auto &user : users)

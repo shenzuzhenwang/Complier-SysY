@@ -1,7 +1,7 @@
 #include "compile_std.h"
 
-bool _debugSyntax = true;  // 输出语法
-bool _debugLexer = true;  // 输出词法
+bool _debugSyntax = false;  // 输出语法
+bool _debugLexer = false;  // 输出词法
 bool _debugIr = true;  // 输出IR
 bool _debugAst = true;  // 输出AST
 bool _debugIrOptimize = true;  // IR优化
