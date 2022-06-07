@@ -442,7 +442,7 @@ void phiElimination(shared_ptr<Function> &func)
 }
 
 /**
- * @brief 将块中的AliveValues加入ins中
+ * @brief 将块中的AliveValues加入块内ins中
  * @param func 
  */
 void mergeAliveValuesToInstruction(shared_ptr<Function> &func)

@@ -27,10 +27,10 @@ enum OptimizeLevel
 #define s_p_c static_pointer_cast  // 静态指针类型转换
 
 #define _W_LEN 4
-#define _GLB_REG_CNT 9
+#define _GLB_REG_CNT 9    // R4-R12为函数左值寄存器（图着色分配）
 #define _TMP_REG_CNT 5
-#define _GLB_REG_START 4
-#define _TMP_REG_START 0
+#define _GLB_REG_START 4  // R0-R3为临时寄存器
+#define _TMP_REG_START 0   // R13为SP，R14为LR，R15为PC
 #define _LOOP_WEIGHT_BASE 10
 #define _MAX_DEPTH 6
 #define _MAX_LOOP_WEIGHT 1000000000

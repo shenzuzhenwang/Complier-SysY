@@ -185,7 +185,7 @@ public:
     unordered_set<shared_ptr<Function>> callers;  // 此函数被其他函数调用
 
     unordered_map<shared_ptr<Value>, unsigned int> variableWeight; // value <--> weight.
-    unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.
+    unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.  函数左值使用的寄存器R4-R12
     unordered_set<shared_ptr<Value>> variableWithoutReg;   // 必须存在内存中的，寄存器放不下的变量
     unsigned int requiredStackSize = 0; // required size in bytes.
 
