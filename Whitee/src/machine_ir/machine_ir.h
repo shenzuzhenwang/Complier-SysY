@@ -79,7 +79,7 @@ namespace mit
         LSL,  // 逻辑左移
         SMULL,// 长整型有符号乘法
         LOAD, // 加载
-        PSEUDO_LOAD, //LDR ,=label/number
+        PSEUDO_LOAD, //加载非法立即数
         STORE,// 存储
         POP,  // 弹出
         PUSH, // 推入
@@ -87,7 +87,7 @@ namespace mit
         MOVW, // 
         MOVT, // 移至顶部
         CMP,  // 比较
-        BRANCH, // B
+        BRANCH, // B 跳转
         BLINK,  // BL
         BRETURN, 
         GLOBAL,
@@ -271,7 +271,7 @@ public:
 };
 
 /**
- * For ld/st
+ * For load和store
  */
 class MemoryIns : public MachineIns
 {
@@ -297,6 +297,9 @@ public:
     void toARM(shared_ptr<MachineFunc> &machineFunc) override;
 };
 
+/**
+ * 加载非法立即数.
+ */
 class PseudoLoad : public MachineIns
 {
 public:

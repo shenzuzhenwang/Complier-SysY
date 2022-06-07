@@ -19,10 +19,10 @@ extern bool judgeImmValid (unsigned int imm, bool mov);
 
 unordered_map<shared_ptr<BasicBlock>, shared_ptr<MachineBB>> IRB2MachB;
 
-int const_pool_id = 0;
-int ins_count = 0;
-int pre_ins_count = 0;
-set<int> invalid_imm;
+int const_pool_id = 0;  // 全局变量加载次数
+int ins_count = 0;   // 机器指令数量
+int pre_ins_count = 0;   // 上一段机器指令数量
+set<int> invalid_imm;  // 非法立即数
 
 Cond cmp_op = NON;  // 比较的失败的条件
 bool true_cmp = false;   // 跳转前是否进行过一次比较
@@ -128,6 +128,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 	machineModule->globalConstants = module->globalConstants;
 	machineModule->globalVariables = module->globalVariables;
 
+	// 处理每个函数
 	for (auto& func : module->functions)
 	{
 		// if (_debugMachineIr) cout << func->name + ":" << endl;
@@ -155,8 +156,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 			regInUse.insert (it.second);
 		/// end: 清除寄存器信息
 
-		// 函数进入后的基本处理
-		shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB> (func->blocks[0]->getValueId (), machineFunction);
+		shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB> (func->blocks[0]->getValueId (), machineFunction);  // 函数进入后的基本处理
 		// 处理函数参数
 		for (int i = 4; i < machineFunction->params.size (); ++i)  // 当形参大于4个
 		{
@@ -221,8 +221,10 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 			// if (_debugMachineIr) cout << "block" + to_string(bb->id) + ":" << endl;
 			machineFunction->machineBlocks.push_back (bbToMachineBB (bb, machineFunction, module));
 		}
+		// 将每个machineFunction加入machineModule
 		machineModule->machineFunctions.push_back (machineFunction);
 	}
+	// 所有函数块已处理完
 
 	for (auto& machineFunc : machineModule->machineFunctions)  // 向每个块前加label
 	{
@@ -233,29 +235,30 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		}
 	}
 
+	// // 每800指令，在块的最后，加载一次全局变量
 	for (auto& machineFunc : machineModule->machineFunctions)
 	{
 		for (auto& machineBB : machineFunc->machineBlocks)
 		{
-			for (auto it = machineBB->MachineInstructions.begin (); it != machineBB->MachineInstructions.end ();)
+			for (auto it = machineBB->MachineInstructions.begin (); it != machineBB->MachineInstructions.end ();)  // 所有的机器指令
 			{
 				auto ins = *it;
-				if (ins->type == mit::COMMENT)
+				if (ins->type == mit::COMMENT)  // 注释忽略
 				{
 					++it;
 					continue;
 				}
 				ins_count++;
-				if (ins->type == mit::PSEUDO_LOAD)
+				if (ins->type == mit::PSEUDO_LOAD)  // 加载非法立即数
 				{
 					shared_ptr<PseudoLoad> ldr = s_p_c<PseudoLoad> (ins);
-					if (ldr->isGlob)
+					if (ldr->isGlob)  // 是全局变量
 					{
 						ldr->label->value = ldr->label->value + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 					}
 					else
 					{
-						if (ldr->label->value.at (0) == '_')
+						if (ldr->label->value.at (0) == '_')  // 将非法立即数加入invalid_imm
 						{
 							invalid_imm.insert (-stoi (ldr->label->value.substr (1)));
 						}
@@ -267,7 +270,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 						ldr->label->value = "invalid_imm_" + to_string (const_pool_id) + "_" + ldr->label->value;
 					}
 				}
-				if (ins_count - pre_ins_count >= 800)
+				if (ins_count - pre_ins_count >= 800)   // 当超过800条机器指令，加载一次全局变量
 				{
 					vector<shared_ptr<MachineIns>> res;
 					res = genGlobIns (machineModule);
@@ -280,7 +283,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 					++it;
 				}
 			}
-			if (ins_count - pre_ins_count >= 800)
+			if (ins_count - pre_ins_count >= 800)   // 每800指令，或在块的最后，加载一次全局变量
 			{
 				vector<shared_ptr<MachineIns>> res;
 				res = genGlobIns (machineModule);
@@ -297,6 +300,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 			}
 		}
 	}
+	// 最后加载一次全局变量
 	vector<shared_ptr<MachineIns>> res;
 	res = genGlobIns (machineModule);
 	shared_ptr<MachineBB> machineBB = machineModule->machineFunctions.back ()->machineBlocks.back ();
@@ -1392,16 +1396,16 @@ vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr
 	shared_ptr<Operand> op1 = make_shared<Operand> (REG, "2");
 	bool release1 = readRegister (br->condition, op1, machineFunc, res, true, true);
 	shared_ptr<Operand> op2 = make_shared<Operand> (IMM, "0");
-	shared_ptr<CmpIns> cmpIns = make_shared<CmpIns> (NON, NONE, 0, op1, op2);
+	shared_ptr<CmpIns> cmpIns = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // op1即condition与op2即0进行比较，!true_cmp即跳转前未进行比较才加入
 	if (release1)
 		releaseTempRegister (op1->value);
 	//false case
 	string false_label = "block" + to_string (br->falseBlock->id);
-	shared_ptr<BIns> bfIns = make_shared<BIns> (EQ, NONE, 0, false_label);
+	shared_ptr<BIns> bfIns = make_shared<BIns> (EQ, NONE, 0, false_label);  // condition==0则跳入false_label
 	//true case
 	string true_label = "block" + to_string (br->trueBlock->id);
-	shared_ptr<BIns> btIns = make_shared<BIns> (NON, NONE, 0, true_label);
-	if (cmp_op != NON)  // 有过比较
+	shared_ptr<BIns> btIns = make_shared<BIns> (NON, NONE, 0, true_label);  // 否则跳入true_label
+	if (cmp_op != NON)  // 有过比较,则加入上次的比较符
 	{
 		bfIns->cond = cmp_op;
 	}
@@ -1411,7 +1415,7 @@ vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr
 	}
 	res.push_back (bfIns);
 	res.push_back (btIns);
-	cmp_op = NON;
+	cmp_op = NON;  // 进行过的比较符清空
 	return res;
 }
 
@@ -1712,23 +1716,23 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 	vector<shared_ptr<MachineIns>> res;
 	string pool_label = "next" + to_string (const_pool_id);
 	shared_ptr<BIns> skip = make_shared<BIns> (NON, NONE, 0, pool_label);
-	//res.push_back(skip);
-	bool need = false;
+	
+	bool need = false;  //是否需要skip跳转
 	for (auto& glob_var : machineModule->globalVariables)
 	{
 		string name = s_p_c<GlobalValue> (glob_var)->name + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 		string value = s_p_c<GlobalValue> (glob_var)->name;
 		shared_ptr<GlobalIns> glob_var_label = make_shared<GlobalIns> (name, value);
-		res.push_back (glob_var_label);
-		need = true;
+		res.push_back (glob_var_label);  // 将全局变量加入
+		need = true;  // 存在全局变量，则需要skip跳转
 	}
 	for (auto& glob_const : machineModule->globalConstants)
 	{
 		string name = s_p_c<ConstantValue> (glob_const)->name + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 		string value = s_p_c<ConstantValue> (glob_const)->name;
 		shared_ptr<GlobalIns> glob_const_label = make_shared<GlobalIns> (name, value);
-		res.push_back (glob_const_label);
-		need = true;
+		res.push_back (glob_const_label);  // 将const array加入
+		need = true;  // 存在const array，则需要skip跳转
 	}
 	for (int num : invalid_imm)
 	{
@@ -1743,17 +1747,17 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 		}
 		string value = to_string (num);
 		shared_ptr<GlobalIns> invalid_num_label = make_shared<GlobalIns> (name, value);
-		res.push_back (invalid_num_label);
-		need = true;
+		res.push_back (invalid_num_label);  // 将非法立即数加入
+		need = true;  // 存在非法立即数，则需要skip跳转
 	}
 	invalid_imm.clear ();
 	string next_name = "next" + to_string (const_pool_id);
 	string value;
 	shared_ptr<GlobalIns> next = make_shared<GlobalIns> (next_name, value);
-	if (need)
+	if (need)  // 需要skip跳转
 	{
-		res.insert (res.begin (), skip);
-		res.push_back (next);
+		res.insert (res.begin (), skip);  // 开始加入skip跳转
+		res.push_back (next);     // 最后加入next数
 		const_pool_id++;
 	}
 	return res;
