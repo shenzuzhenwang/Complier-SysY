@@ -950,7 +950,7 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 vector<shared_ptr<MachineIns>> genJmpIns (shared_ptr<Instruction>& ins)
 {
 	vector<shared_ptr<MachineIns>> res;
-
+	// Ö±½ÓÌø×ª
 	string label = "block" + to_string (s_p_c<JumpInstruction> (ins)->targetBlock->id);
 	shared_ptr<BIns> b = make_shared<BIns> (NON, NONE, 0, label);
 
