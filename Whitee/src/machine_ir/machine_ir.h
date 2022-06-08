@@ -121,7 +121,7 @@ enum Cond
 };
 
 /**
- * For represent an op type
+ * For represent an Operand type
  */
 enum State
 {
@@ -160,10 +160,10 @@ public:
     FuncType funcType;
     vector<shared_ptr<Value>> params;
     vector<shared_ptr<MachineBB>> machineBlocks;
-    unordered_map<string, int> var2offset;  // 局部变量偏移
+    unordered_map<string, int> var2offset;  // 局部变量偏移  id <--> 偏移量
     // stack size
     int stackSize;
-    int stackPointer;
+    int stackPointer;  // 当前栈顶的值
 
     void toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts);
 };
@@ -284,12 +284,10 @@ public:
     MemoryIns(mit::InsType type, Mode mode, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
         : MachineIns(type), mode(mode), rd(rd), base(base), offset(offset){};
 
-    MemoryIns(mit::InsType type, Mode mode, Cond condition, SType stype, int shift, shared_ptr<Operand> &rd,
-              shared_ptr<Operand> &base,shared_ptr<Operand> &offset)
+    MemoryIns(mit::InsType type, Mode mode, Cond condition, SType stype, int shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base,shared_ptr<Operand> &offset)
         : MachineIns(type, condition, stype, shift), mode(mode), rd(rd), base(base), offset(offset){};
 
-    MemoryIns(mit::InsType type, Mode mode, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &rd,
-              shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
+    MemoryIns(mit::InsType type, Mode mode, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
         : MachineIns(type, condition, shift), mode(mode), rd(rd), base(base), offset(offset){};
 
     string toString() override;

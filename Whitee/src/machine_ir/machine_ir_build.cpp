@@ -74,7 +74,7 @@ unordered_map<Cond, string> cond2string {
 										{GE, "GE"},
 										{GT, "GT"} };
 
-unordered_map<State, string> state2string {// NOLINT
+unordered_map<State, string> state2string {
 										  {VIRTUAL, "^"},
 										  {IMM, "#"},
 										  {REG, "R"},
@@ -84,7 +84,7 @@ unordered_map<State, string> state2string {// NOLINT
 
 void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>>& res, bool mov);
 
-void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res, bool mov, int compensate = 0, string reg = "3");
+void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res, bool mov, int compensate, string reg);
 
 vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc);
 
@@ -114,7 +114,7 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 
 set<string> tempRegPool; // 未分配临时寄存器
 unordered_map<shared_ptr<Value>, string> lValRegMap;  // 左值对应的寄存器
-unordered_map<shared_ptr<Value>, string> rValRegMap;
+unordered_map<shared_ptr<Value>, string> rValRegMap;  // 已使用的临时寄存器寄存器
 unordered_set<string> regInUse;  // 正在使用寄存器
 
 /**
@@ -383,6 +383,7 @@ shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<Mach
 		default:
 			break;
 		}
+		// 将此IR对应的机器码加入
 		machineBB->MachineInstructions.insert (machineBB->MachineInstructions.end (), ir);
 		machineBB->MachineInstructions.insert (machineBB->MachineInstructions.end (), res.begin (), res.end ());
 		if (tempRegPool.size () + rValRegMap.size () != _TMP_REG_CNT)
@@ -394,7 +395,10 @@ shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<Mach
 	return machineBB;
 }
 
-// 分配临时寄存器
+/**
+ * @brief 分配临时寄存器
+ * @return 分配的寄存器
+ */
 string allocTempRegister ()
 {
 	if (!tempRegPool.empty ())
@@ -415,19 +419,28 @@ string allocTempRegister ()
 	}
 }
 
-// 释放临时寄存器
+/**
+ * @brief 释放临时寄存器
+ * @param reg 临时寄存器
+ */
 void releaseTempRegister (const string& reg)
 {
 	set<string> copy = tempRegPool;
-	while (!copy.empty ())
-	{
-		if (*copy.begin () == reg)
+	//while (!copy.empty ())
+	//{
+	//	if (*copy.begin () == reg)
+	//	{
+	//		cerr << "Try to release a register in pool." << endl;
+	//		return;
+	//	}
+	//	copy.erase (copy.begin ());
+	//}
+	for (const string& tempReg : tempRegPool)
+		if (tempReg == reg)
 		{
 			cerr << "Try to release a register in pool." << endl;
 			return;
 		}
-		copy.erase (copy.begin ());
-	}
 	if (regInUse.count (reg) == 0)
 	{
 		cerr << "Register " + reg + " is not in the use list but trying to release it." << endl;
@@ -446,14 +459,14 @@ void releaseTempRegister (const string& reg)
 void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>>& res, bool mov)
 {
 	shared_ptr<Operand> imm;
-	if (judgeImmValid (num, mov))
-	{ //  可以移动 
+	if (judgeImmValid (num, mov))  // 合法立即数
+	{
 		imm = make_shared<Operand> (IMM, to_string (num));
 		shared_ptr<MovIns> mov2Reg = make_shared<MovIns> (NON, NONE, 0, des, imm);
 		res.push_back (mov2Reg);
 	}
-	else
-	{ //load to reg
+	else  // 非法立即数，需要加载至寄存器
+	{
 		if (_optimizeMachineIr)
 		{
 			unsigned short low16 = (unsigned int) num & 0x0000FFFFU;
@@ -483,7 +496,7 @@ void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns
 }
 
 /**
- * @brief 加载一个offset
+ * @brief 加载一个offset，立即数合法则为立即数，不合法则加载至寄存器
  * @param offset offset大小
  * @param off offset对象
  * @param reg 寄存器
@@ -522,7 +535,7 @@ void loadGlobVar2Reg (shared_ptr<GlobalValue>& glob, shared_ptr<Operand>& des, v
 }
 
 /**
- * @brief 加载常量数组
+ * @brief 加载常量数组起始地址
  * @param cons 常量数组
  * @param des 目标寄存器
  * @param res 汇编指令
@@ -544,8 +557,8 @@ void loadConst2Reg (shared_ptr<ConstantValue>& cons, shared_ptr<Operand>& des, v
 void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_ptr<Operand>& offset, vector<shared_ptr<MachineIns>>& res)
 {
 	shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
-	if (var->valueType == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)
-	{
+	if (var->valueType == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)  // 数组起始地址
+	{   //use ADD instead of LDR+OFFSET
 		shared_ptr<BinaryIns> addrToReg = make_shared<BinaryIns> (mit::ADD, NON, NONE, 0, stack, offset, des);
 		res.push_back (addrToReg);
 	}
@@ -561,50 +574,49 @@ void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_pt
  * @param val 被加载的值
  * @param des 目标寄存器
  * @param machineFunc 所在机器码函数
- * @param res 汇编指令
- * @param mov 可否移位
- * @param compensate
- * @param reg
+ * @param res 生成的机器指令
+ * @param mov 可否移动
+ * @param compensate 相对于当前sp的偏移量
+ * @param reg 目的寄存器编号
  */
 void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc,
-				  vector<shared_ptr<MachineIns>>& res, bool mov, int compensate, string reg)
+				  vector<shared_ptr<MachineIns>>& res, bool mov, int compensate = 0, string reg = "3")
 {
-	if (val->valueType == NUMBER)
+	if (val->valueType == NUMBER)  // 常数
 	{
 		int imm = s_p_c<NumberValue> (val)->number;
 		loadImm2Reg (imm, des, res, mov);
 	}
-	else if (val->valueType == GLOBAL)
+	else if (val->valueType == GLOBAL)  // 全局变量
 	{
 		shared_ptr<GlobalValue> glob_var = s_p_c<GlobalValue> (val);
 		loadGlobVar2Reg (glob_var, des, res);
 	}
-	else if (val->valueType == CONSTANT)
+	else if (val->valueType == CONSTANT)  // const array
 	{
 		shared_ptr<ConstantValue> const_var = s_p_c<ConstantValue> (val);
 		loadConst2Reg (const_var, des, res);
 	}
-	else
-	{ // 局部变量
+	else    // 局部变量
+	{
 		shared_ptr<Operand> off;
-		// 在寄存器里
-		if (machineFunc->var2offset.count (to_string (val->id)) == 0)
+		if (machineFunc->var2offset.count (to_string (val->id)) == 0)  // 在寄存器里
 		{
 			if (rValRegMap.count (val) != 0 || lValRegMap.count (val) != 0)
 			{
 				string exist_reg;
-				if (rValRegMap.count (val) != 0)
+				if (rValRegMap.count (val) != 0)  // 临时寄存器内
 					exist_reg = rValRegMap.at (val);
 				else
-					exist_reg = lValRegMap.at (val);
-				if (exist_reg == des->value)
-				{ //same reg
+					exist_reg = lValRegMap.at (val);  // 左值寄存器内
+				if (exist_reg == des->value)  // 相同的寄存器
+				{
 					return;
 				}
-				else
-				{ //different reg
+				else      // 不同的寄存器
+				{
 					shared_ptr<Operand> ori = make_shared<Operand> (REG, exist_reg);
-					shared_ptr<MovIns> mov2Des = make_shared<MovIns> (NON, NONE, 0, des, ori);
+					shared_ptr<MovIns> mov2Des = make_shared<MovIns> (NON, NONE, 0, des, ori);  // 从源寄存器移至目的寄存器
 					res.push_back (mov2Des);
 					return;
 				}
@@ -614,7 +626,7 @@ void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 		}
 		// 不在寄存器里
 		int offset = machineFunc->var2offset.at (to_string (val->id)) + compensate;
-		if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)
+		if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)  // 如果是数组，则加载起始地址
 		{ //use ADD instead of LDR+OFFSET
 			if (judgeImmValid (offset, false))
 			{
@@ -655,10 +667,10 @@ void storeNewValue (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc
 
 /**
  * @brief 存储至内存
- * @param des
- * @param val_id
+ * @param des value所在寄存器
+ * @param val_id value的id
  * @param machineFunc
- * @param res
+ * @param res 生成的机器指令
  */
 void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res)
 {
@@ -685,13 +697,13 @@ void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>
 
 /**
  * @brief 加载operand至reg寄存器
- * @param val
- * @param des
+ * @param val 需要加载的值
+ * @param des 目的寄存器
  * @param machineFunc
- * @param res
- * @param mov
- * @param reg
- * @param regRequired
+ * @param res 生成的机器指令
+ * @param mov 可否移动
+ * @param reg 目的寄存器编号
+ * @param regRequired true 必须是寄存器；false 可以是立即数
  */
 void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc,
 				  vector<shared_ptr<MachineIns>>& res, bool mov, string reg = "3", bool regRequired = true)
@@ -705,7 +717,7 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 		if (val->valueType == NUMBER)
 		{
 			int imm = s_p_c<NumberValue> (val)->number;
-			if (judgeImmValid (imm, mov))
+			if (judgeImmValid (imm, mov))  // 常数且为合法立即数
 			{
 				des->state = IMM;
 				des->value = to_string (imm);
@@ -723,17 +735,21 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 }
 
 /**
- * @brief 读一个值，查看此值所在寄存器op
- * @param regRequired为true，则是必须是寄存器，否则可以变为imm
- * @return true 如果寄存器需要释放
+ * @brief 读一个值，查看此值所在寄存器或立即数op
+ * @param val 所需读的值
+ * @param op 目的寄存器
+ * @param machineFunc 
+ * @param res 生成的机器指令
+ * @param mov 可否移动
+ * @param regRequired true 必须是寄存器；false 可以是立即数
+ * @return true 需要释放寄存器；false 无需释放
  */
 bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc,
 				   vector<shared_ptr<MachineIns>>& res, bool mov, bool regRequired)
 {
-	// 此值为一个无法直接获取的值（表达式）
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)
+	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT) // 此值为左值
 	{
-		if (lValRegMap.count (val) != 0)
+		if (lValRegMap.count (val) != 0)  // 在左值寄存器内
 		{
 			op->value = lValRegMap.at (val);
 			return false;
@@ -745,7 +761,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// 此值为一个无法直接获取的值（表达式）
+	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// 此值为右值
 	{
 		if (rValRegMap.count (val) == 0)
 		{
@@ -761,10 +777,10 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 	}
 	else
 	{
-		if (val->valueType == NUMBER)
+		if (val->valueType == NUMBER)  // 此值为常数
 		{
 			int num = s_p_c<NumberValue> (val)->number;
-			if (regRequired)
+			if (regRequired)  // 必须存在寄存器内
 			{
 				op->value = allocTempRegister ();
 				op->state = REG;
@@ -788,7 +804,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 				}
 			}
 		}
-		if (val->valueType == GLOBAL)
+		if (val->valueType == GLOBAL)  // 全局变量，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -797,7 +813,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadGlobVar2Reg (glob_val, op, res);
 			return true;
 		}
-		if (val->valueType == CONSTANT)
+		if (val->valueType == CONSTANT)  // const array，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -806,7 +822,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadConst2Reg (const_val, op, res);
 			return true;
 		}
-		if (val->valueType == PARAMETER)
+		if (val->valueType == PARAMETER) // 形参，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -814,7 +830,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadOperand (val, op, machineFunc, res, mov, reg, regRequired);
 			return true;
 		}
-		if (val->valueType == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)
+		if (val->valueType == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)  // 数组，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -828,33 +844,36 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 }
 
 /**
- *
  * @brief 如果val值已有，则op为此寄存器，否则分配寄存器
- * @return true 如果寄存器需要释放
+ * @param val 需要写入的值
+ * @param op 目的寄存器
+ * @param machineFunc 
+ * @param res 生成的机器指令
+ * @return true 如果寄存器需要释放；false 无需释放
  */
 bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res)
 {
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)
+	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)  // 左值
 	{
-		if (lValRegMap.count (val) != 0)
+		if (lValRegMap.count (val) != 0)  // 在左值寄存器内
 		{
 			op->value = lValRegMap.at (val);
 			return false;
 		}
-		else
+		else       // 没在寄存器内，分配一个寄存器
 		{
 			op->value = allocTempRegister ();
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)
+	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)  // 右值
 	{
-		if (rValRegMap.count (val) != 0)
+		if (rValRegMap.count (val) != 0)  // 右值不能已分配寄存器
 		{
 			cerr << "Error occurs in process read register: write a r-value with register." << endl;
 			return false;
 		}
-		else
+		else   // 分配一个寄存器，并加入rValRegMap
 		{
 			op->value = allocTempRegister ();
 			rValRegMap[val] = op->value;
@@ -869,9 +888,9 @@ bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<
 
 /**
  * @brief 将return转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -944,8 +963,8 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 
 /**
  * @brief 将jump转为机器码
- * @param ins
- * @return
+ * @param ins IR指令
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genJmpIns (shared_ptr<Instruction>& ins)
 {
@@ -960,28 +979,26 @@ vector<shared_ptr<MachineIns>> genJmpIns (shared_ptr<Instruction>& ins)
 
 /**
  * @brief 将调用函数转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @param module
- * @return
+ * @param module 
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc, shared_ptr<Module>& module)
 {
 	vector<shared_ptr<MachineIns>> res;
-	shared_ptr<InvokeInstruction> invoke = static_pointer_cast<InvokeInstruction>(ins);
-	// 保存上下文
-	bool useR0 = false;
-	shared_ptr<StackIns> push = make_shared<StackIns> (NON, NONE, 0, true);
-	// 记录已使用的register
-	set<int> reg_index;
-	int context_size = 0;
+	shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(ins);
+	/********************************* 保存上下文 ****************************************/
+	bool useR0 = false;  // 是否使用R0
+	set<int> reg_index;   // 正在使用的寄存器
+	int context_size = 0;   // 上下文的大小，即push入的大小，仅为保存的当前寄存器的值，不包括调用函数的参数
 	for (auto& r_val : rValRegMap)
 	{
 		if (r_val.second == "0")
 			useR0 = true;
-		reg_index.insert (stoi (r_val.second));
+		reg_index.insert (stoi (r_val.second));  // 加入使用的临时寄存器
 	}
-	shared_ptr<Function> current_func;
+	shared_ptr<Function> current_func;  // 当前所在的函数
 	for (const auto& func : module->functions)
 	{
 		if (func->name == machineFunc->name)
@@ -990,10 +1007,10 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			break;
 		}
 	}
-	set<int> current_reg_index;
+	set<int> current_reg_index;   // 当前函数使用的左值寄存器
 	if (current_func != nullptr)
 	{
-		for (auto& alive_val : ins->aliveValues)
+		for (auto& alive_val : ins->aliveValues)   // 将此调用指令时，活跃的变量
 		{
 			if (current_func->variableRegs.count (alive_val) != 0)
 			{
@@ -1001,9 +1018,10 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			}
 		}
 	}
-	reg_index.insert (current_reg_index.begin (), current_reg_index.end ());
-	// 将需要保存的register push入栈中
-	for (auto index : reg_index)
+	reg_index.insert (current_reg_index.begin (), current_reg_index.end ());  // 加入使用的左值寄存器
+	
+	shared_ptr<StackIns> push = make_shared<StackIns> (NON, NONE, 0, true);
+	for (auto index : reg_index)  // 将当前使用的寄存器 push入栈中
 	{
 		context_size += 4;
 		shared_ptr<Operand> reg = make_shared<Operand> (REG, to_string (index));
@@ -1014,11 +1032,11 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		res.push_back (push);
 	}
 
-	// 保存参数
+	// 传递函数参数
 	int i;
 	int para_size = 0;
-	int compensate = context_size;
-	for (i = invoke->params.size () - 1; i >= 4;)  // 四个以上的参数
+	int compensate = context_size;  // 相对于当前sp的偏移量，包括保存的上下文与函数参数
+	for (i = invoke->params.size () - 1; i >= 4;)  // 四个以上的参数，从后向前依次push入栈
 	{
 		para_size += 4;
 		int j = 0;
@@ -1044,26 +1062,26 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 	while (i >= 0)   // 四个以内的参数，加载入R0至R3
 	{
 		shared_ptr<Operand> init_param = make_shared<Operand> (REG, to_string (i));
-		if (lValRegMap.count (invoke->params[i]) == 0 && rValRegMap.count (invoke->params[i]) == 0)
+		if (lValRegMap.count (invoke->params[i]) == 0 && rValRegMap.count (invoke->params[i]) == 0)  // 不在寄存器内
 		{
 			loadVal2Reg (invoke->params[i], init_param, machineFunc, res, true, compensate, to_string (i));
 		}
-		else
+		else  // 在寄存器内
 		{
 			string init_reg;
-			if (lValRegMap.count (invoke->params[i]) != 0)
+			if (lValRegMap.count (invoke->params[i]) != 0)  // 在左值寄存器内
 			{
 				init_reg = lValRegMap.at (invoke->params[i]);
 			}
 			else
 			{
-				init_reg = rValRegMap.at (invoke->params[i]);
+				init_reg = rValRegMap.at (invoke->params[i]);  // 在临时寄存器内
 				rValRegMap.erase (invoke->params[i]);
 				releaseTempRegister (init_reg);
 			}
 			init_param->value = init_reg;
 		}
-		if (init_param->value != to_string (i))
+		if (init_param->value != to_string (i))  // 排序与寄存器编号不同，则move到指定序号的寄存器
 		{
 			shared_ptr<Operand> des = make_shared<Operand> (REG, to_string (i));
 			shared_ptr<MovIns> mov2R = make_shared<MovIns> (NON, NONE, 0, des, init_param);
@@ -1071,6 +1089,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		}
 		i--;
 	}
+	// 如果调用的是_sysy_starttime和_sysy_stoptime函数，则 mov R0 #1
 	if (invoke->targetFunction == nullptr && (invoke->targetName == "_sysy_starttime" || invoke->targetName == "_sysy_stoptime"))
 	{
 		shared_ptr<Operand> R0 = make_shared<Operand> (REG, "0");
@@ -1078,48 +1097,47 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		shared_ptr<MovIns> mov1 = make_shared<MovIns> (NON, NONE, 0, R0, one);
 		res.push_back (mov1);
 	}
-	// 跳转
+	// 目标函数的函数名
 	string targetName;
-	if (invoke->targetFunction != nullptr)
+	if (invoke->targetFunction != nullptr)  // 自定义函数
 	{
 		targetName = invoke->targetFunction->name;
 	}
-	else
+	else  // 系统函数
 	{
 		targetName = invoke->targetName;
-		if (targetName == "starttime" || targetName == "stoptime")
+		if (targetName == "starttime" || targetName == "stoptime")  // 系统时间函数
 		{
 			targetName = "_sysy_" + targetName;
 		}
 	}
-	shared_ptr<BLIns> blink = make_shared<BLIns> (NON, NONE, 0, targetName);
+	shared_ptr<BLIns> blink = make_shared<BLIns> (NON, NONE, 0, targetName);  // 跳转到目标函数
 	res.push_back (blink);
 	// 保存R0内的返回值
 	bool needFetch = false;
 	bool needMove = false;
-	if ((s_p_c<InvokeInstruction> (ins)->invokeType == GET_ARRAY ||
-		s_p_c<InvokeInstruction> (ins)->invokeType == GET_CHAR ||
-		s_p_c<InvokeInstruction> (ins)->invokeType == GET_INT ||
-		(s_p_c<InvokeInstruction> (ins)->targetFunction != nullptr &&
-		s_p_c<InvokeInstruction> (ins)->targetFunction->funcType == FUNC_INT)))
+	// 如果目标函数为系统函数GETXXX，或返回int的自定义函数，即有返回值的函数
+	if ((s_p_c<InvokeInstruction> (ins)->invokeType == GET_ARRAY || s_p_c<InvokeInstruction> (ins)->invokeType == GET_CHAR || s_p_c<InvokeInstruction> (ins)->invokeType == GET_INT ||
+		(s_p_c<InvokeInstruction> (ins)->targetFunction != nullptr && s_p_c<InvokeInstruction> (ins)->targetFunction->funcType == FUNC_INT)))
 	{
-		if (useR0)
+		if (useR0)  // R0已被使用
 		{
-			needFetch = true;
+			needFetch = true;   // 需要将R0值加载回来
 			shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");
 			shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 			shared_ptr<Operand> offset = make_shared<Operand> (IMM, "-4");
 			shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, ret, stack, offset);
-			res.push_back (storeR0);
+			res.push_back (storeR0);  // store R0 -> SP-4
 		}
-		else
+		else    // R0未被使用
 		{
-			needMove = true;
+			needMove = true;  // 仅需保存R0值
 		}
 	}
+	/**************************************************** 函数调用完毕返回 *******************************************************/
 	// 重建上下文
 	shared_ptr<StackIns> pop = make_shared<StackIns> (NON, NONE, 0, false);
-	for (int j = 0; j < push->regs.size (); ++j)
+	for (int j = 0; j < push->regs.size (); ++j)  // 将之前push入栈的寄存器，全部出栈
 	{
 		pop->regs.push_back (push->regs[j]);
 	}
@@ -1127,21 +1145,21 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 	{
 		res.push_back (pop);
 	}
-	//fetch return value R0
-	if (needMove)
+	
+	if (needMove)  // 仅需保存R0返回值，无需加载回来
 	{
-		shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");
+		shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");   // 返回值在R0
 		shared_ptr<Operand> final_des = make_shared<Operand> (REG, "1");
 		shared_ptr<Value> i_ins = ins;
 		bool release_des = writeRegister (i_ins, final_des, machineFunc, res);
-		shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, final_des, ret);
+		shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, final_des, ret);  // 将返回值从R0移到一个空闲的临时寄存器中
 		res.push_back (move2Des);
 		if (release_des)
 		{
 			store2Memory (final_des, ins->id, machineFunc, res);
 		}
 	}
-	if (needFetch)
+	if (needFetch)  // 将原来R0值加载回来
 	{
 		shared_ptr<Operand> final_des = make_shared<Operand> (REG, "1");
 		shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
@@ -1149,7 +1167,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		bool release_des = writeRegister (i_ins, final_des, machineFunc, res);
 		shared_ptr<Operand> offset = make_shared<Operand> (IMM, to_string (-context_size - 4));
 		shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, final_des, stack, offset);
-		res.push_back (fetchR0);
+		res.push_back (fetchR0);   // 从sp-4将值加载回来
 		if (release_des)
 		{
 			store2Memory (final_des, ins->id, machineFunc, res);
@@ -1160,9 +1178,9 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 
 /**
  * @brief 将一元表达式转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -1173,7 +1191,7 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> op1 = make_shared<Operand> (IMM, "0");
 		shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 		bool release2 = readRegister (ui->value, op2, machineFunc, res, true, true);
-		if (release2)
+		if (release2)  // 立即释放寄存器，即目的寄存器和源寄存器可以一样
 		{
 			releaseTempRegister (op2->value);
 		}
@@ -1183,7 +1201,7 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 
 		shared_ptr<BinaryIns> bi = make_shared<BinaryIns> (mit::RSB, NON, NONE, 0, op2, op1, rd);
 		res.push_back (bi);
-		if (release_rd)
+		if (release_rd)   // 如果结果值的寄存器需要释放
 		{
 			store2Memory (rd, ui->id, machineFunc, res);
 		}
@@ -1193,7 +1211,7 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> op2 = make_shared<Operand> (IMM, "0");
 		shared_ptr<Operand> op1 = make_shared<Operand> (REG, "2");
 		bool release1 = readRegister (ui->value, op1, machineFunc, res, true, true);
-		if (release1)
+		if (release1)  // 立即释放寄存器，即目的寄存器和源寄存器可以一样
 		{
 			releaseTempRegister (op1->value);
 		}
@@ -1218,15 +1236,15 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 
 /**
  * @brief 将二元表达式转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
 	shared_ptr<Operand> rd;
-	if (s_p_c<BinaryInstruction> (ins)->op == "%")  // 取余需要转为三元，先进行除法，在对结果进行乘减
+	if (s_p_c<BinaryInstruction> (ins)->op == "%")  // 取余需要，先进行除法，在对结果进行三元乘减
 	{
 		shared_ptr<Operand> d_op1 = make_shared<Operand> (REG, "2");
 		shared_ptr<Value> lhs = s_p_c<BinaryInstruction> (ins)->lhs;
@@ -1234,29 +1252,30 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 		shared_ptr<Operand> d_op2 = make_shared<Operand> (REG, "3");
 		shared_ptr<Value> rhs = s_p_c<BinaryInstruction> (ins)->rhs;
 		bool release2 = readRegister (rhs, d_op2, machineFunc, res, true, true);
-
 		shared_ptr<Operand> d_rd = make_shared<Operand> (REG, "1");
-
 		d_rd->value = allocTempRegister ();
-		shared_ptr<BinaryIns> sdiv = make_shared<BinaryIns> (mit::DIV, NON, NONE, 0, d_op1, d_op2, d_rd);
+		shared_ptr<BinaryIns> sdiv = make_shared<BinaryIns> (mit::DIV, NON, NONE, 0, d_op1, d_op2, d_rd);  // d_rd = d_op1 / d_op2
 		res.push_back (sdiv);
+		// 没有立即释放寄存器，即目的寄存器和源寄存器不一样，因为之后还要继续用
 		releaseTempRegister (d_rd->value);
 		if (release2)
 			releaseTempRegister (d_op2->value);
 		if (release1)
 			releaseTempRegister (d_op1->value);
+
 		rd = make_shared<Operand> (REG, "0");
 		shared_ptr<Value> ans = ins;
 		bool release_ans = writeRegister (ans, rd, machineFunc, res);
-		shared_ptr<TriIns> mls = make_shared<TriIns> (mit::MLS, NON, NONE, 0, d_rd, d_op2, d_op1, rd);
+		shared_ptr<TriIns> mls = make_shared<TriIns> (mit::MLS, NON, NONE, 0, d_rd, d_op2, d_op1, rd);  // rd = d_op1 - d_rd * d_op2
 		res.push_back (mls);
 		if (release_ans)
 		{
 			store2Memory (rd, ins->id, machineFunc, res);
 		}
 	}
-	else
-	{ //+ - * / && ||
+	else   // + - * / && ||
+	{    
+		// 比较，转为genCmpIns
 		if (s_p_c<BinaryInstruction> (ins)->op == ">" || s_p_c<BinaryInstruction> (ins)->op == "<" ||
 			s_p_c<BinaryInstruction> (ins)->op == "<=" || s_p_c<BinaryInstruction> (ins)->op == ">=" ||
 			s_p_c<BinaryInstruction> (ins)->op == "==" || s_p_c<BinaryInstruction> (ins)->op == "!=")
@@ -1269,18 +1288,19 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 		shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 		shared_ptr<Value> rhs = s_p_c<BinaryInstruction> (ins)->rhs;
 		bool release2;
-		if (s_p_c<BinaryInstruction> (ins)->op == "*" || s_p_c<BinaryInstruction> (ins)->op == "/")
+		if (s_p_c<BinaryInstruction> (ins)->op == "*" || s_p_c<BinaryInstruction> (ins)->op == "/")  // 乘除的操作数都必须为寄存器
 		{
 			release2 = readRegister (rhs, op2, machineFunc, res, true, true);
 		}
-		else
+		else    // 其余操作，一个操作数可为立即数
 		{
 			release2 = readRegister (rhs, op2, machineFunc, res, false, false);
 		}
-		if (release2)
+		if (release2)   // 源寄存器和目的寄存器可以相同
 			releaseTempRegister (op2->value);
 		if (release1)
 			releaseTempRegister (op1->value);
+
 		rd = make_shared<Operand> (REG, "1");
 		shared_ptr<Value> b_ins = ins;
 		bool release_rd = writeRegister (b_ins, rd, machineFunc, res);
@@ -1302,9 +1322,9 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 
 /**
  * @brief 将cmp转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -1316,12 +1336,13 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 	shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 	shared_ptr<Value> rhs = bi->rhs;
 	bool release2 = readRegister (rhs, op2, machineFunc, res, false, false);
-	shared_ptr<CmpIns> cmp = make_shared<CmpIns> (NON, NONE, 0, op1, op2);
+	shared_ptr<CmpIns> cmp = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // 比较操作无目的寄存器，结果更新CPSR寄存器
 	res.push_back (cmp);
 	if (release2)
 		releaseTempRegister (op2->value);
 	if (release1)
 		releaseTempRegister (op1->value);
+
 	shared_ptr<Operand> ans = make_shared<Operand> (REG, "1");
 	shared_ptr<Value> cmp_ins = ins;
 	bool release_rd = writeRegister (cmp_ins, ans, machineFunc, res);
@@ -1329,7 +1350,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 	shared_ptr<Operand> zero = make_shared<Operand> (IMM, "0");
 	shared_ptr<MovIns> assign_t = make_shared<MovIns> (NON, NONE, 0, ans, one);
 	shared_ptr<MovIns> assign_f = make_shared<MovIns> (NON, NONE, 0, ans, zero);
-	if (bi->op == "==")
+	if (bi->op == "==")    // 两个移动指令根据比较符，来更改移动条件
 	{
 		assign_t->cond = EQ;
 		assign_f->cond = NE;
@@ -1365,7 +1386,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 		assign_f->cond = LS;
 		cmp_op = LS;
 	}
-	if (!true_cmp)  // ？？？？永远不会进来
+	if (!true_cmp)  // 如果比较不是为了跳转，即二元运算，需要保存结果
 	{
 		res.push_back (assign_t);
 		res.push_back (assign_f);
@@ -1374,7 +1395,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 			store2Memory (ans, bi->id, machineFunc, res);
 		}
 	}
-	else
+	else   // 否则，为了跳转，无需保存结果
 	{
 		if (release_rd)
 			releaseTempRegister (ans->value);
@@ -1385,9 +1406,9 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 
 /**
  * @brief 将branch转为机器码，根据之前比较，选择跳转
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -1422,7 +1443,7 @@ vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr
 /**
  * @brief 分配一个局部变量
  * @param machineFunc
- * @param ins
+ * @param ins IR指令
  */
 void genAlloc (shared_ptr<MachineFunc>& machineFunc, shared_ptr<Instruction>& ins)
 {
@@ -1433,29 +1454,29 @@ void genAlloc (shared_ptr<MachineFunc>& machineFunc, shared_ptr<Instruction>& in
 
 /**
  * @brief 将load转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	shared_ptr<LoadInstruction> li = s_p_c<LoadInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (li->address->valueType == PARAMETER || li->address->valueType == GLOBAL ||
+	if (li->address->valueType == PARAMETER || li->address->valueType == GLOBAL ||   // 基地址与偏移量已知
 		li->address->valueType == CONSTANT || (li->address->valueType == INSTRUCTION && s_p_c<Instruction> (li->address)->type == BINARY))
 	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
 		bool release_base = readRegister (li->address, t_base, machineFunc, res, true, true);
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
-		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		bool release_offset;
-		if (li->offset->valueType == NUMBER)
+		shared_ptr<Shift> t_s = make_shared<Shift> ();  // 移位方式
+		bool release_offset = false;
+		if (li->offset->valueType == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
 			string reg = allocTempRegister ();
 			t_offset->value = reg;
-			loadOffset (off, t_offset, reg, res);
-			release_offset = true;
+			loadOffset (off, t_offset, reg, res);  // 加载offset
+			release_offset = true;  // 为寄存器则需要释放，为立即数则无需
 			if (t_offset->state == IMM)
 			{
 				releaseTempRegister (reg);
@@ -1464,11 +1485,11 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else
+		else   // offset在寄存器内
 		{
 			release_offset = readRegister (li->offset, t_offset, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;
+			t_s->shift = 2;  // 左移两位，即*4
 		}
 		if (release_offset)
 			releaseTempRegister (t_offset->value);
@@ -1486,24 +1507,24 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 	}
 	else  // 局部变量
 	{
-		//compute offset
+		// 计算相对sp偏移量
 		shared_ptr<Operand> f_pre = make_shared<Operand> (REG, "2");
 		f_pre->value = allocTempRegister ();
 		f_pre->state = REG;
 		loadImm2Reg (machineFunc->var2offset.at (to_string (li->address->id)), f_pre, res, true);
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_off;
-		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (li->offset->valueType == NUMBER)
+		shared_ptr<Shift> t_s = make_shared<Shift> ();  // 移位方式
+		if (li->offset->valueType == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
-			if (judgeImmValid (off, false))
+			if (judgeImmValid (off, false))  // 合法立即数，直接使用
 			{
 				t_off->state = IMM;
 				t_off->value = to_string (off);
 				release_off = false;
 			}
-			else
+			else    // 非法立即数，需要加载至寄存器
 			{
 				t_off->value = allocTempRegister ();
 				t_off->state = REG;
@@ -1513,25 +1534,25 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else
+		else   // offset在寄存器内
 		{
 			release_off = readRegister (li->offset, t_off, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;
+			t_s->shift = 2;  // 左移两位，即*4
 		}
 		if (release_off)
 			releaseTempRegister (t_off->value);
 		releaseTempRegister (f_pre->value);
-		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");
+		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // 最终结果，相对于sp偏移量
 		f_aft->value = allocTempRegister ();
 		f_aft->state = REG;
 		shared_ptr<BinaryIns> add = make_shared<BinaryIns> (mit::ADD, NON, t_s, f_pre, t_off, f_aft);
 		res.push_back (add);
 		releaseTempRegister (f_aft->value);
-		//load
+		// 以sp为基地址，加载
 		shared_ptr<Operand> des = make_shared<Operand> (REG, "2");
 		shared_ptr<Value> l_ins = ins;
-		bool release_des = writeRegister (l_ins, des, machineFunc, res);
+		bool release_des = writeRegister (l_ins, des, machineFunc, res);  // 读取值的目的寄存器
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
 		shared_ptr<MemoryIns> load = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, des, base, f_aft);
 		res.push_back (load);
@@ -1546,18 +1567,17 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 
 /**
  * @brief 将store转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	shared_ptr<StoreInstruction> si = s_p_c<StoreInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (si->address->valueType == PARAMETER || si->address->valueType == GLOBAL ||
-		(si->address->valueType == INSTRUCTION &&
-		s_p_c<Instruction> (si->address)->type == BINARY))
-	{ //pointer
+	if (si->address->valueType == PARAMETER || si->address->valueType == GLOBAL ||   // 基地址与偏移量已知
+		(si->address->valueType == INSTRUCTION && s_p_c<Instruction> (si->address)->type == BINARY))
+	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
 		bool release_base = readRegister (si->address, t_base, machineFunc, res, true, true);
 		shared_ptr<Operand> t_rd = make_shared<Operand> (REG, "2");
@@ -1565,13 +1585,13 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)
+		if (si->offset->valueType == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
 			string reg = allocTempRegister ();
 			t_offset->value = reg;
-			loadOffset (off, t_offset, t_offset->value, res);
-			release_offset = true;
+			loadOffset (off, t_offset, t_offset->value, res); // 加载offset
+			release_offset = true;  // 为寄存器则需要释放，为立即数则无需
 			if (t_offset->state == IMM)
 			{
 				release_offset = false;
@@ -1580,15 +1600,15 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 			t_s->shift = 0;
 			t_s->type = NONE;
 		}
-		else
+		else   // offset在寄存器内
 		{
 			release_offset = readRegister (si->offset, t_offset, machineFunc, res, true, true);
 			t_s->shift = 2;
-			t_s->type = LSL;
+			t_s->type = LSL;  // 左移两位，即*4
 		}
 		shared_ptr<MemoryIns> t_store = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, t_s, t_rd, t_base, t_offset);
 		res.push_back (t_store);
-		if (release_offset)
+		if (release_offset)    // store完，将相关寄存器释放
 			releaseTempRegister (t_offset->value);
 		if (release_rd)
 			releaseTempRegister (t_rd->value);
@@ -1597,7 +1617,7 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 	}
 	else   // 局部变量
 	{
-		//compute offset
+		// 计算相对sp偏移量
 		shared_ptr<Operand> f_pre = make_shared<Operand> (REG, "2");
 		f_pre->value = allocTempRegister ();
 		f_pre->state = REG;
@@ -1605,16 +1625,16 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)
+		if (si->offset->valueType == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
-			if (judgeImmValid (off, false))
+			if (judgeImmValid (off, false))  // 合法立即数，直接使用
 			{
 				t_off->value = to_string (off);
 				t_off->state = IMM;
 				release_offset = false;
 			}
-			else
+			else    // 非法立即数，需要加载至寄存器
 			{
 				t_off->value = allocTempRegister ();
 				t_off->state = REG;
@@ -1624,23 +1644,23 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else
+		else   // offset在寄存器内
 		{
 			release_offset = readRegister (si->offset, t_off, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;
+			t_s->shift = 2;  // 左移两位，即*4
 		}
 		releaseTempRegister (f_pre->value);
 		if (release_offset)
 			releaseTempRegister (t_off->value);
-		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");
+		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // 最终结果，相对于sp偏移量
 		f_aft->value = allocTempRegister ();
 		f_aft->state = REG;
 		shared_ptr<BinaryIns> add = make_shared<BinaryIns> (mit::ADD, NON, t_s, f_pre, t_off, f_aft);
 		res.push_back (add);
-		//store
+		// 以sp为基地址，store
 		shared_ptr<Operand> obj = make_shared<Operand> (REG, "2");
-		bool release_obj = readRegister (si->value, obj, machineFunc, res, true, true);
+		bool release_obj = readRegister (si->value, obj, machineFunc, res, true, true);  // 需要store的值
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
 		shared_ptr<MemoryIns> store = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, obj, base, f_aft);
 		res.push_back (store);
@@ -1653,16 +1673,16 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 
 /**
  * @brief 将phi move转为机器码
- * @param ins
+ * @param ins IR指令
  * @param basicBlock
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
-vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_ptr<BasicBlock>& basicBlock, shared_ptr<MachineFunc>& machineFunc) //PhiMoveIns
+vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_ptr<BasicBlock>& basicBlock, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
-	shared_ptr<PhiMoveInstruction> p_move = static_pointer_cast<PhiMoveInstruction>(ins);
-	shared_ptr<Value> target = p_move->phi->operands.at (basicBlock);
+	shared_ptr<PhiMoveInstruction> p_move = s_p_c<PhiMoveInstruction>(ins);
+	shared_ptr<Value> target = p_move->phi->operands.at (basicBlock);  // phi_mov需要copy的数
 	shared_ptr<Operand> op = make_shared<Operand> (REG, "3");
 	bool release_target = readRegister (target, op, machineFunc, res, true, true);
 	shared_ptr<Operand> des = make_shared<Operand> (REG, "2");
@@ -1670,7 +1690,7 @@ vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_p
 	if (release_target)
 		releaseTempRegister (op->value);
 	bool release_des = writeRegister (p_ins, des, machineFunc, res);
-	shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, des, op);
+	shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, des, op);  // mov至一个寄存器
 	res.push_back (move2Des);
 	if (release_des)
 	{
@@ -1681,21 +1701,21 @@ vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_p
 
 /**
  * @brief 将phi转为机器码
- * @param ins
+ * @param ins IR指令
  * @param machineFunc
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
-	shared_ptr<PhiInstruction> phi = static_pointer_cast<PhiInstruction>(ins);
+	shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(ins);
 	shared_ptr<Operand> phi_mov = make_shared<Operand> (REG, "3");
-	shared_ptr<Value> p_mov = phi->phiMove;
+	shared_ptr<Value> p_mov = phi->phiMove;  // phi_move copy的值
 	bool release_mov = readRegister (p_mov, phi_mov, machineFunc, res, true, true);
 	shared_ptr<Operand> target = make_shared<Operand> (REG, "2");
 	shared_ptr<Value> p_ins = ins;
 	bool release_target = writeRegister (p_ins, target, machineFunc, res);
-	shared_ptr<MovIns> move2Target = make_shared<MovIns> (NON, NONE, 0, target, phi_mov);
+	shared_ptr<MovIns> move2Target = make_shared<MovIns> (NON, NONE, 0, target, phi_mov);  // 将copy的值移入phi的值所在寄存器，不能相同
 	res.push_back (move2Target);
 	if (release_target)
 	{
@@ -1709,7 +1729,7 @@ vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<
 /**
  * @brief 将全局变量转为机器码
  * @param machineModule
- * @return
+ * @return 生成的机器指令
  */
 vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineModule)
 {

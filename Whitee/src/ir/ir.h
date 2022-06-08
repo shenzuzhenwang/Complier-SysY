@@ -671,7 +671,7 @@ public:
     string localVarName;  // 变量名
     unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // phi的操作数（可能的数）
 
-    shared_ptr<PhiMoveInstruction> phiMove; // 确定phi的phi move对象
+    shared_ptr<PhiMoveInstruction> phiMove; // phi指令，一个phi_move对应一个phi，但此phi_move在每个phi的operand块最后
 
     PhiInstruction(string &localVarName, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::PHI, bb, L_VAL_RESULT), localVarName(localVarName)
@@ -702,7 +702,7 @@ public:
 class PhiMoveInstruction : public Instruction
 {
 public:
-    shared_ptr<PhiInstruction> phi;  // phi指令
+    shared_ptr<PhiInstruction> phi;  // phi指令，一个phi_move对应一个phi，但此phi_move在每个phi的operand块最后
 
     unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // 所在块中活跃的变量
 
