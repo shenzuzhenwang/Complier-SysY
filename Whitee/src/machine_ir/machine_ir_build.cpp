@@ -235,7 +235,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		}
 	}
 
-	// // 每800指令，在块的最后，加载一次全局变量
+	// 每800指令，在块的最后，加载一次全局变量
 	for (auto& machineFunc : machineModule->machineFunctions)
 	{
 		for (auto& machineBB : machineFunc->machineBlocks)
