@@ -133,16 +133,6 @@ enum State
     LABEL
 };
 
-/**
- * For represent an MemoryIns type
- */
-enum Mode
-{
-    OFFSET,
-    PREFIX,
-    POSTFIX
-};
-
 class MachineModule
 {
 public:
@@ -279,16 +269,15 @@ public:
     shared_ptr<Operand> rd;
     shared_ptr<Operand> base; 
     shared_ptr<Operand> offset;
-    Mode mode;
 
-    MemoryIns(mit::InsType type, Mode mode, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
-        : MachineIns(type), mode(mode), rd(rd), base(base), offset(offset){};
+    MemoryIns(mit::InsType type, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
+        : MachineIns(type), rd(rd), base(base), offset(offset){};
 
-    MemoryIns(mit::InsType type, Mode mode, Cond condition, SType stype, int shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base,shared_ptr<Operand> &offset)
-        : MachineIns(type, condition, stype, shift), mode(mode), rd(rd), base(base), offset(offset){};
+    MemoryIns(mit::InsType type, Cond condition, SType stype, int shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base,shared_ptr<Operand> &offset)
+        : MachineIns(type, condition, stype, shift), rd(rd), base(base), offset(offset){};
 
-    MemoryIns(mit::InsType type, Mode mode, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
-        : MachineIns(type, condition, shift), mode(mode), rd(rd), base(base), offset(offset){};
+    MemoryIns(mit::InsType type, Cond condition, shared_ptr<Shift> shift, shared_ptr<Operand> &rd, shared_ptr<Operand> &base, shared_ptr<Operand> &offset)
+        : MachineIns(type, condition, shift), rd(rd), base(base), offset(offset){};
 
     string toString() override;
 

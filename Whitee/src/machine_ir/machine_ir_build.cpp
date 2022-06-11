@@ -165,7 +165,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				shared_ptr<Operand> des = make_shared<Operand> (REG, lValRegMap.at (machineFunction->params[i]));
 				shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 				shared_ptr<Operand> offset = make_shared<Operand> (IMM, to_string ((i - 4) * 4));
-				shared_ptr<MemoryIns> load_para = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, des, stack, offset);
+				shared_ptr<MemoryIns> load_para = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, des, stack, offset);
 				func_epilogue->MachineInstructions.push_back (load_para);
 			}
 			else  // 无对应的寄存器，则向var2offset记录：此形参的id <--> (i - 4) * 4 + stackSize
@@ -180,7 +180,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				shared_ptr<Operand> para_reg = make_shared<Operand> (REG, to_string (i));
 				shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 				shared_ptr<Operand> offset = make_shared<Operand> (IMM, to_string (-16 + i * 4));
-				shared_ptr<MemoryIns> storeParam = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, para_reg, stack, offset);
+				shared_ptr<MemoryIns> storeParam = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, para_reg, stack, offset);
 				func_epilogue->MachineInstructions.push_back (storeParam);
 				machineFunction->var2offset.insert (pair<string, int> (to_string (machineFunction->params[i]->id), -16 + i * 4 + machineFunction->stackSize));
 			}
@@ -196,7 +196,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		shared_ptr<Operand> lr = make_shared<Operand> (REG, "14");
 		shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 		shared_ptr<Operand> lrSpace = make_shared<Operand> (IMM, "-20");
-		shared_ptr<MemoryIns> storeLR = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, lr, stack, lrSpace);
+		shared_ptr<MemoryIns> storeLR = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, lr, stack, lrSpace);
 		func_epilogue->MachineInstructions.push_back (storeLR);
 
 		/************************************   创建栈   *****************************************/
@@ -564,7 +564,7 @@ void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_pt
 	}
 	else
 	{
-		shared_ptr<MemoryIns> load_para = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, des, stack, offset);
+		shared_ptr<MemoryIns> load_para = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, des, stack, offset);
 		res.push_back (load_para);
 	}
 }
@@ -659,7 +659,7 @@ void storeNewValue (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc
 	shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 	shared_ptr<Operand> offset;
 	loadOffset (machineFunc->stackPointer, offset, reg, res);
-	shared_ptr<MemoryIns> strValue = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, des, stack, offset);
+	shared_ptr<MemoryIns> strValue = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, des, stack, offset);
 	res.push_back (strValue);
 	machineFunc->var2offset.insert (pair<string, int> (to_string (val_id), machineFunc->stackPointer));
 	machineFunc->stackPointer += 4;
@@ -688,7 +688,7 @@ void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>
 		shared_ptr<Operand> offset;
 		string reg = allocTempRegister ();
 		loadOffset (machineFunc->var2offset.at (to_string (val_id)), offset, reg, res);
-		shared_ptr<MemoryIns> storeExistVal = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, des, stack, offset);
+		shared_ptr<MemoryIns> storeExistVal = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, des, stack, offset);
 		res.push_back (storeExistVal);
 		releaseTempRegister (reg);
 		releaseTempRegister (des->value);
@@ -955,7 +955,7 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 	// 加载LR至PC
 	shared_ptr<Operand> pc = make_shared<Operand> (REG, "15");
 	shared_ptr<Operand> lrOff = make_shared<Operand> (IMM, to_string (-20 - para_size * 4));
-	shared_ptr<MemoryIns> restoreLR = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, pc, stack, lrOff);
+	shared_ptr<MemoryIns> restoreLR = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, pc, stack, lrOff);
 	res.push_back (restoreLR);
 
 	return res;
@@ -1126,7 +1126,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");
 			shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 			shared_ptr<Operand> offset = make_shared<Operand> (IMM, "-4");
-			shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, ret, stack, offset);
+			shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, ret, stack, offset);
 			res.push_back (storeR0);  // store R0 -> SP-4
 		}
 		else    // R0未被使用
@@ -1166,7 +1166,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		shared_ptr<Value> i_ins = ins;
 		bool release_des = writeRegister (i_ins, final_des, machineFunc, res);
 		shared_ptr<Operand> offset = make_shared<Operand> (IMM, to_string (-context_size - 4));
-		shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, final_des, stack, offset);
+		shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, final_des, stack, offset);
 		res.push_back (fetchR0);   // 从sp-4将值加载回来
 		if (release_des)
 		{
@@ -1498,7 +1498,7 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 		shared_ptr<Operand> t_rd = make_shared<Operand> (REG, "2");
 		shared_ptr<Value> l_ins = ins;
 		bool release_rd = writeRegister (l_ins, t_rd, machineFunc, res);
-		shared_ptr<MemoryIns> t_load = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, t_s, t_rd, t_base, t_offset);
+		shared_ptr<MemoryIns> t_load = make_shared<MemoryIns> (mit::LOAD, NON, t_s, t_rd, t_base, t_offset);
 		res.push_back (t_load);
 		if (release_rd)
 		{
@@ -1554,7 +1554,7 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 		shared_ptr<Value> l_ins = ins;
 		bool release_des = writeRegister (l_ins, des, machineFunc, res);  // 读取值的目的寄存器
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
-		shared_ptr<MemoryIns> load = make_shared<MemoryIns> (mit::LOAD, OFFSET, NON, NONE, 0, des, base, f_aft);
+		shared_ptr<MemoryIns> load = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, des, base, f_aft);
 		res.push_back (load);
 		if (release_des)
 		{
@@ -1606,7 +1606,7 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 			t_s->shift = 2;
 			t_s->type = LSL;  // 左移两位，即*4
 		}
-		shared_ptr<MemoryIns> t_store = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, t_s, t_rd, t_base, t_offset);
+		shared_ptr<MemoryIns> t_store = make_shared<MemoryIns> (mit::STORE, NON, t_s, t_rd, t_base, t_offset);
 		res.push_back (t_store);
 		if (release_offset)    // store完，将相关寄存器释放
 			releaseTempRegister (t_offset->value);
@@ -1662,7 +1662,7 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> obj = make_shared<Operand> (REG, "2");
 		bool release_obj = readRegister (si->value, obj, machineFunc, res, true, true);  // 需要store的值
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
-		shared_ptr<MemoryIns> store = make_shared<MemoryIns> (mit::STORE, OFFSET, NON, NONE, 0, obj, base, f_aft);
+		shared_ptr<MemoryIns> store = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, obj, base, f_aft);
 		res.push_back (store);
 		if (release_obj)
 			releaseTempRegister (obj->value);
