@@ -13,15 +13,15 @@ extern set<int> invalid_imm;
 
 extern OptimizeLevel optimizeLevel;
 
-extern unordered_map<mit::InsType, string> instype2string;
-extern unordered_map<SType, string> stype2string;
-extern unordered_map<Cond, string> cond2string;
+extern unordered_map<mit::InsType, string> instype2string;  // 汇编指令
+extern unordered_map<SType, string> stype2string;  // 移位汇编指令
+extern unordered_map<Cond, string> cond2string;  // 条件的汇编指令
 
 string convertImm(int imm, const string &reg);
 
 string convertImm(int imm, const string &reg, bool mov);
 
-void MachineModule::toARM()
+void MachineModule::toARM()   // 汇编载入全局变量与const array
 {
     machineIrStream << ".arch armv7ve" << endl;
     machineIrStream << ".data" << endl;
