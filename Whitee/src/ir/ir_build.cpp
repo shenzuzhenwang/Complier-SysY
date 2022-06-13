@@ -399,9 +399,9 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
     case StmtType::STMT_WHILE:
     {
         // 声明循环头、循环结束和循环体
-        shared_ptr<BasicBlock> whileEnd = make_shared<BasicBlock>(func, true, loopDepth);
-        shared_ptr<BasicBlock> whileJudge = make_shared<BasicBlock>(func, true, loopDepth + 1);
         shared_ptr<BasicBlock> whileBody = make_shared<BasicBlock>(func, false, loopDepth + 1);  // 循环中的块不封闭
+        shared_ptr<BasicBlock> whileJudge = make_shared<BasicBlock> (func, true, loopDepth + 1);
+        shared_ptr<BasicBlock> whileEnd = make_shared<BasicBlock> (func, true, loopDepth);
         shared_ptr<BasicBlock> preWhileBody = whileBody;
         // cond真则进入whileBody，假则进入whileEnd
         conditionToIr(func, bb, stmt->cond, whileBody, whileEnd);
@@ -483,7 +483,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         {
             shared_ptr<SymbolTableItem> identItem = p->lVal->ident->ident;
             shared_ptr<Value> address, offset;
-            switch (identItem->symbolType)   //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
+            switch (identItem->symbolType)   //  CONST_ARRAY | VAR | ARRAY
             {
             case SymbolType::VAR:
             {
@@ -495,7 +495,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                     bb->instructions.push_back(ins);
                     return ins;
                 }
-                // 局部变量
+                // 常量传播、复制传播    直接取出对应变量的值
                 return readLocalVariable(bb, identItem->usageName);
             }
             case SymbolType::CONST_ARRAY:

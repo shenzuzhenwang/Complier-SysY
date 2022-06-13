@@ -10,6 +10,7 @@
 #include <iostream>
 
 // https://zhuanlan.zhihu.com/p/360692294
+// https://www.gqrelic.com/2022/04/07/ssa-book-1/
 
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName);
 
@@ -35,21 +36,21 @@ shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const shared_ptr<Value> &value)
 {
     bb->localVarSsaMap[varName] = value;
-    if (dynamic_cast<PhiInstruction *>(value.get()))
+    if (dynamic_cast<PhiInstruction *>(value.get()))   // 写入phi函数的值，phi被此块使用
     {
         value->users.insert(bb);
     }
 }
 
 /**
- * @brief 递归向前驱的块寻找变量
+ * @brief 递归向前驱的块寻找变量的值
  * @param bb 开始寻找的块
  * @param varName 变量的名字
  * @return 变量的值
  */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
-    if (!bb->sealed)  // 块不封闭，仅存在于循环体
+    if (!bb->sealed)  // 块不封闭，仅存在于循环体，此时可能前驱未加入完
     {
         shared_ptr<PhiInstruction> emptyPhi = make_shared<PhiInstruction>(varName, bb);
         bb->incompletePhis[varName] = emptyPhi;
@@ -59,17 +60,18 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
     else if (bb->predecessors.size() == 1)  // 只有一个前驱的情况：不需要 phi
     {
         shared_ptr<BasicBlock> predecessor = *(bb->predecessors.begin());
-        shared_ptr<Value> val = readLocalVariable(predecessor, varName);
-        writeLocalVariable(bb, varName, val);
+        shared_ptr<Value> val = readLocalVariable(predecessor, varName);  // 继续递归向前寻找变量的值
+        writeLocalVariable(bb, varName, val);  // 找到后写入现在的块
         return val;
     }
-    else  // 用无操作数的 phi 破坏潜在的循环
+    else  // 如果有两个以上前驱块
     {
         shared_ptr<Value> val = make_shared<PhiInstruction>(varName, bb);
-        writeLocalVariable(bb, varName, val);
+        writeLocalVariable(bb, varName, val);                   // 先在块中写一个无操作数的phi，为了破坏可能的循环
         shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(val);
         bb->phis.insert(phi);
-        val = addPhiOperands(bb, varName, phi);
+
+        val = addPhiOperands(bb, varName, phi);  // 加入操作数
         writeLocalVariable(bb, varName, val);
         return val;
     }
@@ -87,12 +89,12 @@ shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, sh
     for (auto &it : bb->predecessors)  // 从前驱中确定操作数
     {
         shared_ptr<BasicBlock> pred = it;
-        shared_ptr<Value> v = readLocalVariable(pred, varName);
+        shared_ptr<Value> v = readLocalVariable(pred, varName);  // 递归向前驱块寻找同名变量的值，可能由于循环，找到了此phi
         shared_ptr<BasicBlock> block;
         phi->operands.insert({it, v});
         v->users.insert(phi);
     }
-    return removeTrivialPhi(phi);
+    return removeTrivialPhi(phi);  // 由于可能由于循环，phi的操作数的值为phi自己；或是两个操作数相同，此时需要去除phi
 }
 
 /**
@@ -106,13 +108,13 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     shared_ptr<Value> self = phi->shared_from_this();
     for (auto &it : phi->operands)     // 操作数为自己和另一个值的时候，此phi可以用另一个值代替
     {
-        if (it.second == same || it.second == self)  // 只有一个唯一值或引用自己
+        if (it.second == same || it.second == self)  // 两个操作数的值：其中一个为此phi，或两个值相同，此时，需要去除此phi
             continue;
         if (same != nullptr)  // phi有两个非自己的操作数，重要
             return phi;
         same = it.second;
     }
-    if (same == nullptr)     // 不可达或在开始块中
+    if (same == nullptr)     // 不可达或在开始块中，无操作数
         same = make_shared<UndefinedValue>(phi->localVarName);
     phi->users.erase(phi);    // 找出所有使用这个 phi 的值，除了它本身
     unordered_set<shared_ptr<Value>> users = phi->users;
@@ -159,10 +161,10 @@ void sealBasicBlock(shared_ptr<BasicBlock> &bb)
     {
         for (auto &it : bb->incompletePhis)
         {
-            string varName = it.first;
-            shared_ptr<PhiInstruction> phi = it.second;
+            string varName = it.first;   // 变量名
+            shared_ptr<PhiInstruction> phi = it.second;  // 空phi
             bb->phis.insert(phi);
-            addPhiOperands(bb, varName, phi);
+            addPhiOperands(bb, varName, phi);  // 加入操作数
         }
         bb->incompletePhis.clear();
         bb->sealed = true;

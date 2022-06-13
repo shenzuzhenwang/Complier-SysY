@@ -30,19 +30,19 @@ void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
     auto it = bb->instructions.begin();
     while (it != bb->instructions.end())
     {
-        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())
+        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // 有返回值指令，且不被使用
         {
             (*it)->abandonUse();
             it = bb->instructions.erase(it);
         }
-        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)
+        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // 无返回值指令，且无效
         {
             it = bb->instructions.erase(it);
         }
         else if ((*it)->type == INVOKE && (*it)->users.empty())
         {
             shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(*it);
-            if (invoke->invokeType == COMMON && !invoke->targetFunction->hasSideEffect)
+            if (invoke->invokeType == COMMON && !invoke->targetFunction->hasSideEffect)  // 无副作用的函数，在没有使用对象时，才能被删除
             {
                 (*it)->abandonUse();
                 it = bb->instructions.erase(it);
@@ -57,25 +57,25 @@ VISIT_ALL_PHIS:
     unordered_set<shared_ptr<PhiInstruction>> phis = bb->phis;
     for (auto phi : phis)
     {
-        if (phi->onlyHasBlockUserOrUserEmpty())
+        if (phi->onlyHasBlockUserOrUserEmpty())  // phi没有被其他指令使用
         {
             phi->abandonUse();
             bb->phis.erase(phi);
             continue;
         }
-        unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands = phi->operands;
-        bool op = false;
+        auto operands = phi->operands;
+        bool del = false;
         for (auto &entry : operands)
         {
-            if (bb->predecessors.count(entry.first) == 0)
+            if (bb->predecessors.count(entry.first) == 0)  // phi操作数的块，并非此块的前驱，需要删除此操作数
             {
-                if (phi->getOperandValueCount(entry.second) == 1)
+                if (phi->getOperandValueCount(entry.second) == 1)  // phi的操作数中，仅有一个操作数的值为此值
                     entry.second->users.erase(phi);
                 phi->operands.erase(entry.first);
-                op = true;
+                del = true;
             }
         }
-        if (op)
+        if (del)  // 对phi中操作数进行删除了
         {
             removeTrivialPhi(phi);
             goto VISIT_ALL_PHIS;
@@ -198,14 +198,14 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
  * @brief 函数有副作用：修改了自己范围之外的资源    修改全局变量、修改输入参数所引用的对象、做输入输出操作、调用其他有副作用的函数
  * @param module 此module中的函数
  */
-void countFunctionSideEffect(shared_ptr<Module> &module)
+void IsFunctionSideEffect(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {
         func->hasSideEffect = false;
         for (auto &arg : func->params)
         {
-            if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)
+            if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)   // 函数参数为指针
             {
                 func->hasSideEffect = true;
                 goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -217,7 +217,7 @@ void countFunctionSideEffect(shared_ptr<Module> &module)
             {
                 if (ins->type == InstructionType::STORE)
                 {
-                    if (s_p_c<StoreInstruction>(ins)->address->valueType != INSTRUCTION)
+                    if (s_p_c<StoreInstruction>(ins)->address->valueType != INSTRUCTION)  // store一个全局变量
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -225,7 +225,7 @@ void countFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::LOAD)
                 {
-                    if (s_p_c<LoadInstruction>(ins)->address->valueType != INSTRUCTION)
+                    if (s_p_c<LoadInstruction>(ins)->address->valueType != INSTRUCTION)  // load一个全局变量
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -233,7 +233,9 @@ void countFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::BINARY)
                 {
-                    if (s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::GLOBAL || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::GLOBAL)
+                    // 使用了全局变量
+                    if (s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::GLOBAL 
+                        || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::GLOBAL)
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -241,19 +243,19 @@ void countFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::INVOKE)
                 {
-                    if (s_p_c<InvokeInstruction>(ins)->invokeType != COMMON)
+                    if (s_p_c<InvokeInstruction>(ins)->invokeType != COMMON)  // 调用了系统函数
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
-                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->hasSideEffect)
+                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->hasSideEffect)  // 调用了有副作用的函数
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                     for (auto &arg : s_p_c<InvokeInstruction>(ins)->params)
                     {
-                        if (arg->valueType == ValueType::GLOBAL || arg->valueType == ValueType::CONSTANT)
+                        if (arg->valueType == ValueType::GLOBAL || arg->valueType == ValueType::CONSTANT)  // 函数的实参为全局变量
                         {
                             func->hasSideEffect = true;
                             goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -313,7 +315,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
                 unordered_set<shared_ptr<Value>> users = phi->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者，因为当时phi多加了user
+                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者，因为当时phi多加了此user
                     {
                         phi->users.erase(user);
                     }
@@ -329,18 +331,17 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
  */
 void fixRightValue(shared_ptr<Module> &module)
 {
-    // 预处理分配和非用户的函数调用?
     for (auto &func : module->functions)
     {
         for (auto &bb : func->blocks)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->type == ALLOC)
+                if (ins->type == ALLOC)   // 局部数组的地址
                 {
                     ins->resultType = OTHER_RESULT;
                 }
-                else if (ins->type == INVOKE && s_p_c<InvokeInstruction>(ins)->users.empty())
+                else if (ins->type == INVOKE && s_p_c<InvokeInstruction>(ins)->users.empty())  // 直接调用的函数
                 {
                     s_p_c<InvokeInstruction>(ins)->resultType = OTHER_RESULT;
                 }
@@ -379,7 +380,7 @@ void getFunctionRequiredStackSize(shared_ptr<Function> &func)
     {
         for (auto &ins : bb->instructions)
         {
-            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)  // phi move 只用分配一次
+            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)  // 多个phi_move 只用分配一次
             {
                 phiMovSet.insert(ins);
                 size += _W_LEN;

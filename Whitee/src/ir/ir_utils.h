@@ -15,7 +15,7 @@ extern void removeUnusedFunctions(shared_ptr<Module> &module);
 
 extern void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre);
 
-extern void countFunctionSideEffect(shared_ptr<Module> &module);
+extern void IsFunctionSideEffect(shared_ptr<Module> &module);
 
 extern void addUser(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> used);
 

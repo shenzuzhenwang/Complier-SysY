@@ -530,7 +530,7 @@ int PhiInstruction::getOperandValueCount (const shared_ptr<Value>& value)
 	return cnt;
 }
 
-// 基本块无用户使用
+// 仅被基本块使用
 bool PhiInstruction::onlyHasBlockUserOrUserEmpty ()
 {
 	for (auto& user : users)
