@@ -4,7 +4,7 @@
  * @brief 去掉只有store指令的变量，包括全局变量与数组
  * @param module 
  */
-void deadArrayDelete(shared_ptr<Module> &module)
+void dead_array_delete(shared_ptr<Module> &module)
 {
     for (auto glb = module->globalVariables.begin(); glb != module->globalVariables.end();)
     {

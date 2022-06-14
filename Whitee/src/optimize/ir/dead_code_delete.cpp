@@ -4,7 +4,7 @@
  * @brief ËÀ´úÂëÉ¾³ı
  * @param module 
  */
-void deadCodeElimination(shared_ptr<Module> &module)
+void dead_code_delete(shared_ptr<Module> &module)
 {
     removeUnusedFunctions(module);
     IsFunctionSideEffect(module);

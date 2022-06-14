@@ -4,7 +4,7 @@
  * @brief 局部常量数组全局化
  * @param module 
  */
-void arrayExternalLift(shared_ptr<Module> &module)
+void array_external(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {

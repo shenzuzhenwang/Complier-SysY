@@ -4,7 +4,7 @@
  * @brief 折叠局部数组
  * @param alloc 局部数组
  */
-void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
+void fold_array(shared_ptr<AllocInstruction> &alloc)
 {
     bool visit = false;
     shared_ptr<BasicBlock> &bb = alloc->block;
@@ -107,7 +107,7 @@ void foldLocalArray(shared_ptr<AllocInstruction> &alloc)
  * @brief 局部数组折叠
  * @param module 
  */
-void localArrayFolding(shared_ptr<Module> &module)
+void array_folding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {
@@ -119,7 +119,7 @@ void localArrayFolding(shared_ptr<Module> &module)
                 if (ins->type == InstructionType::ALLOC)  // 分析局部数组
                 {
                     shared_ptr<AllocInstruction> alloc = s_p_c<AllocInstruction>(ins);
-                    foldLocalArray(alloc);
+                    fold_array(alloc);
                 }
             }
         }

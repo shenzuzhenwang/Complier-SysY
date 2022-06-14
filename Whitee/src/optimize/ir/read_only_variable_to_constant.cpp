@@ -5,7 +5,7 @@
  * @param globalVar 全局变量
  * @return true 可能被写入；false 不可能被写入
  */
-bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
+bool global_var_has_write_user(const shared_ptr<Value> &globalVar)
 {
     for (auto &user : globalVar->users)
     {
@@ -14,7 +14,7 @@ bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
         if (dynamic_cast<InvokeInstruction *>(user.get())) // 调用全局变量数组，作为指针
             return true;
         if (dynamic_cast<BinaryInstruction *>(user.get()))  // 作为指针，可能被改变
-            if (globalVarHasWriteUser(user))
+            if (global_var_has_write_user(user))
                 return true;
     }
     return false;
@@ -24,7 +24,7 @@ bool globalVarHasWriteUser(const shared_ptr<Value> &globalVar)
  * @param globalVar 此全局变量
  * @param module 
  */
-void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &module)
+void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module> &module)
 {
     for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it) // 删去全局变量
     {
@@ -74,14 +74,14 @@ void globalVariableToConstant(shared_ptr<Value> &globalVar, shared_ptr<Module> &
  * @brief 只读全局变量转为常数
  * @param module 
  */
-void readOnlyVariableToConstant(shared_ptr<Module> &module)
+void read_only_variable_to_constant(shared_ptr<Module> &module)
 {
     vector<shared_ptr<Value>> globalVariables = module->globalVariables;
     for (auto &globalVar : globalVariables)
     {
-        if (!globalVarHasWriteUser(globalVar))
+        if (!global_var_has_write_user(globalVar))
         {
-            globalVariableToConstant(globalVar, module);
+            global_variable_to_constant(globalVar, module);
         }
     }
 }

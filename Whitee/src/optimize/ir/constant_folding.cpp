@@ -335,7 +335,7 @@ void fold(shared_ptr<Instruction> &ins)
  * @brief 常量折叠  直接计算出可以被计算的值，作为常量
  * @param module 
  */
-void constantFolding(shared_ptr<Module> &module)
+void constant_folding(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {

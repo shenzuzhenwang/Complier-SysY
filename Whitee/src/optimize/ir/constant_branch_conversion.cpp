@@ -4,7 +4,7 @@
  * @brief 分支条件常数转化
  * @param module 
  */
-void constantBranchConversion(shared_ptr<Module> &module)
+void constant_branch_conversion(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {

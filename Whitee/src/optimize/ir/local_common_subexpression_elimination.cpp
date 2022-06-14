@@ -1,18 +1,18 @@
 #include "ir_optimize.h"
 
-void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb);
+void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb);
 
 /**
  * @brief 局部公共子表达式删除   非自己写
  * @param module 
  */
-void localCommonSubexpressionElimination(shared_ptr<Module> &module)
+void local_common_subexpression_elimination(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {
         for (auto &bb : func->blocks)
         {
-            blockCommonSubexpressionElimination(bb);
+            block_common_subexpression_elimination(bb);
         }
     }
 }
@@ -21,7 +21,7 @@ void localCommonSubexpressionElimination(shared_ptr<Module> &module)
  * @brief 主要在于 对比两个指令的表达式是否相同（hashCode），以及对比相同表达式的两个值相同（equals）
  * @param bb 
  */
-void blockCommonSubexpressionElimination(shared_ptr<BasicBlock> &bb)
+void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb)
 {
     unordered_map<unsigned long long, unordered_set<shared_ptr<Value>>> hashMap;
     for (auto it = bb->instructions.begin(); it != bb->instructions.end();)

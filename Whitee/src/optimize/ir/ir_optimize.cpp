@@ -30,72 +30,72 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
         globalIrCorrect = true;
         if (level >= O1)
         {
-            readOnlyVariableToConstant(module);
-            deadCodeElimination(module);
+            read_only_variable_to_constant(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Non-write variable to constant." << endl;
         }
 
         if (level >= O1)
         {
-            constantFolding(module);
-            deadCodeElimination(module);
+            constant_folding(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Constant Folding." << endl;
         }
 
         if (level >= O1)  // 可以不用
         {
-            localArrayFolding(module);
-            deadCodeElimination(module);
+            array_folding(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Local Array Folding." << endl;
         }
 
         if (level >= O1)
         {
-            deadArrayDelete(module);
-            deadCodeElimination(module);
+            dead_array_delete(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Dead Array Delete." << endl;
         }
 
         if (level >= O1)
         {
-            arrayExternalLift(module);
-            deadCodeElimination(module);
+            array_external(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Array External Lift." << endl;
         }
 
         if (level >= O1)
         {
-            loopInvariantCodeMotion(module);
-            deadCodeElimination(module);
+            loop_invariant_code_motion(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Loop Invariant Code Motion." << endl;
         }
 
         if (level >= O1)
         {
-            localCommonSubexpressionElimination(module);
-            deadCodeElimination(module);
+            local_common_subexpression_elimination(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Local Common Subexpression Elimination." << endl;
         }
 
         if (level >= O1)
         {
-            constantBranchConversion(module);
-            deadCodeElimination(module);
+            constant_branch_conversion(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Constant Branch Conversion." << endl;
         }
 
         if (level >= O1)
         {
-            blockCombination(module);
-            deadCodeElimination(module);
+            block_combination(module);
+            dead_code_delete(module);
             if (needIrPassCheck && !irCheck(module))
                 cerr << "Error: Block Combination." << endl;
         }
@@ -117,7 +117,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
     }
 
     for (int i = 0; i < OPTIMIZE_TIMES; ++i)
-        deadCodeElimination(module);
+        dead_code_delete(module);
 
     irUserCheck = true;
     if (needIrCheck && !irCheck(module))

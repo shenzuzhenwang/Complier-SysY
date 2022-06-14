@@ -160,7 +160,7 @@ void dealWithConstDigit(FILE *in)
         c = fgetc(in);
     }
     ungetc(c, in);
-    long long integer = strToInt(isHex, isOct);
+    int64_t integer = strToInt(isHex, isOct);
     TokenInfo tmp(INTCONST);
     tmp.setName(token);
     if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  // 超过int上限
@@ -398,9 +398,9 @@ void catToken()
  * @param isOct 是否为8进制
  * @return 返回int64_t
  */
-long long strToInt(bool isHex, bool isOct)
+int64_t strToInt(bool isHex, bool isOct)
 {
-    long long integer;
+    int64_t integer;
     if (isHex)
     {
         integer = strtoll (token.c_str (), NULL, 16);

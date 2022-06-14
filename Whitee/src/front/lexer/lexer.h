@@ -87,7 +87,7 @@ void clearToken();
 
 void catToken();
 
-long long strToInt(bool isHex, bool isOct);
+int64_t strToInt(bool isHex, bool isOct);
 
 bool lexicalAnalyze(const string &file);
 
