@@ -1,9 +1,9 @@
-/*******************************************************************
+ï»¿/*******************************************************************
  * @file   main.cpp
- * @brief  ÔËĞĞµÄÈë¿Ú£¬ÔËĞĞµÄÖ÷ÒªÁ÷³Ì  
+ * @brief  è¿è¡Œçš„å…¥å£ï¼Œè¿è¡Œçš„ä¸»è¦æµç¨‹  
  *         
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 
@@ -25,13 +25,13 @@
 #include "machine_ir/machine_ir_build.h"
 using namespace std;
 
-OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // ´úÂëÓÅ»¯µÈ¼¶
-bool needIrCheck = true;  // ³õÊ¼IRºÍ×îÖÕÓÅ»¯ºóIR¼ì²é
-bool needIrPassCheck = false;  // Ã¿Ò»±éÓÅ»¯ºó¶¼½øĞĞ¼ì²é
+OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // ä»£ç ä¼˜åŒ–ç­‰çº§
+bool needIrCheck = true;  // åˆå§‹IRå’Œæœ€ç»ˆä¼˜åŒ–åIRæ£€æŸ¥
+bool needIrPassCheck = false;  // æ¯ä¸€éä¼˜åŒ–åéƒ½è¿›è¡Œæ£€æŸ¥
 
-string sourceCodeFile = "D:\\complier_test\\Whitee-main\\function\\028_if_test1.c";  // Ô´³ÌĞòÂ·¾¶
-string targetCodeFile;  // Ä¿±ê³ÌĞòÂ·¾¶ 
-string debugMessageDirectory;  // debugĞÅÏ¢Â·¾¶
+string sourceCodeFile = "D:\\complier_test\\Whitee-main\\function\\028_if_test1.c";  // æºç¨‹åºè·¯å¾„
+string targetCodeFile;  // ç›®æ ‡ç¨‹åºè·¯å¾„ 
+string debugMessageDirectory;  // debugä¿¡æ¯è·¯å¾„
 
 void printHelp(const char *exec);
 
@@ -41,10 +41,10 @@ int initConfig();
 
 /**
  * @brief setCompileOptions -> initConfig -> lexicalAnalyze -> syntaxAnalyze -> buildIrModule -> optimizeIr -> buildMachineModule
- *        ÉèÖÃ±àÒëÑ¡Ïî -> ±àÒëÉèÖÃ -> ´Ê·¨·ÖÎö -> Óï·¨·ÖÎö -> ¹¹½¨ÖĞ¼äIR -> ÓÅ»¯IR -> ¹¹½¨»úÆ÷Âë
- * @param argc  ÃüÁîĞĞ²ÎÊıµÄ¸öÊı
- * @param argv  ÃüÁîĞĞ²ÎÊı  µÚÒ»¸öÎªÖ´ĞĞÎÄ¼şµÄÂ·¾¶
- * @return ³ÌĞò·µ»ØÖµ
+ *        è®¾ç½®ç¼–è¯‘é€‰é¡¹ -> ç¼–è¯‘è®¾ç½® -> è¯æ³•åˆ†æ -> è¯­æ³•åˆ†æ -> æ„å»ºä¸­é—´IR -> ä¼˜åŒ–IR -> æ„å»ºæœºå™¨ç 
+ * @param argc  å‘½ä»¤è¡Œå‚æ•°çš„ä¸ªæ•°
+ * @param argv  å‘½ä»¤è¡Œå‚æ•°  ç¬¬ä¸€ä¸ªä¸ºæ‰§è¡Œæ–‡ä»¶çš„è·¯å¾„
+ * @return ç¨‹åºè¿”å›å€¼
  */
 int main(int argc, char **argv)
 {
@@ -154,11 +154,11 @@ int main(int argc, char **argv)
 }
 
 /**
- * @brief Í¨¹ı¶ÁÈ¡ÃüÁîĞĞµÄ²ÎÊı£¬À´¶Ô½ñºóµÄ¶¯×÷½øĞĞÉèÖÃ
- * @param argc  ÃüÁîĞĞ²ÎÊıµÄ¸öÊı
- * @param argv  ÃüÁîĞĞ²ÎÊı  µÚÒ»¸öÎªÖ´ĞĞÎÄ¼şµÄÂ·¾¶
- * @return _SCO_ARG_ERR ²ÎÊı¸ñÊ½²»ÕıÈ·£¬Í£Ö¹Ö´ĞĞ£¬²¢´òÓ¡helpËµÃ÷£»_SCO_HELP ´òÓ¡help£»_SCO_DBG_ERR debug²ÎÊı³ö´í£»_SCO_OP_ERR optimize²ÎÊı³ö´í£»
- *         _SCO_CHK_ERR check²ÎÊı³ö´í£»_SCO_DBG_PATH_ERR debug path²»ÕıÈ·£»_SCO_SUCCESS ³É¹¦
+ * @brief é€šè¿‡è¯»å–å‘½ä»¤è¡Œçš„å‚æ•°ï¼Œæ¥å¯¹ä»Šåçš„åŠ¨ä½œè¿›è¡Œè®¾ç½®
+ * @param argc  å‘½ä»¤è¡Œå‚æ•°çš„ä¸ªæ•°
+ * @param argv  å‘½ä»¤è¡Œå‚æ•°  ç¬¬ä¸€ä¸ªä¸ºæ‰§è¡Œæ–‡ä»¶çš„è·¯å¾„
+ * @return _SCO_ARG_ERR å‚æ•°æ ¼å¼ä¸æ­£ç¡®ï¼Œåœæ­¢æ‰§è¡Œï¼Œå¹¶æ‰“å°helpè¯´æ˜ï¼›_SCO_HELP æ‰“å°helpï¼›_SCO_DBG_ERR debugå‚æ•°å‡ºé”™ï¼›_SCO_OP_ERR optimizeå‚æ•°å‡ºé”™ï¼›
+ *         _SCO_CHK_ERR checkå‚æ•°å‡ºé”™ï¼›_SCO_DBG_PATH_ERR debug pathä¸æ­£ç¡®ï¼›_SCO_SUCCESS æˆåŠŸ
  */
 int setCompileOptions(int argc, char **argv)
 {
@@ -174,12 +174,12 @@ int setCompileOptions(int argc, char **argv)
 
     for (int i = 1; i < argc; ++i)
     {
-        if (argv[i] == "-h"s || argv[i] == "--help"s)  // -h  ÏÔÊ¾°ïÖú
+        if (argv[i] == "-h"s || argv[i] == "--help"s)  // -h  æ˜¾ç¤ºå¸®åŠ©
         {
             printHelp(argv[0]);
             return _SCO_HELP;
         }
-        else if (argv[i] == "-S"s && !argSourceFlag)  // -s  Éú³É»ã±à
+        else if (argv[i] == "-S"s && !argSourceFlag)  // -s  ç”Ÿæˆæ±‡ç¼–
         {
             argSourceFlag = true;
         }
@@ -187,7 +187,7 @@ int setCompileOptions(int argc, char **argv)
         {
             argOutputFlag = true;
         }
-        else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))  // -O  ÓÅ»¯µÈ¼¶
+        else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))  // -O  ä¼˜åŒ–ç­‰çº§
         {
             argOptimizeFlag = true;
             argv[i] += 2;
@@ -214,8 +214,8 @@ int setCompileOptions(int argc, char **argv)
 }
 
 /**
- * @brief ´òÓ¡helpËµÃ÷£¬ÒòÎª²ÎÊı²»·ûºÏ¹æÔò
- * @param exec Ö´ĞĞÎÄ¼şµÄÂ·¾¶
+ * @brief æ‰“å°helpè¯´æ˜ï¼Œå› ä¸ºå‚æ•°ä¸ç¬¦åˆè§„åˆ™
+ * @param exec æ‰§è¡Œæ–‡ä»¶çš„è·¯å¾„
  */
 void printHelp(const char *exec)
 {
@@ -262,15 +262,15 @@ void printHelp(const char *exec)
 }
 
 /**
- * @brief ´´½¨Ò»¸öÎÄ¼ş¼Ğ
- * @param path ÎÄ¼ş¼ĞµÄÂ·¾¶
- * @return true ³É¹¦£»false Ê§°Ü
+ * @brief åˆ›å»ºä¸€ä¸ªæ–‡ä»¶å¤¹
+ * @param path æ–‡ä»¶å¤¹çš„è·¯å¾„
+ * @return true æˆåŠŸï¼›false å¤±è´¥
  */
 bool createFolder(const char *path)
 {
-    if (_access(path, F_OK) != -1) // ÒÑÓĞ´ËÎÄ¼ş¼Ğ
+    if (_access(path, F_OK) != -1) // å·²æœ‰æ­¤æ–‡ä»¶å¤¹
         return true;
-    if (strlen(path) > FILENAME_MAX)  // ÎÄ¼şÂ·¾¶¹ı³¤
+    if (strlen(path) > FILENAME_MAX)  // æ–‡ä»¶è·¯å¾„è¿‡é•¿
     {
         cout << "Error: debug path is too long." << endl;
         return false;
@@ -282,15 +282,15 @@ bool createFolder(const char *path)
         if ((tempPath[i] == _SLASH_CHAR) && _access(tempPath, F_OK) == -1)
         {
             string command = "mkdir " + string(tempPath);
-            system(command.c_str());  // ÏµÍ³Ö´ĞĞ´´½¨ÎÄ¼ş¼ĞÃüÁî
+            system(command.c_str());  // ç³»ç»Ÿæ‰§è¡Œåˆ›å»ºæ–‡ä»¶å¤¹å‘½ä»¤
         }
     }
     return true;
 }
 
 /**
- * @brief ½«ÎÄ¼şµÄÂ·¾¶ÃûÍ³Ò»Îª±ê×¼¸ñÊ½£¨¸ù¾İ²»Í¬µÄÆ½Ì¨£©£¬²¢´´½¨Ó¦´´½¨µÄÎÄ¼ş¼Ğ
- * @return _INIT_CRT_ERR ´´½¨ÎÄ¼ş¼ĞÊ§°Ü£»_INIT_SUCCESS ³É¹¦
+ * @brief å°†æ–‡ä»¶çš„è·¯å¾„åç»Ÿä¸€ä¸ºæ ‡å‡†æ ¼å¼ï¼ˆæ ¹æ®ä¸åŒçš„å¹³å°ï¼‰ï¼Œå¹¶åˆ›å»ºåº”åˆ›å»ºçš„æ–‡ä»¶å¤¹
+ * @return _INIT_CRT_ERR åˆ›å»ºæ–‡ä»¶å¤¹å¤±è´¥ï¼›_INIT_SUCCESS æˆåŠŸ
  */
 int initConfig()
 {
@@ -304,7 +304,7 @@ int initConfig()
     }
     if (_debugIr)
     {
-        //½«ÎÄ¼şÄ¿Â¼µÄ'/'»»Îª'\\'
+        //å°†æ–‡ä»¶ç›®å½•çš„'/'æ¢ä¸º'\\'
         while (debugMessageDirectory.find(_O_SLASH_CHAR) != string::npos)
         {
             debugMessageDirectory.replace(debugMessageDirectory.find(_O_SLASH_CHAR), 1, _SLASH_STRING);
@@ -314,7 +314,7 @@ int initConfig()
             targetCodeFile.replace(targetCodeFile.find(_O_SLASH_CHAR), 1, _SLASH_STRING);
         }
     }
-    if (_debugIr && debugMessageDirectory.empty())  // Èç¹ûÃ»ÓĞdebugÄ¿Â¼£¬ÔòÔÚdirPath + "whitee-debug-" + targetPath Â·¾¶´´½¨Ä¿Â¼
+    if (_debugIr && debugMessageDirectory.empty())  // å¦‚æœæ²¡æœ‰debugç›®å½•ï¼Œåˆ™åœ¨dirPath + "whitee-debug-" + targetPath è·¯å¾„åˆ›å»ºç›®å½•
     {
         string targetPath = string(targetCodeFile);
         string dirPath;
@@ -329,11 +329,11 @@ int initConfig()
     {
         debugMessageDirectory += _SLASH_STRING;
     }
-    if (_debugIr && !createFolder(debugMessageDirectory.c_str()))  // debugÄ¿Â¼Éú³É
+    if (_debugIr && !createFolder(debugMessageDirectory.c_str()))  // debugç›®å½•ç”Ÿæˆ
     {
         return _INIT_CRT_ERR;
     }
-    if (optimizeLevel > O0 && _debugIrOptimize && !createFolder((debugMessageDirectory + "optimize" + _SLASH_STRING).c_str())) // optimizeÄ¿Â¼Éú³É
+    if (optimizeLevel > O0 && _debugIrOptimize && !createFolder((debugMessageDirectory + "optimize" + _SLASH_STRING).c_str())) // optimizeç›®å½•ç”Ÿæˆ
     {
         return _INIT_CRT_ERR;
     }

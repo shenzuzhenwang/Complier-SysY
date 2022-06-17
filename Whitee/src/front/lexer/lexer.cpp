@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   lexer.cpp
- * @brief  ´Ê·¨·ÖÎö£¬½«Ã¿¸ö´Ê±êÖ¾ÎªÏàÓ¦µÄtoken
+ * @brief  è¯æ³•åˆ†æï¼Œå°†æ¯ä¸ªè¯æ ‡å¿—ä¸ºç›¸åº”çš„token
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 #include "lexer.h"
@@ -11,16 +11,17 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <fstream>
 using namespace std;
 
-int c;  // »º³åÇø
-string token;  // ´Ê·¨µ¥Ôª
+int c;  // ç¼“å†²åŒº
+string token;  // è¯æ³•å•å…ƒ
 
-vector<TokenInfo> tokenInfoList;  // ´Ê·¨·ÖÎöÍêÉú³ÉµÄ½á¹û
+vector<TokenInfo> tokenInfoList;  // è¯æ³•åˆ†æå®Œç”Ÿæˆçš„ç»“æœ
 
 extern string debugMessageDirectory;
 
-unordered_map<string, TokenType> reverseTable{   // ´ÊÓïtoken×ª»»±í
+unordered_map<string, TokenType> reverseTable{   // è¯è¯­tokenè½¬æ¢è¡¨
                  {"int", INT_TK},
                  {"const", CONST_TK},
                  {"void", VOID_TK},
@@ -56,9 +57,9 @@ unordered_map<string, TokenType> reverseTable{   // ´ÊÓïtoken×ª»»±í
 
 // type1:/* */ type2://
 /**
- * @brief ÏûÈ¥×¢ÊÍ  
+ * @brief æ¶ˆå»æ³¨é‡Š  
  * @param type 
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void skipComment(int type, FILE *in)
 {
@@ -91,8 +92,8 @@ void skipComment(int type, FILE *in)
 }
 
 /**
- * @brief È¥³ı¿Õ¸ñ»»ĞĞµÈ×Ö·û
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å»é™¤ç©ºæ ¼æ¢è¡Œç­‰å­—ç¬¦
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void skipSpaceOrNewlineOrTab(FILE *in)
 {
@@ -103,8 +104,8 @@ void skipSpaceOrNewlineOrTab(FILE *in)
 }
 
 /**
- * @brief ´¦Àí¹Ø¼ü×Ö»ò±êÊ¶·û
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å¤„ç†å…³é”®å­—æˆ–æ ‡è¯†ç¬¦
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void dealWithKeywordOrIdent(FILE *in)
 {
@@ -116,13 +117,13 @@ void dealWithKeywordOrIdent(FILE *in)
     ungetc(c, in);
 
     string name(token);
-    if (reverseTable.find(token) != reverseTable.end())  // ÊÇ·ñÎª¹Ø¼ü×Ö
+    if (reverseTable.find(token) != reverseTable.end())  // æ˜¯å¦ä¸ºå…³é”®å­—
     {
         TokenInfo tmp(reverseTable.at(token));
         tmp.setName(name);
         tokenInfoList.push_back(tmp);
     }
-    else  // Îª±êÊ¶·û
+    else  // ä¸ºæ ‡è¯†ç¬¦
     {
         TokenInfo tmp(IDENT);
         tmp.setName(token);
@@ -131,15 +132,15 @@ void dealWithKeywordOrIdent(FILE *in)
 }
 
 /**
- * @brief ´¦ÀíÁ¬ĞøµÄÊı×Ö
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å¤„ç†è¿ç»­çš„æ•°å­—
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void dealWithConstDigit(FILE *in)
 {
     // deal with 0Xxxx
     bool isHex = false;
     bool isOct = false;
-    if (c == '0')  // ½øÖÆ×ª»»
+    if (c == '0')  // è¿›åˆ¶è½¬æ¢
     {
         c = fgetc(in);
         if (c == 'x' || c == 'X')
@@ -163,7 +164,7 @@ void dealWithConstDigit(FILE *in)
     int64_t integer = strToInt(isHex, isOct);
     TokenInfo tmp(INTCONST);
     tmp.setName(token);
-    if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  // ³¬¹ıintÉÏÏŞ
+    if (integer == 2147483648 && tokenInfoList[tokenInfoList.size () - 1].getSym () == MINUS)  // è¶…è¿‡intä¸Šé™
     {
         tokenInfoList.pop_back ();
         tmp.setValue (-integer);
@@ -176,8 +177,8 @@ void dealWithConstDigit(FILE *in)
 }
 
 /**
- * @brief ´¦Àí×Ö·û´®
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å¤„ç†å­—ç¬¦ä¸²
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void dealWithStr(FILE *in)
 {
@@ -190,14 +191,14 @@ void dealWithStr(FILE *in)
             break;
         }
     }
-    TokenInfo tmp(STRCONST);  // ×Ö·û´®³£Á¿
+    TokenInfo tmp(STRCONST);  // å­—ç¬¦ä¸²å¸¸é‡
     tmp.setName(token);
     tokenInfoList.push_back(tmp);
 }
 
 /**
- * @brief ´¦Àí²¿·ÖÆäËû×Ö·û
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å¤„ç†éƒ¨åˆ†å…¶ä»–å­—ç¬¦
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void dealWithOtherTk(FILE *in)
 {
@@ -258,8 +259,8 @@ void dealWithOtherTk(FILE *in)
 }
 
 /**
- * @brief È¥³ı²»ºÏ¹æÔò×Ö·û
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief å»é™¤ä¸åˆè§„åˆ™å­—ç¬¦
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void skipIllegalChar(FILE *in)
 {
@@ -274,9 +275,9 @@ void skipIllegalChar(FILE *in)
 }
 
 /**
- * @brief ´Ê·¨·ÖÎö
- * @param file ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
- * @return true ³É¹¦£»false Ê§°Ü
+ * @brief è¯æ³•åˆ†æ
+ * @param file è¯æ³•åˆ†æçš„æºæ–‡ä»¶
+ * @return true æˆåŠŸï¼›false å¤±è´¥
  */
 bool lexicalAnalyze(const string &file)
 {
@@ -288,22 +289,21 @@ bool lexicalAnalyze(const string &file)
     parseSym(in);
     if (_debugLexer)
     {
-        FILE *out = fopen((debugMessageDirectory + "lexer.txt").c_str(), "w+");
-        fprintf(out, "[Lexer]\n");
+        ofstream out (debugMessageDirectory + "lexer.txt", ios::out | ios::trunc);
+        out << "[Lexer]\n";
         for (TokenInfo tokenInfo : tokenInfoList)
         {
-            fprintf(out, "%s", tokenInfo.getName().c_str());
-            fprintf(out, "\n");
+            out << tokenInfo.getName ().c_str () << '\n';
         }
-        fclose(out);
+        out.close ();
     }
     fclose(in);
     return true;
 }
 
 /**
- * @brief ´Ê·¨·ÖÎö
- * @param in ´Ê·¨·ÖÎöµÄÔ´ÎÄ¼ş
+ * @brief è¯æ³•åˆ†æ
+ * @param in è¯æ³•åˆ†æçš„æºæ–‡ä»¶
  */
 void parseSym(FILE *in)
 {
@@ -315,7 +315,7 @@ void parseSym(FILE *in)
         skipIllegalChar(in);
         skipSpaceOrNewlineOrTab(in);
 
-        // ÅĞ¶Ï×¢ÊÍ²¢È¥³ı
+        // åˆ¤æ–­æ³¨é‡Šå¹¶å»é™¤
         if (c == '/')
         {
             c = fgetc(in);
@@ -356,17 +356,17 @@ void parseSym(FILE *in)
     tokenInfoList.emplace_back(TokenType::END);
 }
 
-// ¿Õ¸ñ
+// ç©ºæ ¼
 bool isSpace()
 {
     return c == ' ';
 }
-// Ó¢ÎÄ×Ö·û»ò_
+// è‹±æ–‡å­—ç¬¦æˆ–_
 bool isLetter()
 {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '_');
 }
-// ÊÇÊı×Ö
+// æ˜¯æ•°å­—
 bool isDigit()
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
@@ -376,27 +376,27 @@ bool isTab()
 {
     return c == '\t';
 }
-// »»ĞĞ
+// æ¢è¡Œ
 bool isNewline()
 {
     return c == '\n';
 }
-// Çå³ı´Ê·¨µ¥Ôª
+// æ¸…é™¤è¯æ³•å•å…ƒ
 void clearToken()
 {
     token.clear();
 }
-// ´Ê·¨µ¥ÔªºóÌí¼Ó
+// è¯æ³•å•å…ƒåæ·»åŠ 
 void catToken()
 {
     token.push_back(c);
 }
 
 /**
- * @brief Êı×Ö×Ö·û´®×ªint64_t
- * @param isHex ÊÇ·ñÎª16½øÖÆ
- * @param isOct ÊÇ·ñÎª8½øÖÆ
- * @return ·µ»Øint64_t
+ * @brief æ•°å­—å­—ç¬¦ä¸²è½¬int64_t
+ * @param isHex æ˜¯å¦ä¸º16è¿›åˆ¶
+ * @param isOct æ˜¯å¦ä¸º8è¿›åˆ¶
+ * @return è¿”å›int64_t
  */
 int64_t strToInt(bool isHex, bool isOct)
 {

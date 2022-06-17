@@ -1,4 +1,4 @@
-#include "ir.h"
+ï»¿#include "ir.h"
 #include <cmath>
 
 unsigned int Value::valueId = 0;
@@ -95,7 +95,7 @@ void Function::abandonUse ()
 	name = "abandon_function_" + name;
 }
 
-// Ìæ»»value
+// æ›¿æ¢value
 void BasicBlock::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
@@ -178,7 +178,7 @@ bool StringValue::equals (shared_ptr<Value>& value)
 	return s_p_c<StringValue> (value)->str == str;
 }
 
-// Ìæ»»value
+// æ›¿æ¢value
 void ReturnInstruction::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
@@ -203,7 +203,7 @@ void ReturnInstruction::abandonUse ()
 	}
 }
 
-// Ìæ»»value
+// æ›¿æ¢value
 void BranchInstruction::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
@@ -238,7 +238,7 @@ void JumpInstruction::abandonUse ()
 	valid = false;
 }
 
-// ×Ô´øº¯Êı
+// è‡ªå¸¦å‡½æ•°
 unordered_map<string, InvokeType> InvokeInstruction::sysFuncMap {
 																{"getint", InvokeType::GET_INT},
 																{"getch", InvokeType::GET_CHAR},
@@ -249,7 +249,7 @@ unordered_map<string, InvokeType> InvokeInstruction::sysFuncMap {
 																{"putf", InvokeType::PUT_F},
 																{"starttime", InvokeType::START_TIME},
 																{"stoptime", InvokeType::STOP_TIME} };
-// Ìæ»»value
+// æ›¿æ¢value
 void InvokeInstruction::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
@@ -286,7 +286,7 @@ bool InvokeInstruction::equals (shared_ptr<Value>& value)
 	return self == value;
 }
 
-// Ìæ»»value
+// æ›¿æ¢value
 void UnaryInstruction::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
@@ -472,7 +472,7 @@ bool LoadInstruction::equals (shared_ptr<Value>& value)
 }
 
 /**
- * phiÖ¸Áî²»½öÒªÌæ»»Öµ£¬»¹ÒªÌæ»»»ù±¾¿é¡£
+ * phiæŒ‡ä»¤ä¸ä»…è¦æ›¿æ¢å€¼ï¼Œè¿˜è¦æ›¿æ¢åŸºæœ¬å—ã€‚
  */
 void PhiInstruction::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
@@ -519,7 +519,7 @@ void PhiInstruction::abandonUse ()
 	}
 }
 
-// ¼ÆËãphi OperandÖĞÓëvalueÏàµÈµÄ¸öÊı
+// è®¡ç®—phi Operandä¸­ä¸valueç›¸ç­‰çš„ä¸ªæ•°
 int PhiInstruction::getOperandValueCount (const shared_ptr<Value>& value)
 {
 	int cnt = 0;
@@ -530,7 +530,7 @@ int PhiInstruction::getOperandValueCount (const shared_ptr<Value>& value)
 	return cnt;
 }
 
-// ½ö±»»ù±¾¿éÊ¹ÓÃ
+// ä»…è¢«åŸºæœ¬å—ä½¿ç”¨
 bool PhiInstruction::onlyHasBlockUserOrUserEmpty ()
 {
 	for (auto& user : users)
@@ -558,7 +558,7 @@ PhiMoveInstruction::PhiMoveInstruction (shared_ptr<PhiInstruction>& phi)
 	}
 }
 
-unordered_map<int, shared_ptr<NumberValue>> numberValueMap;  // ³£Êı¹«ÓÃ±í
+unordered_map<int, shared_ptr<NumberValue>> numberValueMap;  // å¸¸æ•°å…¬ç”¨è¡¨
 
 shared_ptr<NumberValue> getNumberValue (int number)
 {
@@ -567,7 +567,7 @@ shared_ptr<NumberValue> getNumberValue (int number)
 	return numberValueMap.at (number);
 }
 
-// Éú³É²ÎÊı LVal Ãû³Æ
+// ç”Ÿæˆå‚æ•° LVal åç§°
 string generateArgumentLeftValueName (const string& functionName)
 {
 	static unordered_map<string, int> functionCallTimesMap;
@@ -580,7 +580,7 @@ string generateArgumentLeftValueName (const string& functionName)
 	return "Arg_" + functionName + "_" + to_string (functionCallTimesMap.at (functionName));
 }
 
-// Éú³Éphi LVal Ãû³Æ
+// ç”Ÿæˆphi LVal åç§°
 string generatePhiLeftValueName (const string& phiName)
 {
 	static unordered_map<string, int> phiLeftValueMap;
@@ -593,14 +593,14 @@ string generatePhiLeftValueName (const string& phiName)
 	return "Phi_" + phiName + "_" + to_string (phiLeftValueMap.at (phiName));
 }
 
-// Éú³ÉÁÙÊ± LVal Ãû³Æ
+// ç”Ÿæˆä¸´æ—¶ LVal åç§°
 string generateTempLeftValueName ()
 {
 	static int tempCount = 0;
 	return "Temp_" + to_string (tempCount++);
 }
 
-// ¼ÆËãÈ¨ÖØ£ºbase + pow (_LOOP_WEIGHT_BASE, depth)
+// è®¡ç®—æƒé‡ï¼šbase + pow (_LOOP_WEIGHT_BASE, depth)
 unsigned int countWeight (unsigned int depth, unsigned int base)
 {
 	unsigned int max = depth < _MAX_DEPTH ? depth : _MAX_DEPTH;
