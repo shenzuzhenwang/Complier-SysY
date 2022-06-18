@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir.h
- * @brief  ¸ù¾İIRµÄ²»Í¬Ö¸Áî£¬¶¨Òå²»Í¬µÄÀà
+ * @brief  æ ¹æ®IRçš„ä¸åŒæŒ‡ä»¤ï¼Œå®šä¹‰ä¸åŒçš„ç±»
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 #ifndef COMPILER_IR_H
@@ -68,21 +68,21 @@ class PhiMoveInstruction;
 enum ValueType
 {
     CONSTANT,  // const array
-    NUMBER,  // ÁÙÊ±±äÁ¿¼´Êı×Ö
+    NUMBER,  // ä¸´æ—¶å˜é‡å³æ•°å­—
     STRING,
-    GLOBAL,  // È«¾Ö±äÁ¿£¬°üÀ¨Êı×é»ò¹«¹²±äÁ¿
-    PARAMETER,  // º¯ÊıĞÎ²Î
-    UNDEFINED,  // Î´¶¨ÒåSSA
-    INSTRUCTION,  // Ö¸ÁîµÃµ½µÄÖµ£¨Ò»°ãÖµ£©
-    MODULE,   // Ã¿¸ö³ÌĞòµÄmoudel
-    FUNCTION,  // º¯Êı
-    BASIC_BLOCK  // »ù±¾¿é
+    GLOBAL,  // å…¨å±€å˜é‡ï¼ŒåŒ…æ‹¬æ•°ç»„æˆ–å…¬å…±å˜é‡
+    PARAMETER,  // å‡½æ•°å½¢å‚
+    UNDEFINED,  // æœªå®šä¹‰SSA
+    INSTRUCTION,  // æŒ‡ä»¤å¾—åˆ°çš„å€¼ï¼ˆä¸€èˆ¬å€¼ï¼‰
+    MODULE,   // æ¯ä¸ªç¨‹åºçš„moudel
+    FUNCTION,  // å‡½æ•°
+    BASIC_BLOCK  // åŸºæœ¬å—
 };
 
 enum VariableType
 {
-    INT,  // ÕûĞÍ
-    POINTER  // ÕûĞÍÖ¸Õë
+    INT,  // æ•´å‹
+    POINTER  // æ•´å‹æŒ‡é’ˆ
 };
 
 enum InstructionType
@@ -91,17 +91,17 @@ enum InstructionType
     BR,   // branch
     JMP,  // jmp
     INVOKE,  // call
-    UNARY,  // Ò»Ôª²Ù×÷
-    BINARY, // ¶şÔª²Ù×÷
+    UNARY,  // ä¸€å…ƒæ“ä½œ
+    BINARY, // äºŒå…ƒæ“ä½œ
     CMP,    // cmp
-    ALLOC,  // ·ÖÅäÊı×é
-    LOAD,   // È¡ÓÃ
-    STORE,  // ´æ´¢
+    ALLOC,  // åˆ†é…æ•°ç»„
+    LOAD,   // å–ç”¨
+    STORE,  // å­˜å‚¨
     PHI,    // phi
-    PHI_MOV  //  phi move ¶ÔphiÖĞ±äÁ¿½øĞĞ¸³Öµ
+    PHI_MOV  //  phi move å¯¹phiä¸­å˜é‡è¿›è¡Œèµ‹å€¼
 };
 
-enum InvokeType  // ÆÕÍ¨º¯Êı£¬Óë9ÖÖÔËĞĞÊ±º¯Êı
+enum InvokeType  // æ™®é€šå‡½æ•°ï¼Œä¸9ç§è¿è¡Œæ—¶å‡½æ•°
 {
     COMMON,
     GET_INT,
@@ -117,22 +117,22 @@ enum InvokeType  // ÆÕÍ¨º¯Êı£¬Óë9ÖÖÔËĞĞÊ±º¯Êı
 
 enum ResultType
 {
-    R_VAL_RESULT,   // ÓÒÖµ
+    R_VAL_RESULT,   // å³å€¼
     L_VAL_RESULT,
-    OTHER_RESULT   // ÎŞ·µ»Ø
+    OTHER_RESULT   // æ— è¿”å›
 };
 
 class Value : public enable_shared_from_this<Value>
 {
 private:
-    static unsigned int valueId;  // Ö¸ÁîµÄ×ÜÊı
+    static unsigned int valueId;  // æŒ‡ä»¤çš„æ€»æ•°
 
 public:
-    unsigned int id;      // Ö¸ÁîµÄID
-    ValueType valueType;  // ÖµÀàĞÍ
-    unordered_set<shared_ptr<Value>> users;  // Ê¹ÓÃ¶ÔÏó
+    unsigned int id;      // æŒ‡ä»¤çš„ID
+    ValueType valueType;  // å€¼ç±»å‹
+    unordered_set<shared_ptr<Value>> users;  // ä½¿ç”¨å¯¹è±¡
 
-    bool valid = true;  // ÓĞĞ§
+    bool valid = true;  // æœ‰æ•ˆ
 
     static unsigned int getValueId();
 
@@ -141,9 +141,9 @@ public:
 
     virtual string toString() = 0;
 
-    virtual void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) = 0;  // Ìæ»»value
+    virtual void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) = 0;  // æ›¿æ¢value
 
-    virtual void abandonUse() = 0;  // ·ÅÆúÊ¹ÓÃ
+    virtual void abandonUse() = 0;  // æ”¾å¼ƒä½¿ç”¨
 
     virtual unsigned long long hashCode() = 0;
 
@@ -155,7 +155,7 @@ class Module : public Value
 public:
     vector<shared_ptr<Value>> globalStrings;
     vector<shared_ptr<Value>> globalConstants;  // const array
-    vector<shared_ptr<Value>> globalVariables;  // È«¾Ö±äÁ¿
+    vector<shared_ptr<Value>> globalVariables;  // å…¨å±€å˜é‡
     vector<shared_ptr<Function>> functions;
 
     Module() 
@@ -175,18 +175,18 @@ public:
 class Function : public Value
 {
 public:
-    string name;  // º¯ÊıÃû
+    string name;  // å‡½æ•°å
     FuncType funcType;
     vector<shared_ptr<Value>> params;
     vector<shared_ptr<BasicBlock>> blocks;
     shared_ptr<BasicBlock> entryBlock; // the entryBlock is the first block of a function.
 
-    unordered_set<shared_ptr<Function>> callees;  // ´Ëº¯ÊıÖĞµ÷ÓÃÆäËûº¯Êı
-    unordered_set<shared_ptr<Function>> callers;  // ´Ëº¯Êı±»ÆäËûº¯Êıµ÷ÓÃ
+    unordered_set<shared_ptr<Function>> callees;  // æ­¤å‡½æ•°ä¸­è°ƒç”¨å…¶ä»–å‡½æ•°
+    unordered_set<shared_ptr<Function>> callers;  // æ­¤å‡½æ•°è¢«å…¶ä»–å‡½æ•°è°ƒç”¨
 
     unordered_map<shared_ptr<Value>, unsigned int> variableWeight; // value <--> weight.
-    unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.  º¯Êı×óÖµÊ¹ÓÃµÄ¼Ä´æÆ÷R4-R12
-    unordered_set<shared_ptr<Value>> variableWithoutReg;   // ±ØĞë´æÔÚÄÚ´æÖĞµÄ£¬¼Ä´æÆ÷·Å²»ÏÂµÄ±äÁ¿
+    unordered_map<shared_ptr<Value>, string> variableRegs;         // value <--> registers.  å‡½æ•°å·¦å€¼ä½¿ç”¨çš„å¯„å­˜å™¨R4-R12
+    unordered_set<shared_ptr<Value>> variableWithoutReg;   // å¿…é¡»å­˜åœ¨å†…å­˜ä¸­çš„ï¼Œå¯„å­˜å™¨æ”¾ä¸ä¸‹çš„å˜é‡
     unsigned int requiredStackSize = 0; // required size in bytes.
 
     bool hasSideEffect = true;
@@ -214,18 +214,18 @@ class BasicBlock : public Value
 public:
     shared_ptr<Function> function;
 
-    unordered_set<shared_ptr<BasicBlock>> predecessors;  // Ç°Çı¿é
-    unordered_set<shared_ptr<BasicBlock>> successors;   // ºó¼Ì¿é
-    vector<shared_ptr<Instruction>> instructions;     // ¿éÖĞÖ¸Áî
-    unordered_set<shared_ptr<PhiInstruction>> phis;   // ¿éÖĞµÄphi
+    unordered_set<shared_ptr<BasicBlock>> predecessors;  // å‰é©±å—
+    unordered_set<shared_ptr<BasicBlock>> successors;   // åç»§å—
+    vector<shared_ptr<Instruction>> instructions;     // å—ä¸­æŒ‡ä»¤
+    unordered_set<shared_ptr<PhiInstruction>> phis;   // å—ä¸­çš„phi
 
-    unsigned int loopDepth = 1;                   // ÓÃÓÚ¼Ä´æÆ÷È¨ÖØ¼ÆËã
-    unordered_set<shared_ptr<Value>> aliveValues; // ´Ëbasic blockÖĞ»îÔ¾µÄ±äÁ¿
+    unsigned int loopDepth = 1;                   // ç”¨äºå¯„å­˜å™¨æƒé‡è®¡ç®—
+    unordered_set<shared_ptr<Value>> aliveValues; // æ­¤basic blockä¸­æ´»è·ƒçš„å˜é‡
 
     unordered_map<string, shared_ptr<Value>> localVarSsaMap;  // SSA MAP
 
-    bool sealed = true;                                               // ±ê¼Ç´Ëbasic blockÊÇ·ñÃÜ·â£ºÃ»ÓĞÇ°Çı»á±»Ìí¼Ó½øÀ´
-    unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // ´æ´¢²»ÍêÕûµÄ phis
+    bool sealed = true;                                               // æ ‡è®°æ­¤basic blockæ˜¯å¦å¯†å°ï¼šæ²¡æœ‰å‰é©±ä¼šè¢«æ·»åŠ è¿›æ¥
+    unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // å­˜å‚¨ä¸å®Œæ•´çš„ phis
 
     BasicBlock() 
         : Value(ValueType::BASIC_BLOCK){};
@@ -248,11 +248,11 @@ class Instruction : public Value
 {
 public:
     InstructionType type;
-    shared_ptr<BasicBlock> block;   // ÊôÓÚµÄ»ù±¾¿é
+    shared_ptr<BasicBlock> block;   // å±äºçš„åŸºæœ¬å—
 
     ResultType resultType;
-    string caughtVarName;                         // Lvalue ¾Ö²¿±äÁ¿Ãû
-    unordered_set<shared_ptr<Value>> aliveValues; // ´ËinstructionÊ±»îÔ¾µÄ±äÁ¿.
+    string caughtVarName;                         // Lvalue å±€éƒ¨å˜é‡å
+    unordered_set<shared_ptr<Value>> aliveValues; // æ­¤instructionæ—¶æ´»è·ƒçš„å˜é‡.
     
     Instruction(InstructionType type, shared_ptr<BasicBlock> &block, ResultType resultType)
         : Value(ValueType::INSTRUCTION), type(type), resultType(resultType), block(block){};
@@ -274,7 +274,7 @@ public:
     explicit BaseValue(ValueType type) 
         : Value(type){};
 
-    virtual string getIdent() = 0;  // È¡µÃ±êÊ¶Ãû
+    virtual string getIdent() = 0;  // å–å¾—æ ‡è¯†å
 
     void replaceUse(shared_ptr<Value> &toBeReplaced, shared_ptr<Value> &replaceValue) override{};
 
@@ -286,7 +286,7 @@ public:
 };
 
 /**
- * ´ú±íÎ´¶¨ÒåµÄSSA
+ * ä»£è¡¨æœªå®šä¹‰çš„SSA
  */
 class UndefinedValue : public BaseValue
 {
@@ -306,12 +306,12 @@ public:
 };
 
 /**
- * ´ú±íÁÙÊ±±äÁ¿¼´Êı×Ö
+ * ä»£è¡¨ä¸´æ—¶å˜é‡å³æ•°å­—
  */
 class NumberValue : public BaseValue
 {
 public:
-    int number;  // Êı×Ö´óĞ¡
+    int number;  // æ•°å­—å¤§å°
 
     explicit NumberValue(int number) 
         : BaseValue(ValueType::NUMBER), number(number){};
@@ -326,14 +326,14 @@ public:
 };
 
 /**
- * ½öÓÃÓÚÎ¬³Ö CONST ARRAYS.
+ * ä»…ç”¨äºç»´æŒ CONST ARRAYS.
  */
 class ConstantValue : public BaseValue
 {
 public:
     string name;
-    vector<int> dimensions;  // Êı×éÎ¬Êı
-    map<int, int> values;    // Êı×éÖĞÖµ
+    vector<int> dimensions;  // æ•°ç»„ç»´æ•°
+    map<int, int> values;    // æ•°ç»„ä¸­å€¼
     int size = 0;
 
     ConstantValue() 
@@ -353,7 +353,7 @@ public:
 };
 
 /**
- * ÓÃÓÚ±£´æº¯ÊıĞÎ²Î
+ * ç”¨äºä¿å­˜å‡½æ•°å½¢å‚
  */
 class ParameterValue : public BaseValue
 {
@@ -361,7 +361,7 @@ public:
     string name;
     VariableType variableType;
     vector<int> dimensions;
-    shared_ptr<Function> function;  // ËùÔÚº¯Êı
+    shared_ptr<Function> function;  // æ‰€åœ¨å‡½æ•°
 
     ParameterValue(shared_ptr<Function> &function, shared_ptr<FuncFParamNode> &funcFParam);
 
@@ -375,7 +375,7 @@ public:
 };
 
 /**
- * ÓÃÀ´±£´æÈ«¾Ö±äÁ¿£¬°üÀ¨Êı×é»ò¹«¹²±äÁ¿¡£
+ * ç”¨æ¥ä¿å­˜å…¨å±€å˜é‡ï¼ŒåŒ…æ‹¬æ•°ç»„æˆ–å…¬å…±å˜é‡ã€‚
  */
 class GlobalValue : public BaseValue
 {
@@ -422,7 +422,7 @@ class ReturnInstruction : public Instruction
 {
 public:
     FuncType funcType;
-    shared_ptr<Value> value;  // ·µ»ØµÄÖµ
+    shared_ptr<Value> value;  // è¿”å›çš„å€¼
 
     ReturnInstruction(FuncType funcType, shared_ptr<Value> &value, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::RET, bb, OTHER_RESULT), funcType(funcType), value(value){};
@@ -444,9 +444,9 @@ public:
 class BranchInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> condition;  // Ìø×ªÌõ¼ş
-    shared_ptr<BasicBlock> trueBlock;  // trueÌø×ª¿é
-    shared_ptr<BasicBlock> falseBlock;  // falseÌø×ª¿é
+    shared_ptr<Value> condition;  // è·³è½¬æ¡ä»¶
+    shared_ptr<BasicBlock> trueBlock;  // trueè·³è½¬å—
+    shared_ptr<BasicBlock> falseBlock;  // falseè·³è½¬å—
 
     BranchInstruction(shared_ptr<Value> &condition, shared_ptr<BasicBlock> &trueBlock, shared_ptr<BasicBlock> &falseBlock, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::BR, bb, OTHER_RESULT), condition(condition), trueBlock(trueBlock), falseBlock(falseBlock){};
@@ -468,7 +468,7 @@ public:
 class JumpInstruction : public Instruction
 {
 public:
-    shared_ptr<BasicBlock> targetBlock;  // Ä¿±ê¿é
+    shared_ptr<BasicBlock> targetBlock;  // ç›®æ ‡å—
 
     JumpInstruction(shared_ptr<BasicBlock> &targetBlock, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::JMP, bb, OTHER_RESULT), targetBlock(targetBlock){};
@@ -490,11 +490,11 @@ public:
 class InvokeInstruction : public Instruction
 {
 public:
-    static unordered_map<string, InvokeType> sysFuncMap;  // ÔËĞĞÊ±º¯Êı±í
-    shared_ptr<Function> targetFunction;   // µ÷ÓÃµÄº¯Êı
-    vector<shared_ptr<Value>> params;    // ²ÎÊı
+    static unordered_map<string, InvokeType> sysFuncMap;  // è¿è¡Œæ—¶å‡½æ•°è¡¨
+    shared_ptr<Function> targetFunction;   // è°ƒç”¨çš„å‡½æ•°
+    vector<shared_ptr<Value>> params;    // å‚æ•°
     InvokeType invokeType;
-    string targetName;         // ½öÓÃÓÚÔËĞĞÊ±º¯Êı
+    string targetName;         // ä»…ç”¨äºè¿è¡Œæ—¶å‡½æ•°
 
     InvokeInstruction(shared_ptr<Function> &targetFunction, vector<shared_ptr<Value>> &params, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::INVOKE, bb, targetFunction->funcType == FuncType::FUNC_INT ? R_VAL_RESULT : OTHER_RESULT),
@@ -521,8 +521,8 @@ public:
 class UnaryInstruction : public Instruction
 {
 public:
-    string op;  // Ò»Ôª²Ù×÷·û
-    shared_ptr<Value> value; // ²Ù×÷Êı
+    string op;  // ä¸€å…ƒæ“ä½œç¬¦
+    shared_ptr<Value> value; // æ“ä½œæ•°
 
     UnaryInstruction(string &op, shared_ptr<Value> &value, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::UNARY, bb, R_VAL_RESULT), op(op), value(value){};
@@ -533,7 +533,7 @@ public:
 
     void abandonUse() override;
 
-    unsigned long long hashCode() override   // ÏàÍ¬µÄ±í´ïÊ½£¬Ó¦ÓĞÏàÍ¬µÄhashCode
+    unsigned long long hashCode() override   // ç›¸åŒçš„è¡¨è¾¾å¼ï¼Œåº”æœ‰ç›¸åŒçš„hashCode
     {
         return (unsigned long long)value.get() * (op.empty() ? 0 : op.at(0));
     }
@@ -547,16 +547,16 @@ public:
 class BinaryInstruction : public Instruction
 {
 public:
-    string op;   // ¶şÔª²Ù×÷·û
-    shared_ptr<Value> lhs;  // ²Ù×÷Êı
-    shared_ptr<Value> rhs;  // ²Ù×÷Êı
+    string op;   // äºŒå…ƒæ“ä½œç¬¦
+    shared_ptr<Value> lhs;  // æ“ä½œæ•°
+    shared_ptr<Value> rhs;  // æ“ä½œæ•°
 
     BinaryInstruction(string &op, shared_ptr<Value> &lhs, shared_ptr<Value> &rhs, shared_ptr<BasicBlock> &bb)
         : Instruction(swapOp(op) != op ? InstructionType::CMP : InstructionType::BINARY, bb, R_VAL_RESULT), op(op), lhs(lhs), rhs(rhs){};
 
     string toString() override;
 
-    inline static string swapOp(const string &op)  // ²Ù×÷·ûÈ¡·´
+    inline static string swapOp(const string &op)  // æ“ä½œç¬¦å–å
     {
         return op == "==" ? "!=" : op == "!=" ? "=="
                                : op == ">"    ? "<="
@@ -566,7 +566,7 @@ public:
                                               : op;
     }
 
-    inline static string swapOpConst(const string &op)  // ²Ù×÷·ûÈ¡·´
+    inline static string swapOpConst(const string &op)  // æ“ä½œç¬¦å–å
     {
         return op == ">" ? "<" : op == "<" ? ">"
                              : op == "<="  ? ">="
@@ -578,7 +578,7 @@ public:
 
     void abandonUse() override;
 
-    unsigned long long hashCode() override   // ÏàÍ¬µÄ±í´ïÊ½£¬Ó¦ÓĞÏàÍ¬µÄhashCode
+    unsigned long long hashCode() override   // ç›¸åŒçš„è¡¨è¾¾å¼ï¼Œåº”æœ‰ç›¸åŒçš„hashCode
     {
         unsigned long long x = 0;
         if (!op.empty())
@@ -592,14 +592,14 @@ public:
 };
 
 /**
- * Memory Alloc IR  ¶ÔÓÚÊı×é
+ * Memory Alloc IR  å¯¹äºæ•°ç»„
  */
 class AllocInstruction : public Instruction
 {
 public:
-    string name;  // ±äÁ¿Ãû
-    int bytes;    // Õ¼ÓÃ¿Õ¼ä
-    int units;    // ÔªËØ¸öÊı
+    string name;  // å˜é‡å
+    int bytes;    // å ç”¨ç©ºé—´
+    int units;    // å…ƒç´ ä¸ªæ•°
 
     AllocInstruction(string &name, int bytes, int units, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::ALLOC, bb, OTHER_RESULT), name(name), bytes(bytes), units(units){};
@@ -621,9 +621,9 @@ public:
 class StoreInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> value;  // storeµÄÖµ
-    shared_ptr<Value> address;  // »ùµØÖ·
-    shared_ptr<Value> offset;   // Æ«ÒÆÁ¿
+    shared_ptr<Value> value;  // storeçš„å€¼
+    shared_ptr<Value> address;  // åŸºåœ°å€
+    shared_ptr<Value> offset;   // åç§»é‡
 
     StoreInstruction(shared_ptr<Value> &value, shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::STORE, bb, OTHER_RESULT), value(value), address(address), offset(offset){};
@@ -645,8 +645,8 @@ public:
 class LoadInstruction : public Instruction
 {
 public:
-    shared_ptr<Value> address;  // »ùµØÖ·
-    shared_ptr<Value> offset;   // Æ«ÒÆÁ¿
+    shared_ptr<Value> address;  // åŸºåœ°å€
+    shared_ptr<Value> offset;   // åç§»é‡
 
     LoadInstruction(shared_ptr<Value> &address, shared_ptr<Value> &offset, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::LOAD, bb, R_VAL_RESULT), address(address), offset(offset){};
@@ -668,10 +668,10 @@ public:
 class PhiInstruction : public Instruction
 {
 public:
-    string localVarName;  // ±äÁ¿Ãû
-    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // phiµÄ²Ù×÷Êı£¨¿ÉÄÜµÄÊı£©
+    string localVarName;  // å˜é‡å
+    unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands;  // phiçš„æ“ä½œæ•°ï¼ˆå¯èƒ½çš„æ•°ï¼‰
 
-    shared_ptr<PhiMoveInstruction> phiMove; // phiÖ¸Áî£¬Ò»¸öphi_move¶ÔÓ¦Ò»¸öphi£¬µ«´Ëphi_moveÔÚÃ¿¸öphiµÄoperand¿é×îºó
+    shared_ptr<PhiMoveInstruction> phiMove; // phiæŒ‡ä»¤ï¼Œä¸€ä¸ªphi_moveå¯¹åº”ä¸€ä¸ªphiï¼Œä½†æ­¤phi_moveåœ¨æ¯ä¸ªphiçš„operandå—æœ€å
 
     PhiInstruction(string &localVarName, shared_ptr<BasicBlock> &bb)
         : Instruction(InstructionType::PHI, bb, L_VAL_RESULT), localVarName(localVarName)
@@ -697,14 +697,14 @@ public:
 };
 
 /**
- * ÔÚÃ¿¸ö¿éÇ°Çı¿ìµÄÄ©Î²¸´ÖÆ phi µÄ²Ù×÷
+ * åœ¨æ¯ä¸ªå—å‰é©±å¿«çš„æœ«å°¾å¤åˆ¶ phi çš„æ“ä½œ
  */
 class PhiMoveInstruction : public Instruction
 {
 public:
-    shared_ptr<PhiInstruction> phi;  // phiÖ¸Áî£¬Ò»¸öphi_move¶ÔÓ¦Ò»¸öphi£¬µ«´Ëphi_moveÔÚÃ¿¸öphiµÄoperand¿é×îºó
+    shared_ptr<PhiInstruction> phi;  // phiæŒ‡ä»¤ï¼Œä¸€ä¸ªphi_moveå¯¹åº”ä¸€ä¸ªphiï¼Œä½†æ­¤phi_moveåœ¨æ¯ä¸ªphiçš„operandå—æœ€å
 
-    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // ËùÔÚ¿éÖĞ»îÔ¾µÄ±äÁ¿
+    unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<Value>>> blockALiveValues;  // æ‰€åœ¨å—ä¸­æ´»è·ƒçš„å˜é‡
 
     explicit PhiMoveInstruction(shared_ptr<PhiInstruction> &phi);
 

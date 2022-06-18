@@ -1,4 +1,4 @@
-#ifndef COMPILER_IR_CHECK_H
+ï»¿#ifndef COMPILER_IR_CHECK_H
 #define COMPILER_IR_CHECK_H
 
 #include "ir.h"
@@ -6,9 +6,9 @@
 
 extern bool irCheck(const shared_ptr<Module> &);
 
-extern bool globalIrCorrect;  // È«¾ÖIR¶¼ÕıÈ·
-extern bool irUserCheck;      // ¼ì²éÊÇ·ñÓĞÊ¹ÓÃÖ¸Áî
+extern bool globalIrCorrect;  // å…¨å±€IRéƒ½æ­£ç¡®
+extern bool irUserCheck;      // æ£€æŸ¥æ˜¯å¦æœ‰ä½¿ç”¨æŒ‡ä»¤
 
-extern bool globalWarningPermit;  // ÆôÓÃ¾¯¸æ
+extern bool globalWarningPermit;  // å¯ç”¨è­¦å‘Š
 
 #endif

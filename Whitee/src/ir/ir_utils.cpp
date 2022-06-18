@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir_utils.cpp
- * @brief  Ò»Ğ©ÓÅ»¯ËùĞèµÄ¹¤¾ß
+ * @brief  ä¸€äº›ä¼˜åŒ–æ‰€éœ€çš„å·¥å…·
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 #include "ir_utils.h"
@@ -10,7 +10,7 @@
 #include <iostream>
 #include <queue>
 
-const unordered_set<InstructionType> noResultTypes{// ÎŞ·µ»ØÖµÖ¸Áî
+const unordered_set<InstructionType> noResultTypes{// æ— è¿”å›å€¼æŒ‡ä»¤
                                                    InstructionType::BR,
                                                    InstructionType::JMP,
                                                    InstructionType::RET,
@@ -22,27 +22,27 @@ unordered_set<shared_ptr<BasicBlock>> blockRelationTree;
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb);
 
 /**
- * @brief È¥³ı¿é²»ÓÃµÄÖ¸Áî
- * @param bb ´Ë¿éÖĞµÄÖ¸Áî
+ * @brief å»é™¤å—ä¸ç”¨çš„æŒ‡ä»¤
+ * @param bb æ­¤å—ä¸­çš„æŒ‡ä»¤
  */
 void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
 {
     auto it = bb->instructions.begin();
     while (it != bb->instructions.end())
     {
-        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // ÓĞ·µ»ØÖµÖ¸Áî£¬ÇÒ²»±»Ê¹ÓÃ
+        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // æœ‰è¿”å›å€¼æŒ‡ä»¤ï¼Œä¸”ä¸è¢«ä½¿ç”¨
         {
             (*it)->abandonUse();
             it = bb->instructions.erase(it);
         }
-        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // ÎŞ·µ»ØÖµÖ¸Áî£¬ÇÒÎŞĞ§
+        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // æ— è¿”å›å€¼æŒ‡ä»¤ï¼Œä¸”æ— æ•ˆ
         {
             it = bb->instructions.erase(it);
         }
         else if ((*it)->type == INVOKE && (*it)->users.empty())
         {
             shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(*it);
-            if (invoke->invokeType == COMMON && !invoke->targetFunction->hasSideEffect)  // ÎŞ¸±×÷ÓÃµÄº¯Êı£¬ÔÚÃ»ÓĞÊ¹ÓÃ¶ÔÏóÊ±£¬²ÅÄÜ±»É¾³ı
+            if (invoke->invokeType == COMMON && !invoke->targetFunction->hasSideEffect)  // æ— å‰¯ä½œç”¨çš„å‡½æ•°ï¼Œåœ¨æ²¡æœ‰ä½¿ç”¨å¯¹è±¡æ—¶ï¼Œæ‰èƒ½è¢«åˆ é™¤
             {
                 (*it)->abandonUse();
                 it = bb->instructions.erase(it);
@@ -57,7 +57,7 @@ VISIT_ALL_PHIS:
     unordered_set<shared_ptr<PhiInstruction>> phis = bb->phis;
     for (auto phi : phis)
     {
-        if (phi->onlyHasBlockUserOrUserEmpty())  // phiÃ»ÓĞ±»ÆäËûÖ¸ÁîÊ¹ÓÃ
+        if (phi->onlyHasBlockUserOrUserEmpty())  // phiæ²¡æœ‰è¢«å…¶ä»–æŒ‡ä»¤ä½¿ç”¨
         {
             phi->abandonUse();
             bb->phis.erase(phi);
@@ -67,15 +67,15 @@ VISIT_ALL_PHIS:
         bool del = false;
         for (auto &entry : operands)
         {
-            if (bb->predecessors.count(entry.first) == 0)  // phi²Ù×÷ÊıµÄ¿é£¬²¢·Ç´Ë¿éµÄÇ°Çı£¬ĞèÒªÉ¾³ı´Ë²Ù×÷Êı
+            if (bb->predecessors.count(entry.first) == 0)  // phiæ“ä½œæ•°çš„å—ï¼Œå¹¶éæ­¤å—çš„å‰é©±ï¼Œéœ€è¦åˆ é™¤æ­¤æ“ä½œæ•°
             {
-                if (phi->getOperandValueCount(entry.second) == 1)  // phiµÄ²Ù×÷ÊıÖĞ£¬½öÓĞÒ»¸ö²Ù×÷ÊıµÄÖµÎª´ËÖµ
+                if (phi->getOperandValueCount(entry.second) == 1)  // phiçš„æ“ä½œæ•°ä¸­ï¼Œä»…æœ‰ä¸€ä¸ªæ“ä½œæ•°çš„å€¼ä¸ºæ­¤å€¼
                     entry.second->users.erase(phi);
                 phi->operands.erase(entry.first);
                 del = true;
             }
         }
-        if (del)  // ¶ÔphiÖĞ²Ù×÷Êı½øĞĞÉ¾³ıÁË
+        if (del)  // å¯¹phiä¸­æ“ä½œæ•°è¿›è¡Œåˆ é™¤äº†
         {
             removeTrivialPhi(phi);
             goto VISIT_ALL_PHIS;
@@ -84,17 +84,17 @@ VISIT_ALL_PHIS:
 }
 
 /**
- * @brief È¥³ı²»ÓÃµÄ¿é
- * @param func ´ËfuncÖĞµÄËùÓĞ¿é
+ * @brief å»é™¤ä¸ç”¨çš„å—
+ * @param func æ­¤funcä¸­çš„æ‰€æœ‰å—
  */
 void removeUnusedBasicBlocks(shared_ptr<Function> &func)
 {
     blockRelationTree.clear();
-    buildBlockRelationTree(func->entryBlock);  // ½«ËùÓĞ¿ÉÄÜµÄ¿é¹¹½¨
+    buildBlockRelationTree(func->entryBlock);  // å°†æ‰€æœ‰å¯èƒ½çš„å—æ„å»º
     auto it = func->blocks.begin();
     while (it != func->blocks.end())
     {
-        if (blockRelationTree.count(*it) == 0)  // Èç¹û´Ë¿é²»¿ÉÄÜÔËĞĞ
+        if (blockRelationTree.count(*it) == 0)  // å¦‚æœæ­¤å—ä¸å¯èƒ½è¿è¡Œ
         {
             for (int i = (*it)->instructions.size() - 1; i >= 0; --i)
             {
@@ -107,7 +107,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                         shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
                         if (userIns->block != *it && userIns->block->valid)
                         {
-                            if (userIns->type == InstructionType::PHI)  // phiÖ¸ÁîÉ¾³ı²Ù×÷Êı
+                            if (userIns->type == InstructionType::PHI)  // phiæŒ‡ä»¤åˆ é™¤æ“ä½œæ•°
                             {
                                 shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(userIns);
                                 unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands = phi->operands;
@@ -120,7 +120,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                                 }
                                 removeTrivialPhi(phi);
                             }
-                            else  // ÀïÃæµÄÖµÈ«²¿±äÎªUndefinedValue
+                            else  // é‡Œé¢çš„å€¼å…¨éƒ¨å˜ä¸ºUndefinedValue
                             {
                                 string undefinedName = "unused block's instruction " + to_string(selfIns->id);
                                 shared_ptr<Value> newVal = make_shared<UndefinedValue>(undefinedName);
@@ -140,15 +140,15 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
 }
 
 /**
- * @brief È¥³ı²»±»µ÷ÓÃµÄº¯Êı
- * @param module ´ËmoduleÀïµÄº¯Êı
+ * @brief å»é™¤ä¸è¢«è°ƒç”¨çš„å‡½æ•°
+ * @param module æ­¤moduleé‡Œçš„å‡½æ•°
  */
 void removeUnusedFunctions(shared_ptr<Module> &module)
 {
     auto func = module->functions.begin ();
     while (func != module->functions.end ())
     {
-        if ((*func)->callers.empty () && (*func)->name != "main")   // È¥³ıÃ»ÓĞµ÷ÓÃµÄmainÒÔÍâµÄº¯Êı
+        if ((*func)->callers.empty () && (*func)->name != "main")   // å»é™¤æ²¡æœ‰è°ƒç”¨çš„mainä»¥å¤–çš„å‡½æ•°
         {
             (*func)->abandonUse ();
             func = module->functions.erase (func);
@@ -159,15 +159,15 @@ void removeUnusedFunctions(shared_ptr<Module> &module)
 }
 
 /**
- * @brief É¾³ıpreµÄºó¼Ì¿ébb
- * @param bb ºó¼Ì¿é
- * @param pre Ç°Çı¿é
+ * @brief åˆ é™¤preçš„åç»§å—bb
+ * @param bb åç»§å—
+ * @param pre å‰é©±å—
  */
 void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre)
 {
     pre->successors.erase(bb);
     bb->predecessors.erase(pre);
-    if (bb->predecessors.empty())  // Èç¹û´Ë¿éÃ»ÓĞÇ°Çı¿é£¬Ôòµİ¹éÉ¾³ı´Ë¿é
+    if (bb->predecessors.empty())  // å¦‚æœæ­¤å—æ²¡æœ‰å‰é©±å—ï¼Œåˆ™é€’å½’åˆ é™¤æ­¤å—
     {
         unordered_set<shared_ptr<BasicBlock>> successorsCopy = bb->successors;
         bb->successors.clear();
@@ -179,8 +179,8 @@ void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &
 }
 
 /**
- * @brief ¹¹½¨¿é¹ØÏµÊ÷£¬½«ºó¼ÌµÄ¿éÈ«²¿²åÈë
- * @param bb ¿ªÊ¼µÄ¿é
+ * @brief æ„å»ºå—å…³ç³»æ ‘ï¼Œå°†åç»§çš„å—å…¨éƒ¨æ’å…¥
+ * @param bb å¼€å§‹çš„å—
  */
 void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
 {
@@ -195,8 +195,8 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
 }
 
 /**
- * @brief º¯ÊıÓĞ¸±×÷ÓÃ£ºĞŞ¸ÄÁË×Ô¼º·¶Î§Ö®ÍâµÄ×ÊÔ´    ĞŞ¸ÄÈ«¾Ö±äÁ¿¡¢ĞŞ¸ÄÊäÈë²ÎÊıËùÒıÓÃµÄ¶ÔÏó¡¢×öÊäÈëÊä³ö²Ù×÷¡¢µ÷ÓÃÆäËûÓĞ¸±×÷ÓÃµÄº¯Êı
- * @param module ´ËmoduleÖĞµÄº¯Êı
+ * @brief å‡½æ•°æœ‰å‰¯ä½œç”¨ï¼šä¿®æ”¹äº†è‡ªå·±èŒƒå›´ä¹‹å¤–çš„èµ„æº    ä¿®æ”¹å…¨å±€å˜é‡ã€ä¿®æ”¹è¾“å…¥å‚æ•°æ‰€å¼•ç”¨çš„å¯¹è±¡ã€åšè¾“å…¥è¾“å‡ºæ“ä½œã€è°ƒç”¨å…¶ä»–æœ‰å‰¯ä½œç”¨çš„å‡½æ•°
+ * @param module æ­¤moduleä¸­çš„å‡½æ•°
  */
 void IsFunctionSideEffect(shared_ptr<Module> &module)
 {
@@ -205,7 +205,7 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
         func->hasSideEffect = false;
         for (auto &arg : func->params)
         {
-            if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)   // º¯Êı²ÎÊıÎªÖ¸Õë
+            if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)   // å‡½æ•°å‚æ•°ä¸ºæŒ‡é’ˆ
             {
                 func->hasSideEffect = true;
                 goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -217,7 +217,7 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
             {
                 if (ins->type == InstructionType::STORE)
                 {
-                    if (s_p_c<StoreInstruction>(ins)->address->valueType != INSTRUCTION)  // storeÒ»¸öÈ«¾Ö±äÁ¿
+                    if (s_p_c<StoreInstruction>(ins)->address->valueType != INSTRUCTION)  // storeä¸€ä¸ªå…¨å±€å˜é‡
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -225,7 +225,7 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::LOAD)
                 {
-                    if (s_p_c<LoadInstruction>(ins)->address->valueType != INSTRUCTION)  // loadÒ»¸öÈ«¾Ö±äÁ¿
+                    if (s_p_c<LoadInstruction>(ins)->address->valueType != INSTRUCTION)  // loadä¸€ä¸ªå…¨å±€å˜é‡
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -233,7 +233,7 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::BINARY)
                 {
-                    // Ê¹ÓÃÁËÈ«¾Ö±äÁ¿
+                    // ä½¿ç”¨äº†å…¨å±€å˜é‡
                     if (s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::GLOBAL 
                         || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::GLOBAL)
                     {
@@ -243,19 +243,19 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
                 }
                 else if (ins->type == InstructionType::INVOKE)
                 {
-                    if (s_p_c<InvokeInstruction>(ins)->invokeType != COMMON)  // µ÷ÓÃÁËÏµÍ³º¯Êı
+                    if (s_p_c<InvokeInstruction>(ins)->invokeType != COMMON)  // è°ƒç”¨äº†ç³»ç»Ÿå‡½æ•°
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
-                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->hasSideEffect)  // µ÷ÓÃÁËÓĞ¸±×÷ÓÃµÄº¯Êı
+                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->hasSideEffect)  // è°ƒç”¨äº†æœ‰å‰¯ä½œç”¨çš„å‡½æ•°
                     {
                         func->hasSideEffect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                     for (auto &arg : s_p_c<InvokeInstruction>(ins)->params)
                     {
-                        if (arg->valueType == ValueType::GLOBAL || arg->valueType == ValueType::CONSTANT)  // º¯ÊıµÄÊµ²ÎÎªÈ«¾Ö±äÁ¿
+                        if (arg->valueType == ValueType::GLOBAL || arg->valueType == ValueType::CONSTANT)  // å‡½æ•°çš„å®å‚ä¸ºå…¨å±€å˜é‡
                         {
                             func->hasSideEffect = true;
                             goto FUNC_SIDE_EFFECT_CONTINUE;
@@ -270,9 +270,9 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
 }
 
 /**
- * @brief ¸øÒ»¸öÖµÌí¼ÓÊ¹ÓÃµÄ¶ÔÏó
- * @param user Ê¹ÓÃÖµµÄ¶ÔÏó£¬Ò»°ãÎªÖ¸Áî
- * @param used ±»Ê¹ÓÃµÄÖµ
+ * @brief ç»™ä¸€ä¸ªå€¼æ·»åŠ ä½¿ç”¨çš„å¯¹è±¡
+ * @param user ä½¿ç”¨å€¼çš„å¯¹è±¡ï¼Œä¸€èˆ¬ä¸ºæŒ‡ä»¤
+ * @param used è¢«ä½¿ç”¨çš„å€¼
  */
 void addUser(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> used)
 {
@@ -291,8 +291,8 @@ void addUser(const shared_ptr<Value> &user, const vector<shared_ptr<Value>> &use
 }
 
 /**
- * @brief ÒÆ³ıPhiÓÃ»§¿éºÍ¶àÖØCmp
- * @param module ´Ëmodule
+ * @brief ç§»é™¤Phiç”¨æˆ·å—å’Œå¤šé‡Cmp
+ * @param module æ­¤module
  */
 void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 {
@@ -304,7 +304,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
             {
                 if ((*ins)->type == InstructionType::CMP && ins + 1 != bb->instructions.end())
                 {
-                    if ((*(ins + 1))->type != InstructionType::BR)  // Èç¹û´ËÖ¸ÁîÊÇcmpÇÒÏÂ¸öÖ¸Áî²»Îªbranch£¬Ôò´ËÖ¸Áî±äÎªbinary£¬½øĞĞ¼ÆËã
+                    if ((*(ins + 1))->type != InstructionType::BR)  // å¦‚æœæ­¤æŒ‡ä»¤æ˜¯cmpä¸”ä¸‹ä¸ªæŒ‡ä»¤ä¸ä¸ºbranchï¼Œåˆ™æ­¤æŒ‡ä»¤å˜ä¸ºbinaryï¼Œè¿›è¡Œè®¡ç®—
                     {
                         (*ins)->type = InstructionType::BINARY;
                     }
@@ -315,7 +315,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
                 unordered_set<shared_ptr<Value>> users = phi->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::BASIC_BLOCK)  // Èç¹û´ËÖ¸ÁîµÄÊ¹ÓÃÕßÊÇ»ù±¾¿é£¬ÔòÉ¾³ı´ËÊ¹ÓÃÕß£¬ÒòÎªµ±Ê±phi¶à¼ÓÁË´Ëuser
+                    if (user->valueType == ValueType::BASIC_BLOCK)  // å¦‚æœæ­¤æŒ‡ä»¤çš„ä½¿ç”¨è€…æ˜¯åŸºæœ¬å—ï¼Œåˆ™åˆ é™¤æ­¤ä½¿ç”¨è€…ï¼Œå› ä¸ºå½“æ—¶phiå¤šåŠ äº†æ­¤user
                     {
                         phi->users.erase(user);
                     }
@@ -326,7 +326,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
 }
 
 /**
- * @brief ÓÒÖµÉú³ÉÁÙÊ±×óÖµ
+ * @brief å³å€¼ç”Ÿæˆä¸´æ—¶å·¦å€¼
  * @param module 
  */
 void fixRightValue(shared_ptr<Module> &module)
@@ -337,11 +337,11 @@ void fixRightValue(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->type == ALLOC)   // ¾Ö²¿Êı×éµÄµØÖ·
+                if (ins->type == ALLOC)   // å±€éƒ¨æ•°ç»„çš„åœ°å€
                 {
                     ins->resultType = OTHER_RESULT;
                 }
-                else if (ins->type == INVOKE && s_p_c<InvokeInstruction>(ins)->users.empty())  // Ö±½Óµ÷ÓÃµÄº¯Êı
+                else if (ins->type == INVOKE && s_p_c<InvokeInstruction>(ins)->users.empty())  // ç›´æ¥è°ƒç”¨çš„å‡½æ•°
                 {
                     s_p_c<InvokeInstruction>(ins)->resultType = OTHER_RESULT;
                 }
@@ -356,7 +356,7 @@ void fixRightValue(shared_ptr<Module> &module)
             {
                 if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)
                 {
-                    // Èç¹û´ËÓÒÖµ½ö±»Ò»´ÎÊ¹ÓÃ£¬ÇÒÊ¹ÓÃÓë´ËÖ¸Áî²»ÔÚÍ¬Ò»¸ö¿é
+                    // å¦‚æœæ­¤å³å€¼ä»…è¢«ä¸€æ¬¡ä½¿ç”¨ï¼Œä¸”ä½¿ç”¨ä¸æ­¤æŒ‡ä»¤ä¸åœ¨åŒä¸€ä¸ªå—
                     if (ins->users.begin()->get()->valueType == ValueType::INSTRUCTION && ins->block != s_p_c<Instruction>(*ins->users.begin())->block)
                     {
                         ins->resultType = L_VAL_RESULT;
@@ -369,27 +369,27 @@ void fixRightValue(shared_ptr<Module> &module)
 }
 
 /**
- * @brief »ñÈ¡º¯ÊıËùĞèµÄ¶ÑÕ»´óĞ¡  Ö»Óëº¯ÊıÄÚµÄ¾Ö²¿±äÁ¿ÓĞ¹Ø
+ * @brief è·å–å‡½æ•°æ‰€éœ€çš„å †æ ˆå¤§å°  åªä¸å‡½æ•°å†…çš„å±€éƒ¨å˜é‡æœ‰å…³
  * @param func 
  */
 void getFunctionRequiredStackSize(shared_ptr<Function> &func)
 {
-    unsigned int size = 4 * _W_LEN;  // ³õÊ¼Îª4¸ö×Ö½Ú
+    unsigned int size = 4 * _W_LEN;  // åˆå§‹ä¸º4ä¸ªå­—èŠ‚
     unordered_set<shared_ptr<Value>> phiMovSet;
     for (auto &bb : func->blocks)
     {
         for (auto &ins : bb->instructions)
         {
-            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)  // ¶à¸öphi_move Ö»ÓÃ·ÖÅäÒ»´Î
+            if (ins->type == PHI_MOV && phiMovSet.count(ins) == 0 && func->variableRegs.count(ins) == 0)  // å¤šä¸ªphi_move åªç”¨åˆ†é…ä¸€æ¬¡
             {
                 phiMovSet.insert(ins);
                 size += _W_LEN;
             }
-            else if (ins->resultType == L_VAL_RESULT && func->variableRegs.count(ins) == 0)  // Éú³ÉÁËĞÂµÄ×óÖµ
+            else if (ins->resultType == L_VAL_RESULT && func->variableRegs.count(ins) == 0)  // ç”Ÿæˆäº†æ–°çš„å·¦å€¼
             {
                 size += _W_LEN;
             }
-            else if (ins->type == ALLOC)  // ÓĞ±äÁ¿·ÖÅä¿Õ¼ä
+            else if (ins->type == ALLOC)  // æœ‰å˜é‡åˆ†é…ç©ºé—´
             {
                 size += s_p_c<AllocInstruction>(ins)->bytes;
             }
@@ -399,7 +399,7 @@ void getFunctionRequiredStackSize(shared_ptr<Function> &func)
 }
 
 /**
- * @brief phiÏû³ı£¬½«phiµÄ¿ÉÄÜÈ¡Öµ½øĞĞcopy£¬phi½öÓĞÒ»¸öÈ·¶¨Öµ
+ * @brief phiæ¶ˆé™¤ï¼Œå°†phiçš„å¯èƒ½å–å€¼è¿›è¡Œcopyï¼Œphiä»…æœ‰ä¸€ä¸ªç¡®å®šå€¼
  * @param func 
  */
 void phiElimination(shared_ptr<Function> &func)
@@ -415,11 +415,11 @@ void phiElimination(shared_ptr<Function> &func)
                 if (!pred->instructions.empty())
                 {
                     auto it = pred->instructions.end() - 1;
-                    if ((*it)->type == JMP)        // ÔÚjumpÇ°copy
+                    if ((*it)->type == JMP)        // åœ¨jumpå‰copy
                     {
                         pred->instructions.insert(it, phiMov);
                     }
-                    else if ((*it)->type == BR)   // ÔÚbranchÇ°²åÈë
+                    else if ((*it)->type == BR)   // åœ¨branchå‰æ’å…¥
                     {
                         if (it != pred->instructions.begin() && (*(it - 1))->type == CMP)
                         {
@@ -443,7 +443,7 @@ void phiElimination(shared_ptr<Function> &func)
 }
 
 /**
- * @brief ½«¿éÖĞµÄAliveValues¼ÓÈë¿éÄÚinsÖĞ
+ * @brief å°†å—ä¸­çš„AliveValuesåŠ å…¥å—å†…insä¸­
  * @param func 
  */
 void mergeAliveValuesToInstruction(shared_ptr<Function> &func)

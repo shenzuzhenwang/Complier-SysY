@@ -1,4 +1,4 @@
-#ifndef COMPILER_IR_UTILS_H
+﻿#ifndef COMPILER_IR_UTILS_H
 #define COMPILER_IR_UTILS_H
 
 #include "ir.h"

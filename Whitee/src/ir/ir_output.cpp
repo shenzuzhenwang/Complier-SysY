@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir_output.cpp
- * @brief  IRÊä³öµÄº¯Êı
+ * @brief  IRè¾“å‡ºçš„å‡½æ•°
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   June 2022
  *********************************************************************/
 #include "ir.h"
@@ -15,9 +15,9 @@ unordered_map<unsigned int, string> valueSsaMap;
 unordered_map<unsigned int, string> blockLabelMap;
 
 /**
- * @brief Éú³ÉÖµµÄÕıÊ½Ãû³Æ
- * @param v ĞèÒªĞ´µÄÖµ
- * @return Ğ´ÈëµÄÃû×Ö£¬¿ÉÒÔÊÇÒ»¸össa-name£¬Ò»¸ö±¾µØÖ¸Õë£¬È«¾ÖÖ¸Õë»ò²ÎÊıÃû³Æ
+ * @brief ç”Ÿæˆå€¼çš„æ­£å¼åç§°
+ * @param v éœ€è¦å†™çš„å€¼
+ * @return å†™å…¥çš„åå­—ï¼Œå¯ä»¥æ˜¯ä¸€ä¸ªssa-nameï¼Œä¸€ä¸ªæœ¬åœ°æŒ‡é’ˆï¼Œå…¨å±€æŒ‡é’ˆæˆ–å‚æ•°åç§°
  */
 string getSsaName(const shared_ptr<Value> &v)
 {
@@ -51,9 +51,9 @@ string getSsaName(const shared_ptr<Value> &v)
 }
 
 /**
- * @brief ´Ëº¯ÊıÉú³É»ù±¾¿éµÄÃû³Æ
- * @param bb ´Ë»ù±¾¿é
- * @return ¿éµÄ¿ªÊ¼label
+ * @brief æ­¤å‡½æ•°ç”ŸæˆåŸºæœ¬å—çš„åç§°
+ * @param bb æ­¤åŸºæœ¬å—
+ * @return å—çš„å¼€å§‹label
  */
 string getBasicBlockId(const shared_ptr<BasicBlock> &bb)
 {
