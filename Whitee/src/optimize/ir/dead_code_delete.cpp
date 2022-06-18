@@ -1,7 +1,7 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ËÀ´úÂëÉ¾³ı
+ * @brief æ­»ä»£ç åˆ é™¤
  * @param module 
  */
 void dead_code_delete(shared_ptr<Module> &module)
@@ -10,7 +10,7 @@ void dead_code_delete(shared_ptr<Module> &module)
     IsFunctionSideEffect(module);
     for (auto var = module->globalStrings.begin(); var != module->globalStrings.end();)
     {
-        if ((*var)->users.empty())  // É¾³ıÃ»ÓĞ±»Ê¹ÓÃµÄstring
+        if ((*var)->users.empty())  // åˆ é™¤æ²¡æœ‰è¢«ä½¿ç”¨çš„string
         {
             var = module->globalStrings.erase(var);
         }
@@ -19,7 +19,7 @@ void dead_code_delete(shared_ptr<Module> &module)
             auto it = (*var)->users.begin();
             while (it != (*var)->users.end())
             {
-                // É¾³ıÒÑ¾­Ê§Ğ§µÄÊ¹ÓÃ
+                // åˆ é™¤å·²ç»å¤±æ•ˆçš„ä½¿ç”¨
                 if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);
@@ -53,7 +53,7 @@ void dead_code_delete(shared_ptr<Module> &module)
     }
     for (auto var = module->globalConstants.begin(); var != module->globalConstants.end();)
     {
-        if ((*var)->users.empty())  // É¾³ıÃ»ÓĞ±»Ê¹ÓÃµÄ³£ÊıÖµ
+        if ((*var)->users.empty())  // åˆ é™¤æ²¡æœ‰è¢«ä½¿ç”¨çš„å¸¸æ•°å€¼
         {
             var = module->globalConstants.erase(var);
         }
@@ -62,7 +62,7 @@ void dead_code_delete(shared_ptr<Module> &module)
             auto it = (*var)->users.begin();
             while (it != (*var)->users.end())
             {
-                // É¾³ıÒÑ¾­Ê§Ğ§µÄÊ¹ÓÃ
+                // åˆ é™¤å·²ç»å¤±æ•ˆçš„ä½¿ç”¨
                 if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);

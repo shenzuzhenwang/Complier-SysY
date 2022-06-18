@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir_ssa.cpp
- * @brief  SSA¾²Ì¬µ¥¸³Öµ²ßÂÔ
+ * @brief  SSAé™æ€å•èµ‹å€¼ç­–ç•¥
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   June 2022
  *********************************************************************/
 #include "ir_ssa.h"
@@ -15,10 +15,10 @@
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName);
 
 /**
- * @brief ´ÓÒ»¸ö¿éµÄSSA MAPÖĞ¶ÁÈ¡±äÁ¿
- * @param bb ±äÁ¿ËùÔÚµÄ¿é
- * @param varName ±äÁ¿µÄÃû×Ö
- * @return ±äÁ¿µÄÖµ
+ * @brief ä»ä¸€ä¸ªå—çš„SSA MAPä¸­è¯»å–å˜é‡
+ * @param bb å˜é‡æ‰€åœ¨çš„å—
+ * @param varName å˜é‡çš„åå­—
+ * @return å˜é‡çš„å€¼
  */
 shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 {
@@ -28,77 +28,77 @@ shared_ptr<Value> readLocalVariable(shared_ptr<BasicBlock> &bb, string &varName)
 }
 
 /**
- * @brief ½«±äÁ¿Ğ´Èë¿éµÄSSA MAP
- * @param bb ±äÁ¿ËùÔÚµÄ¿é
- * @param varName ±äÁ¿µÄÃû×Ö
- * @param value ¸ø±äÁ¿Ğ´ÈëµÄÖµ
+ * @brief å°†å˜é‡å†™å…¥å—çš„SSA MAP
+ * @param bb å˜é‡æ‰€åœ¨çš„å—
+ * @param varName å˜é‡çš„åå­—
+ * @param value ç»™å˜é‡å†™å…¥çš„å€¼
  */
 void writeLocalVariable(shared_ptr<BasicBlock> &bb, const string &varName, const shared_ptr<Value> &value)
 {
     bb->localVarSsaMap[varName] = value;
-    if (dynamic_cast<PhiInstruction *>(value.get()))   // Ğ´Èëphiº¯ÊıµÄÖµ£¬phi±»´Ë¿éÊ¹ÓÃ
+    if (dynamic_cast<PhiInstruction *>(value.get()))   // å†™å…¥phiå‡½æ•°çš„å€¼ï¼Œphiè¢«æ­¤å—ä½¿ç”¨
     {
         value->users.insert(bb);
     }
 }
 
 /**
- * @brief µİ¹éÏòÇ°ÇıµÄ¿éÑ°ÕÒ±äÁ¿µÄÖµ
- * @param bb ¿ªÊ¼Ñ°ÕÒµÄ¿é
- * @param varName ±äÁ¿µÄÃû×Ö
- * @return ±äÁ¿µÄÖµ
+ * @brief é€’å½’å‘å‰é©±çš„å—å¯»æ‰¾å˜é‡çš„å€¼
+ * @param bb å¼€å§‹å¯»æ‰¾çš„å—
+ * @param varName å˜é‡çš„åå­—
+ * @return å˜é‡çš„å€¼
  */
 shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, string &varName)
 {
-    if (!bb->sealed)  // ¿é²»·â±Õ£¬½ö´æÔÚÓÚÑ­»·Ìå£¬´ËÊ±¿ÉÄÜÇ°ÇıÎ´¼ÓÈëÍê
+    if (!bb->sealed)  // å—ä¸å°é—­ï¼Œä»…å­˜åœ¨äºå¾ªç¯ä½“ï¼Œæ­¤æ—¶å¯èƒ½å‰é©±æœªåŠ å…¥å®Œ
     {
         shared_ptr<PhiInstruction> emptyPhi = make_shared<PhiInstruction>(varName, bb);
         bb->incompletePhis[varName] = emptyPhi;
         writeLocalVariable(bb, varName, emptyPhi);
         return emptyPhi;
     }
-    else if (bb->predecessors.size() == 1)  // Ö»ÓĞÒ»¸öÇ°ÇıµÄÇé¿ö£º²»ĞèÒª phi
+    else if (bb->predecessors.size() == 1)  // åªæœ‰ä¸€ä¸ªå‰é©±çš„æƒ…å†µï¼šä¸éœ€è¦ phi
     {
         shared_ptr<BasicBlock> predecessor = *(bb->predecessors.begin());
-        shared_ptr<Value> val = readLocalVariable(predecessor, varName);  // ¼ÌĞøµİ¹éÏòÇ°Ñ°ÕÒ±äÁ¿µÄÖµ
-        writeLocalVariable(bb, varName, val);  // ÕÒµ½ºóĞ´ÈëÏÖÔÚµÄ¿é
+        shared_ptr<Value> val = readLocalVariable(predecessor, varName);  // ç»§ç»­é€’å½’å‘å‰å¯»æ‰¾å˜é‡çš„å€¼
+        writeLocalVariable(bb, varName, val);  // æ‰¾åˆ°åå†™å…¥ç°åœ¨çš„å—
         return val;
     }
-    else  // Èç¹ûÓĞÁ½¸öÒÔÉÏÇ°Çı¿é
+    else  // å¦‚æœæœ‰ä¸¤ä¸ªä»¥ä¸Šå‰é©±å—
     {
         shared_ptr<Value> val = make_shared<PhiInstruction>(varName, bb);
-        writeLocalVariable(bb, varName, val);                   // ÏÈÔÚ¿éÖĞĞ´Ò»¸öÎŞ²Ù×÷ÊıµÄphi£¬ÎªÁËÆÆ»µ¿ÉÄÜµÄÑ­»·
+        writeLocalVariable(bb, varName, val);                   // å…ˆåœ¨å—ä¸­å†™ä¸€ä¸ªæ— æ“ä½œæ•°çš„phiï¼Œä¸ºäº†ç ´åå¯èƒ½çš„å¾ªç¯
         shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(val);
         bb->phis.insert(phi);
 
-        val = addPhiOperands(bb, varName, phi);  // ¼ÓÈë²Ù×÷Êı
+        val = addPhiOperands(bb, varName, phi);  // åŠ å…¥æ“ä½œæ•°
         writeLocalVariable(bb, varName, val);
         return val;
     }
 }
 
 /**
- * @brief ¼ÓÈë±äÁ¿µÄphiµÄ²Ù×÷Êı
- * @param bb phiËùÔÚµÄ¿é
- * @param varName ±äÁ¿µÄÃû×Ö
- * @param phi phi¶ÔÏó
+ * @brief åŠ å…¥å˜é‡çš„phiçš„æ“ä½œæ•°
+ * @param bb phiæ‰€åœ¨çš„å—
+ * @param varName å˜é‡çš„åå­—
+ * @param phi phiå¯¹è±¡
  * @return 
  */
 shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, shared_ptr<PhiInstruction> &phi)
 {
-    for (auto &it : bb->predecessors)  // ´ÓÇ°ÇıÖĞÈ·¶¨²Ù×÷Êı
+    for (auto &it : bb->predecessors)  // ä»å‰é©±ä¸­ç¡®å®šæ“ä½œæ•°
     {
         shared_ptr<BasicBlock> pred = it;
-        shared_ptr<Value> v = readLocalVariable(pred, varName);  // µİ¹éÏòÇ°Çı¿éÑ°ÕÒÍ¬Ãû±äÁ¿µÄÖµ£¬¿ÉÄÜÓÉÓÚÑ­»·£¬ÕÒµ½ÁË´Ëphi
+        shared_ptr<Value> v = readLocalVariable(pred, varName);  // é€’å½’å‘å‰é©±å—å¯»æ‰¾åŒåå˜é‡çš„å€¼ï¼Œå¯èƒ½ç”±äºå¾ªç¯ï¼Œæ‰¾åˆ°äº†æ­¤phi
         shared_ptr<BasicBlock> block;
         phi->operands.insert({it, v});
         v->users.insert(phi);
     }
-    return removeTrivialPhi(phi);  // ÓÉÓÚ¿ÉÄÜÓÉÓÚÑ­»·£¬phiµÄ²Ù×÷ÊıµÄÖµÎªphi×Ô¼º£»»òÊÇÁ½¸ö²Ù×÷ÊıÏàÍ¬£¬´ËÊ±ĞèÒªÈ¥³ıphi
+    return removeTrivialPhi(phi);  // ç”±äºå¯èƒ½ç”±äºå¾ªç¯ï¼Œphiçš„æ“ä½œæ•°çš„å€¼ä¸ºphiè‡ªå·±ï¼›æˆ–æ˜¯ä¸¤ä¸ªæ“ä½œæ•°ç›¸åŒï¼Œæ­¤æ—¶éœ€è¦å»é™¤phi
 }
 
 /**
- * @brief È¥³ı²»ÖØÒªµÄphi
+ * @brief å»é™¤ä¸é‡è¦çš„phi
  * @param phi 
  * @return 
  */
@@ -106,23 +106,23 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
 {
     shared_ptr<Value> same;
     shared_ptr<Value> self = phi->shared_from_this();
-    for (auto &it : phi->operands)     // ²Ù×÷ÊıÎª×Ô¼ººÍÁíÒ»¸öÖµµÄÊ±ºò£¬´Ëphi¿ÉÒÔÓÃÁíÒ»¸öÖµ´úÌæ
+    for (auto &it : phi->operands)     // æ“ä½œæ•°ä¸ºè‡ªå·±å’Œå¦ä¸€ä¸ªå€¼çš„æ—¶å€™ï¼Œæ­¤phiå¯ä»¥ç”¨å¦ä¸€ä¸ªå€¼ä»£æ›¿
     {
-        if (it.second == same || it.second == self)  // Á½¸ö²Ù×÷ÊıµÄÖµ£ºÆäÖĞÒ»¸öÎª´Ëphi£¬»òÁ½¸öÖµÏàÍ¬£¬´ËÊ±£¬ĞèÒªÈ¥³ı´Ëphi
+        if (it.second == same || it.second == self)  // ä¸¤ä¸ªæ“ä½œæ•°çš„å€¼ï¼šå…¶ä¸­ä¸€ä¸ªä¸ºæ­¤phiï¼Œæˆ–ä¸¤ä¸ªå€¼ç›¸åŒï¼Œæ­¤æ—¶ï¼Œéœ€è¦å»é™¤æ­¤phi
             continue;
-        if (same != nullptr)  // phiÓĞÁ½¸ö·Ç×Ô¼ºµÄ²Ù×÷Êı£¬ÖØÒª
+        if (same != nullptr)  // phiæœ‰ä¸¤ä¸ªéè‡ªå·±çš„æ“ä½œæ•°ï¼Œé‡è¦
             return phi;
         same = it.second;
     }
-    if (same == nullptr)     // ²»¿É´ï»òÔÚ¿ªÊ¼¿éÖĞ£¬ÎŞ²Ù×÷Êı
+    if (same == nullptr)     // ä¸å¯è¾¾æˆ–åœ¨å¼€å§‹å—ä¸­ï¼Œæ— æ“ä½œæ•°
         same = make_shared<UndefinedValue>(phi->localVarName);
-    phi->users.erase(phi);    // ÕÒ³öËùÓĞÊ¹ÓÃÕâ¸ö phi µÄÖµ£¬³ıÁËËü±¾Éí
+    phi->users.erase(phi);    // æ‰¾å‡ºæ‰€æœ‰ä½¿ç”¨è¿™ä¸ª phi çš„å€¼ï¼Œé™¤äº†å®ƒæœ¬èº«
     unordered_set<shared_ptr<Value>> users = phi->users;
     shared_ptr<Value> toBeReplaced = phi;
     phi->block->phis.erase(phi);
     for (auto &it : users)
     {
-        it->replaceUse(toBeReplaced, same);  // ½«ËùÓĞÓÃµ½ phi µÄµØ·½Ìæ´úÎª same ²¢ÒÆ³ı phi
+        it->replaceUse(toBeReplaced, same);  // å°†æ‰€æœ‰ç”¨åˆ° phi çš„åœ°æ–¹æ›¿ä»£ä¸º same å¹¶ç§»é™¤ phi
     }
     if (_isBuildingIr)
     {
@@ -136,7 +136,7 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
     {
         phi->abandonUse ();
     }
-    for (auto &it : users)   // ÊÔÈ¥µİ¹éÒÆ³ıÊ¹ÓÃ´Ë phi µÄ phi Ö¸Áî£¬ÒòÎªËü¿ÉÄÜ±äµÃ²»ÖØÒª£¨trivial£©
+    for (auto &it : users)   // è¯•å»é€’å½’ç§»é™¤ä½¿ç”¨æ­¤ phi çš„ phi æŒ‡ä»¤ï¼Œå› ä¸ºå®ƒå¯èƒ½å˜å¾—ä¸é‡è¦ï¼ˆtrivialï¼‰
     {
         if (dynamic_cast<PhiInstruction *>(it.get()))
         {
@@ -152,8 +152,8 @@ shared_ptr<Value> removeTrivialPhi(shared_ptr<PhiInstruction> &phi)
 }
 
 /**
- * @brief ÔÚÇ°Çı²éÑ¯±äÁ¿¶¨Òå ¼ÓÈë±äÁ¿µÄphi¿ÉÄÜÖµ
- * @param bb ´Ë¿é
+ * @brief åœ¨å‰é©±æŸ¥è¯¢å˜é‡å®šä¹‰ åŠ å…¥å˜é‡çš„phiå¯èƒ½å€¼
+ * @param bb æ­¤å—
  */
 void sealBasicBlock(shared_ptr<BasicBlock> &bb)
 {
@@ -161,10 +161,10 @@ void sealBasicBlock(shared_ptr<BasicBlock> &bb)
     {
         for (auto &it : bb->incompletePhis)
         {
-            string varName = it.first;   // ±äÁ¿Ãû
-            shared_ptr<PhiInstruction> phi = it.second;  // ¿Õphi
+            string varName = it.first;   // å˜é‡å
+            shared_ptr<PhiInstruction> phi = it.second;  // ç©ºphi
             bb->phis.insert(phi);
-            addPhiOperands(bb, varName, phi);  // ¼ÓÈë²Ù×÷Êı
+            addPhiOperands(bb, varName, phi);  // åŠ å…¥æ“ä½œæ•°
         }
         bb->incompletePhis.clear();
         bb->sealed = true;

@@ -1,7 +1,7 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief »ù±¾¿éºÏ²¢
+ * @brief åŸºæœ¬å—åˆå¹¶
  * @param module 
  */
 void block_combination(shared_ptr<Module> &module)
@@ -13,7 +13,7 @@ void block_combination(shared_ptr<Module> &module)
             shared_ptr<BasicBlock> &bb = func->blocks.at(i);
             if (bb->instructions.empty())
                 continue;
-            if (bb->successors.size() == 1)  // Ö»ÓĞÒ»¸öºó¼Ì¿é
+            if (bb->successors.size() == 1)  // åªæœ‰ä¸€ä¸ªåç»§å—
             {
                 shared_ptr<BasicBlock> successor = *bb->successors.begin();
                 if (successor != bb && successor->predecessors.size() == 1)
@@ -23,8 +23,8 @@ void block_combination(shared_ptr<Module> &module)
                     {
                         cerr << "Error occurs in process block combination: the last instruction is not jump." << endl;
                     }
-                    bb->instructions.erase(--bb->instructions.end());  // É¾È¥Ìø×ª
-                    bb->instructions.insert(bb->instructions.end(), successor->instructions.begin(), successor->instructions.end());  // ½«ºó¼Ì¿éËùÓĞÖ¸Áî¼ÓÈë
+                    bb->instructions.erase(--bb->instructions.end());  // åˆ å»è·³è½¬
+                    bb->instructions.insert(bb->instructions.end(), successor->instructions.begin(), successor->instructions.end());  // å°†åç»§å—æ‰€æœ‰æŒ‡ä»¤åŠ å…¥
                     for (auto &ins : successor->instructions)
                     {
                         ins->block = bb;
@@ -33,14 +33,14 @@ void block_combination(shared_ptr<Module> &module)
                     {
                         cerr << "Error occurs in process block combination: phis is not empty." << endl;
                     }
-                    bb->successors = successor->successors;  // ¸ü¸ÄÇ°Çıºó¼Ì¿é
+                    bb->successors = successor->successors;  // æ›´æ”¹å‰é©±åç»§å—
                     // TODO: MERGE LOCAL VAR SSA MAP?
                     unordered_set<shared_ptr<BasicBlock>> successors = bb->successors;
                     for (auto &it : successors)
                     {
                         it->predecessors.insert(bb);
                         unordered_set<shared_ptr<PhiInstruction>> phis = it->phis;
-                        for (auto &phi : phis)  //  Ìæ»»Ê¹ÓÃ¶ÔÏó
+                        for (auto &phi : phis)  //  æ›¿æ¢ä½¿ç”¨å¯¹è±¡
                         {
                             phi->replaceUse(successor, bb);
                         }

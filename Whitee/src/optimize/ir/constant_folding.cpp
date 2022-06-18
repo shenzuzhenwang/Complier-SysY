@@ -1,16 +1,16 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 string negOp = "-"; 
 string notOp = "!"; 
 
 /**
- * @brief Ô­ÖµÎª×óÖµ£¬ÔòĞÂ´´½¨µÄÒ²Îª×óÖµ
- * @param newVal ĞÂ´´½¨µÄÖµ
- * @param oldVal Ô­Öµ
+ * @brief åŸå€¼ä¸ºå·¦å€¼ï¼Œåˆ™æ–°åˆ›å»ºçš„ä¹Ÿä¸ºå·¦å€¼
+ * @param newVal æ–°åˆ›å»ºçš„å€¼
+ * @param oldVal åŸå€¼
  */
 void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
 {
-    if (oldVal->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(oldVal)->resultType == L_VAL_RESULT) // oldValÎª×óÖµ£¬newÒ²ÎªÍ¬Ãû±äÁ¿
+    if (oldVal->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(oldVal)->resultType == L_VAL_RESULT) // oldValä¸ºå·¦å€¼ï¼Œnewä¹Ÿä¸ºåŒåå˜é‡
     {
         s_p_c<Instruction>(newVal)->resultType = L_VAL_RESULT;
         s_p_c<Instruction>(newVal)->caughtVarName = s_p_c<Instruction>(oldVal)->caughtVarName;
@@ -18,8 +18,8 @@ void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
 }
 
 /**
- * @brief ½«´ËÖ¸ÁîÖĞ¿ÉÄÜÕÛµşµÄÁ¿½øĞĞÕÛµş
- * @param ins ´ËÖ¸Áî
+ * @brief å°†æ­¤æŒ‡ä»¤ä¸­å¯èƒ½æŠ˜å çš„é‡è¿›è¡ŒæŠ˜å 
+ * @param ins æ­¤æŒ‡ä»¤
  */
 void fold(shared_ptr<Instruction> &ins)
 {
@@ -29,14 +29,14 @@ void fold(shared_ptr<Instruction> &ins)
     switch (ins->type)
     {
     case InstructionType::BINARY:
-    case InstructionType::CMP:  // Á½¸ö²Ù×÷Êı
+    case InstructionType::CMP:  // ä¸¤ä¸ªæ“ä½œæ•°
     {
         shared_ptr<BinaryInstruction> bIns = s_p_c<BinaryInstruction>(ins);
-        if (bIns->lhs->valueType == ValueType::NUMBER && bIns->rhs->valueType == ValueType::NUMBER)  // Á½²Ù×÷Êı¾ùÎª³£Á¿£¬ÔòÖ±½ÓµÃ³ö½á¹û
+        if (bIns->lhs->valueType == ValueType::NUMBER && bIns->rhs->valueType == ValueType::NUMBER)  // ä¸¤æ“ä½œæ•°å‡ä¸ºå¸¸é‡ï¼Œåˆ™ç›´æ¥å¾—å‡ºç»“æœ
         {
             shared_ptr<NumberValue> lOpVal = s_p_c<NumberValue>(bIns->lhs);
             shared_ptr<NumberValue> rOpVal = s_p_c<NumberValue>(bIns->rhs);
-            if ((bIns->op == "/" || bIns->op == "%") && rOpVal->number == 0)  // ³ıÁã²Ù×÷
+            if ((bIns->op == "/" || bIns->op == "%") && rOpVal->number == 0)  // é™¤é›¶æ“ä½œ
             {
                 cerr << "Error occurs in process constant folding: divide 0." << endl;
                 return;
@@ -73,26 +73,26 @@ void fold(shared_ptr<Instruction> &ins)
                 return;
             }
         }
-        else if (bIns->lhs->valueType == ValueType::NUMBER)  // ¶şÔª²Ù×÷£¬×ó²Ù×÷ÊıÎª³£Á¿
+        else if (bIns->lhs->valueType == ValueType::NUMBER)  // äºŒå…ƒæ“ä½œï¼Œå·¦æ“ä½œæ•°ä¸ºå¸¸é‡
         {
             shared_ptr<NumberValue> lOpVal = s_p_c<NumberValue>(bIns->lhs);
-            if (lOpVal->number == 0)  // ×ó²Ù×÷ÊıÎª0
+            if (lOpVal->number == 0)  // å·¦æ“ä½œæ•°ä¸º0
             {
-                if (bIns->op == "*" || bIns->op == "/" || bIns->op == "%" || bIns->op == "&&")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûÎª0
+                if (bIns->op == "*" || bIns->op == "/" || bIns->op == "%" || bIns->op == "&&")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœä¸º0
                     newVal = getNumberValue(0);
-                else if (bIns->op == "+" || bIns->op == "||")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûµÈÓÚÓÒ²Ù×÷Êı
+                else if (bIns->op == "+" || bIns->op == "||")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœç­‰äºå³æ“ä½œæ•°
                     newVal = bIns->rhs;
-                else if (bIns->op == "-")  // Îª-²Ù×÷£¬Ôò´´½¨Ò»¸öĞÂµÄÒ»Ôª¸º²Ù×÷Öµ
+                else if (bIns->op == "-")  // ä¸º-æ“ä½œï¼Œåˆ™åˆ›å»ºä¸€ä¸ªæ–°çš„ä¸€å…ƒè´Ÿæ“ä½œå€¼
                 {
                     newVal = make_shared<UnaryInstruction>(negOp, bIns->rhs, bIns->block);
                     bIns->rhs->users.insert(newVal);
                     maintainLeftValue(newVal, bIns->rhs);
                     replace = true;
                 }
-                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // ±È½Ï²Ù×÷
+                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // æ¯”è¾ƒæ“ä½œ
                 {
-                    bIns->op = bIns->swapOpConst (bIns->op);    // ²Ù×÷·ûÈ¡·´
-                    shared_ptr<Value> temp = bIns->lhs;    // ×óÓÒ²Ù×÷Öµ½»»»
+                    bIns->op = bIns->swapOpConst (bIns->op);    // æ“ä½œç¬¦å–å
+                    shared_ptr<Value> temp = bIns->lhs;    // å·¦å³æ“ä½œå€¼äº¤æ¢
                     bIns->lhs = bIns->rhs;
                     bIns->rhs = temp;
                     return;
@@ -100,14 +100,14 @@ void fold(shared_ptr<Instruction> &ins)
                 else
                     return;
             }
-            else if (lOpVal->number == 1)  // ×ó²Ù×÷ÊıÎª1
+            else if (lOpVal->number == 1)  // å·¦æ“ä½œæ•°ä¸º1
             {
-                if (bIns->op == "*")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûµÈÓÚÓÒ²Ù×÷Êı
+                if (bIns->op == "*")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœç­‰äºå³æ“ä½œæ•°
                     newVal = bIns->rhs;
-                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // ±È½Ï²Ù×÷
+                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // æ¯”è¾ƒæ“ä½œ
                 {
-                    bIns->op = bIns->swapOpConst(bIns->op);    // ²Ù×÷·ûÈ¡·´
-                    shared_ptr<Value> temp = bIns->lhs;   // ×óÓÒ²Ù×÷Öµ½»»»
+                    bIns->op = bIns->swapOpConst(bIns->op);    // æ“ä½œç¬¦å–å
+                    shared_ptr<Value> temp = bIns->lhs;   // å·¦å³æ“ä½œå€¼äº¤æ¢
                     bIns->lhs = bIns->rhs;
                     bIns->rhs = temp;
                     return;
@@ -115,9 +115,9 @@ void fold(shared_ptr<Instruction> &ins)
                 else
                     return;
             }
-            else if (lOpVal->number == -1)  // ×ó²Ù×÷ÊıÎª1
+            else if (lOpVal->number == -1)  // å·¦æ“ä½œæ•°ä¸º1
             {
-                if (bIns->op == "*")  // Îª*²Ù×÷£¬Ôò´´½¨Ò»¸öĞÂµÄÒ»Ôª¸º²Ù×÷Öµ
+                if (bIns->op == "*")  // ä¸º*æ“ä½œï¼Œåˆ™åˆ›å»ºä¸€ä¸ªæ–°çš„ä¸€å…ƒè´Ÿæ“ä½œå€¼
                 {
                     newVal = make_shared<UnaryInstruction>(negOp, bIns->rhs, bIns->block);
                     bIns->rhs->users.insert(newVal);
@@ -135,7 +135,7 @@ void fold(shared_ptr<Instruction> &ins)
                 else
                     return;
             }
-            else  // ²»ÊÇÌØÊâÖµ£¬½ö±È½Ï²Ù×÷£¬½«³£Êı½»»»µ½ÓÒ²Ù×÷Êı
+            else  // ä¸æ˜¯ç‰¹æ®Šå€¼ï¼Œä»…æ¯”è¾ƒæ“ä½œï¼Œå°†å¸¸æ•°äº¤æ¢åˆ°å³æ“ä½œæ•°
             {
                 if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))
                 {
@@ -149,30 +149,30 @@ void fold(shared_ptr<Instruction> &ins)
                     return;
             }
         }
-        else if (bIns->rhs->valueType == ValueType::NUMBER)  // ¶şÔª²Ù×÷£¬×ó²Ù×÷ÊıÎª³£Á¿
+        else if (bIns->rhs->valueType == ValueType::NUMBER)  // äºŒå…ƒæ“ä½œï¼Œå·¦æ“ä½œæ•°ä¸ºå¸¸é‡
         {
             shared_ptr<NumberValue> rOpVal = s_p_c<NumberValue>(bIns->rhs);
-            if (rOpVal->number == 0)   // ÓÒ²Ù×÷ÊıÎª0
+            if (rOpVal->number == 0)   // å³æ“ä½œæ•°ä¸º0
             {
-                if (bIns->op == "*" || bIns->op == "&&")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûÎª0
+                if (bIns->op == "*" || bIns->op == "&&")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœä¸º0
                     newVal = getNumberValue(0);
-                else if (bIns->op == "+" || bIns->op == "||" || bIns->op == "-")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûµÈÓÚ×ó²Ù×÷Êı
+                else if (bIns->op == "+" || bIns->op == "||" || bIns->op == "-")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœç­‰äºå·¦æ“ä½œæ•°
                     newVal = bIns->lhs;
                 else
                     return;
             }
-            else if (rOpVal->number == 1)   // ÓÒ²Ù×÷ÊıÎª1
+            else if (rOpVal->number == 1)   // å³æ“ä½œæ•°ä¸º1
             {
-                if (bIns->op == "*" || bIns->op == "/")   // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûµÈÓÚ×ó²Ù×÷Êı
+                if (bIns->op == "*" || bIns->op == "/")   // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœç­‰äºå·¦æ“ä½œæ•°
                     newVal = bIns->lhs;
-                else if (bIns->op == "%")  // ÕâĞ©²Ù×÷·û¶¼»áÊ¹½á¹ûÎª0
+                else if (bIns->op == "%")  // è¿™äº›æ“ä½œç¬¦éƒ½ä¼šä½¿ç»“æœä¸º0
                     newVal = getNumberValue(0);
                 else
                     return;
             }
-            else if (rOpVal->number == -1)   // ÓÒ²Ù×÷ÊıÎª-1
+            else if (rOpVal->number == -1)   // å³æ“ä½œæ•°ä¸º-1
             {
-                if (bIns->op == "*") // Îª*²Ù×÷£¬Ôò´´½¨Ò»¸öĞÂµÄÒ»Ôª¸º²Ù×÷Öµ
+                if (bIns->op == "*") // ä¸º*æ“ä½œï¼Œåˆ™åˆ›å»ºä¸€ä¸ªæ–°çš„ä¸€å…ƒè´Ÿæ“ä½œå€¼
                 {
                     newVal = make_shared<UnaryInstruction>(negOp, bIns->lhs, bIns->block);
                     bIns->lhs->users.insert(newVal);
@@ -185,19 +185,19 @@ void fold(shared_ptr<Instruction> &ins)
             else
                 return;
         }
-        else   // ×óÓÒ²Ù×÷Êı¾ù²»Îª³£Á¿
+        else   // å·¦å³æ“ä½œæ•°å‡ä¸ä¸ºå¸¸é‡
         {
-            if ((bIns->op == "-" || bIns->op == "%") && bIns->lhs == bIns->rhs)   // µ±×óÓÒ²Ù×÷ÊıÒ»Ñù£¬Ôò½á¹ûÎª0
+            if ((bIns->op == "-" || bIns->op == "%") && bIns->lhs == bIns->rhs)   // å½“å·¦å³æ“ä½œæ•°ä¸€æ ·ï¼Œåˆ™ç»“æœä¸º0
             {
                 newVal = getNumberValue(0);
             }
-            else if (bIns->op == "/" && bIns->lhs == bIns->rhs)   // µ±×óÓÒ²Ù×÷ÊıÒ»Ñù£¬Ôò½á¹ûÎª1
+            else if (bIns->op == "/" && bIns->lhs == bIns->rhs)   // å½“å·¦å³æ“ä½œæ•°ä¸€æ ·ï¼Œåˆ™ç»“æœä¸º1
             {
                 newVal = getNumberValue(1);
             }
             else if (bIns->op == "-" && dynamic_cast<UnaryInstruction *>(bIns->rhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-")   // ÓÒ²Ù×÷ÊıÓĞÈ¡¸º£¬ÇÒ²Ù×÷·ûÎª-£¬ÔòÓÒ²Ù×÷ÊıÌá³öÖµ
+                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-")   // å³æ“ä½œæ•°æœ‰å–è´Ÿï¼Œä¸”æ“ä½œç¬¦ä¸º-ï¼Œåˆ™å³æ“ä½œæ•°æå‡ºå€¼
                 {
                     bIns->op = "+";
                     shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->rhs);
@@ -211,7 +211,7 @@ void fold(shared_ptr<Instruction> &ins)
             }
             else if (bIns->op == "+" && dynamic_cast<UnaryInstruction *>(bIns->rhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-") // ²Ù×÷·ûÎª+£¬ÓÒ²Ù×÷ÊıÓĞÈ¡¸º£¬×óÓÒ²Ù×÷ÏàµÈ£¬Ôò½á¹û0
+                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-") // æ“ä½œç¬¦ä¸º+ï¼Œå³æ“ä½œæ•°æœ‰å–è´Ÿï¼Œå·¦å³æ“ä½œç›¸ç­‰ï¼Œåˆ™ç»“æœ0
                 {
                     shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->rhs);
                     if (unary->value == bIns->lhs)
@@ -226,7 +226,7 @@ void fold(shared_ptr<Instruction> &ins)
             }
             else if (bIns->op == "+" && dynamic_cast<UnaryInstruction *>(bIns->lhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->lhs)->op == "-") // ²Ù×÷·ûÎª+£¬×ó²Ù×÷ÊıÓĞÈ¡¸º£¬×óÓÒ²Ù×÷ÏàµÈ£¬Ôò½á¹û0
+                if (s_p_c<UnaryInstruction>(bIns->lhs)->op == "-") // æ“ä½œç¬¦ä¸º+ï¼Œå·¦æ“ä½œæ•°æœ‰å–è´Ÿï¼Œå·¦å³æ“ä½œç›¸ç­‰ï¼Œåˆ™ç»“æœ0
                 {
                     shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->lhs);
                     if (unary->value == bIns->rhs)
@@ -244,32 +244,32 @@ void fold(shared_ptr<Instruction> &ins)
         }
         break;
     }
-    case InstructionType::UNARY:   // Ò»Ôª²Ù×÷
+    case InstructionType::UNARY:   // ä¸€å…ƒæ“ä½œ
     {
         shared_ptr<UnaryInstruction> uIns = s_p_c<UnaryInstruction>(ins);
-        if (uIns->op == "+")   // ÕıºÅ£¬Ö±½ÓÌáÈ¡Öµ
+        if (uIns->op == "+")   // æ­£å·ï¼Œç›´æ¥æå–å€¼
             newVal = uIns->value;
-        else if (uIns->value->valueType == ValueType::NUMBER)  // Îª³£Êı
+        else if (uIns->value->valueType == ValueType::NUMBER)  // ä¸ºå¸¸æ•°
         {
             shared_ptr<NumberValue> value = s_p_c<NumberValue>(uIns->value);
             if (uIns->op == "-")
-                newVal = getNumberValue(-value->number);  // ¸ººÅ±äÎª¸ºÊı
+                newVal = getNumberValue(-value->number);  // è´Ÿå·å˜ä¸ºè´Ÿæ•°
             else if (uIns->op == notOp)
-                newVal = getNumberValue(!value->number);  // ·ÇºÅÈ¡·Ç
+                newVal = getNumberValue(!value->number);  // éå·å–é
             else
             {
                 cerr << "Error occurs in process constant folding: undefined operator '" + uIns->op + "'." << endl;
                 return;
             }
         }
-        else if (dynamic_cast<UnaryInstruction *>(uIns->value.get()))  // Ò»Ôª²Ù×÷Àï»¹ÊÇÒ»Ôª²Ù×÷
+        else if (dynamic_cast<UnaryInstruction *>(uIns->value.get()))  // ä¸€å…ƒæ“ä½œé‡Œè¿˜æ˜¯ä¸€å…ƒæ“ä½œ
         {
             shared_ptr<UnaryInstruction> value = s_p_c<UnaryInstruction>(uIns->value);
-            if (uIns->op == "-" && value->op == "-")  // Á½¸ö¾ùÎª¸ººÅ
+            if (uIns->op == "-" && value->op == "-")  // ä¸¤ä¸ªå‡ä¸ºè´Ÿå·
                 newVal = value->value;
-            else if (uIns->op == "!" && value->op == "!")  // Á½¸ö¾ùÎª·Ç
+            else if (uIns->op == "!" && value->op == "!")  // ä¸¤ä¸ªå‡ä¸ºé
                 newVal = value->value;
-            else if (uIns->op == "!")  // Íâ²ã·Ç£¬Àï²ã+-ÎŞËùÎ½
+            else if (uIns->op == "!")  // å¤–å±‚éï¼Œé‡Œå±‚+-æ— æ‰€è°“
             {
                 newVal = make_shared<UnaryInstruction>(uIns->op, value->value, uIns->block);
             }
@@ -280,15 +280,15 @@ void fold(shared_ptr<Instruction> &ins)
             return;
         break;
     }
-    case InstructionType::LOAD:   // ¼ÓÔØ²Ù×÷
+    case InstructionType::LOAD:   // åŠ è½½æ“ä½œ
     {
         shared_ptr<LoadInstruction> lIns = s_p_c<LoadInstruction>(ins);
-        if (lIns->address->valueType == ValueType::CONSTANT && lIns->offset->valueType == ValueType::NUMBER)  // µØÖ·Îªconst array£¬Æ«ÒÆÁ¿Îª³£Êı
+        if (lIns->address->valueType == ValueType::CONSTANT && lIns->offset->valueType == ValueType::NUMBER)  // åœ°å€ä¸ºconst arrayï¼Œåç§»é‡ä¸ºå¸¸æ•°
         {
             shared_ptr<ConstantValue> constArray = s_p_c<ConstantValue>(lIns->address);
             shared_ptr<NumberValue> offsetNumber = s_p_c<NumberValue>(lIns->offset);
             if (constArray->values.count(offsetNumber->number) != 0)
-                newVal = getNumberValue(constArray->values.at(offsetNumber->number));  // Ö±½ÓÌáÈ¡const arrayÖĞµÄÖµ
+                newVal = getNumberValue(constArray->values.at(offsetNumber->number));  // ç›´æ¥æå–const arrayä¸­çš„å€¼
             else
                 newVal = getNumberValue(0);
         }
@@ -299,7 +299,7 @@ void fold(shared_ptr<Instruction> &ins)
     case InstructionType::PHI:   // phi
     {
         shared_ptr<PhiInstruction> pIns = s_p_c<PhiInstruction>(ins);
-        newVal = removeTrivialPhi(pIns);   // È¥³ı²»ÖØÒªµÄphi
+        newVal = removeTrivialPhi(pIns);   // å»é™¤ä¸é‡è¦çš„phi
         if (newVal == pIns)
             return;
         break;
@@ -307,7 +307,7 @@ void fold(shared_ptr<Instruction> &ins)
     default:
         return;
     }
-    if (replace)   // ´´½¨ÁËÒ»¸öĞÂµÄÖµ£¬²¢ÇÒĞèÒªÌæ»»Ö¸Áî
+    if (replace)   // åˆ›å»ºäº†ä¸€ä¸ªæ–°çš„å€¼ï¼Œå¹¶ä¸”éœ€è¦æ›¿æ¢æŒ‡ä»¤
     {
         for (auto &it : ins->block->instructions)
         {
@@ -323,7 +323,7 @@ void fold(shared_ptr<Instruction> &ins)
     insVal->abandonUse();
     for (auto &it : users)
     {
-        if (it->valueType == ValueType::INSTRUCTION)   // ×îÖÕÔËĞĞµÄ½á¹ûÒ²ÊÇÒ»¸öÖµ£¬µİ¹éÕÛµş
+        if (it->valueType == ValueType::INSTRUCTION)   // æœ€ç»ˆè¿è¡Œçš„ç»“æœä¹Ÿæ˜¯ä¸€ä¸ªå€¼ï¼Œé€’å½’æŠ˜å 
         {
             shared_ptr<Instruction> itIns = s_p_c<Instruction>(it);
             fold(itIns);
@@ -332,7 +332,7 @@ void fold(shared_ptr<Instruction> &ins)
 }
 
 /**
- * @brief ³£Á¿ÕÛµş  Ö±½Ó¼ÆËã³ö¿ÉÒÔ±»¼ÆËãµÄÖµ£¬×÷Îª³£Á¿
+ * @brief å¸¸é‡æŠ˜å   ç›´æ¥è®¡ç®—å‡ºå¯ä»¥è¢«è®¡ç®—çš„å€¼ï¼Œä½œä¸ºå¸¸é‡
  * @param module 
  */
 void constant_folding(shared_ptr<Module> &module)

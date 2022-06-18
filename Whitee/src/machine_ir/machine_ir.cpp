@@ -1,11 +1,11 @@
-#include "machine_ir.h"
+ï»¿#include "machine_ir.h"
 
 #include <iostream>
 #include <set>
 
 using namespace std;
 
-ofstream machineIrStream;  // »ã±àÊä³öÎÄ¼ş
+ofstream machineIrStream;  // æ±‡ç¼–è¾“å‡ºæ–‡ä»¶
 extern int const_pool_id;
 extern int ins_count;
 extern int pre_ins_count;
@@ -13,15 +13,15 @@ extern set<int> invalid_imm;
 
 extern OptimizeLevel optimizeLevel;
 
-extern unordered_map<mit::InsType, string> instype2string;  // »ã±àÖ¸Áî
-extern unordered_map<SType, string> stype2string;  // ÒÆÎ»»ã±àÖ¸Áî
-extern unordered_map<Cond, string> cond2string;  // Ìõ¼şµÄ»ã±àÖ¸Áî
+extern unordered_map<mit::InsType, string> instype2string;  // æ±‡ç¼–æŒ‡ä»¤
+extern unordered_map<SType, string> stype2string;  // ç§»ä½æ±‡ç¼–æŒ‡ä»¤
+extern unordered_map<Cond, string> cond2string;  // æ¡ä»¶çš„æ±‡ç¼–æŒ‡ä»¤
 
 string convertImm(int imm, const string &reg);
 
 string convertImm(int imm, const string &reg, bool mov);
 
-void MachineModule::toARM()   // »ã±àÔØÈëÈ«¾Ö±äÁ¿Óëconst array
+void MachineModule::toARM()   // æ±‡ç¼–è½½å…¥å…¨å±€å˜é‡ä¸const array
 {
     machineIrStream << ".arch armv7ve" << endl;
     machineIrStream << ".data" << endl;
@@ -98,9 +98,9 @@ void MachineBB::toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<
 }
 
 /**
- * @brief Á¢¼´Êı¿ÉÒÔÒÆÎ»Å¼Êı´ÎµÃµ½
- * @param number Á¢¼´Êı
- * @return true ¿ÉÒÔµÃµ½£»false ²»ÄÜ
+ * @brief ç«‹å³æ•°å¯ä»¥ç§»ä½å¶æ•°æ¬¡å¾—åˆ°
+ * @param number ç«‹å³æ•°
+ * @return true å¯ä»¥å¾—åˆ°ï¼›false ä¸èƒ½
  */
 bool canRotateShiftEvenTimes(unsigned int number)
 {
@@ -116,9 +116,9 @@ bool canRotateShiftEvenTimes(unsigned int number)
 }
 
 /**
- * @brief ÅĞ¶ÏÁ¢¼´ÊıÊÇ·ñÓĞĞ§   Ã¿¸öÁ¢¼´Êı¶¼ÊÇÓÉÒ»¸ö8Î»µÄ³£Ñ­»·ÓÒÒÆÅ¼ÊıÎ»µÃµ½
- * @param imm Á¢¼´Êı
- * @param mov ÊÇ·ñ¿ÉÒÔÈ¡·´
+ * @brief åˆ¤æ–­ç«‹å³æ•°æ˜¯å¦æœ‰æ•ˆ   æ¯ä¸ªç«‹å³æ•°éƒ½æ˜¯ç”±ä¸€ä¸ª8ä½çš„å¸¸å¾ªç¯å³ç§»å¶æ•°ä½å¾—åˆ°
+ * @param imm ç«‹å³æ•°
+ * @param mov æ˜¯å¦å¯ä»¥å–å
  * @return 
  */
 bool judgeImmValid(unsigned int imm, bool mov)
@@ -136,11 +136,11 @@ bool judgeImmValid(unsigned int imm, bool mov)
 }
 
 /**
- * @brief È¡³öÁ¢¼´Êı
- * @param imm Á¢¼´Êı
- * @param reg ¼Ä´æÆ÷
- * @param mov ¿ÉÒÔmovÖ¸Áî
- * @return ¼Ä´æÆ÷
+ * @brief å–å‡ºç«‹å³æ•°
+ * @param imm ç«‹å³æ•°
+ * @param reg å¯„å­˜å™¨
+ * @param mov å¯ä»¥movæŒ‡ä»¤
+ * @return å¯„å­˜å™¨
  */
 string convertImm(int imm, const string &reg, bool mov)
 {

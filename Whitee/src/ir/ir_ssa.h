@@ -1,4 +1,4 @@
-#ifndef COMPILER_IR_SSA_H
+﻿#ifndef COMPILER_IR_SSA_H
 #define COMPILER_IR_SSA_H
 
 #include "ir.h"

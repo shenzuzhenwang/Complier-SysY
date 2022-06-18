@@ -1,17 +1,17 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ÕÛµş¾Ö²¿Êı×é
- * @param alloc ¾Ö²¿Êı×é
+ * @brief æŠ˜å å±€éƒ¨æ•°ç»„
+ * @param alloc å±€éƒ¨æ•°ç»„
  */
 void fold_array(shared_ptr<AllocInstruction> &alloc)
 {
     bool visit = false;
     shared_ptr<BasicBlock> &bb = alloc->block;
-    unordered_map<int, shared_ptr<Value>> arrValues;  // offset <--> value  ±íÊ¾¿ÉÒÔ±»ÕÛµşµÄoffset¶ÔÓ¦µÄvalue
-    unordered_map<int, shared_ptr<StoreInstruction>> arrStores;  // offset <--> StoreInstruction ±íÊ¾¿ÉÒÔ±»ÕÛµşµÄoffset¶ÔÓ¦µÄStoreInstruction
-    unordered_set<int> canErase;  // offset ±íÊ¾¿É±»ÕÛµşoffset
-    for (auto ins = bb->instructions.begin(); ins != bb->instructions.end();)  // Êı×éËùÔÚ¿éµÄÖ¸Áî
+    unordered_map<int, shared_ptr<Value>> arrValues;  // offset <--> value  è¡¨ç¤ºå¯ä»¥è¢«æŠ˜å çš„offsetå¯¹åº”çš„value
+    unordered_map<int, shared_ptr<StoreInstruction>> arrStores;  // offset <--> StoreInstruction è¡¨ç¤ºå¯ä»¥è¢«æŠ˜å çš„offsetå¯¹åº”çš„StoreInstruction
+    unordered_set<int> canErase;  // offset è¡¨ç¤ºå¯è¢«æŠ˜å offset
+    for (auto ins = bb->instructions.begin(); ins != bb->instructions.end();)  // æ•°ç»„æ‰€åœ¨å—çš„æŒ‡ä»¤
     {
         if (!visit && *ins != alloc)
         {
@@ -20,7 +20,7 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
         }
         else if (!visit && *ins == alloc)
         {
-            visit = true;  // ´Ó·ÖÅäÊı×é¿ªÊ¼
+            visit = true;  // ä»åˆ†é…æ•°ç»„å¼€å§‹
             ++ins;
             continue;
         }
@@ -30,25 +30,25 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
             shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(*ins);
             for (auto &arg : invoke->params)
             {
-                if (arg == alloc)  // Èç¹ûÊÓÎªÖ¸Õë×÷Îªº¯Êı²ÎÊıÊ¹ÓÃ£¬ÔòÎŞ·¨ÕÛµş
+                if (arg == alloc)  // å¦‚æœè§†ä¸ºæŒ‡é’ˆä½œä¸ºå‡½æ•°å‚æ•°ä½¿ç”¨ï¼Œåˆ™æ— æ³•æŠ˜å 
                     return;
             }
         }
         else if ((*ins)->type == InstructionType::BINARY)
         {
             shared_ptr<BinaryInstruction> bin = s_p_c<BinaryInstruction>(*ins);
-            if (bin->lhs == alloc || bin->rhs == alloc)  // Èç¹ûÊÓÎªÖ¸Õë×÷Îª²Ù×÷Êı£¬ÎŞ·¨ÕÛµş
+            if (bin->lhs == alloc || bin->rhs == alloc)  // å¦‚æœè§†ä¸ºæŒ‡é’ˆä½œä¸ºæ“ä½œæ•°ï¼Œæ— æ³•æŠ˜å 
                 return;
         }
         else if ((*ins)->type == InstructionType::STORE)
         {
             shared_ptr<StoreInstruction> store = s_p_c<StoreInstruction>(*ins);
-            if (store->address == alloc && store->offset->valueType == ValueType::NUMBER)  // Èç¹ûstoreÊ±£¬offsetÎª³£Êı
+            if (store->address == alloc && store->offset->valueType == ValueType::NUMBER)  // å¦‚æœstoreæ—¶ï¼Œoffsetä¸ºå¸¸æ•°
             {
                 shared_ptr<NumberValue> off = s_p_c<NumberValue>(store->offset);
-                if (arrStores.count(off->number) != 0 && canErase.count(off->number) != 0)  // Èç¹û²»ÊÇµÚÒ»´Îstore
+                if (arrStores.count(off->number) != 0 && canErase.count(off->number) != 0)  // å¦‚æœä¸æ˜¯ç¬¬ä¸€æ¬¡store
                 {
-                    arrStores.at(off->number)->abandonUse();  // ÔòÉÏÒ»´ÎstoreÖ¸ÁîÊ§Ğ§
+                    arrStores.at(off->number)->abandonUse();  // åˆ™ä¸Šä¸€æ¬¡storeæŒ‡ä»¤å¤±æ•ˆ
                 }
                 else
                 {
@@ -57,12 +57,12 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
                 arrValues[off->number] = store->value;
                 arrStores[off->number] = store;
             }
-            else if (store->address == alloc)  // Èç¹ûoffset²»Îª³£Êı
+            else if (store->address == alloc)  // å¦‚æœoffsetä¸ä¸ºå¸¸æ•°
             {
                 for (auto &item : arrStores)
                 {
                     if (canErase.count(item.first) != 0)
-                        item.second->abandonUse();  // É¾³ıÏÖÓĞ¿ÉÒÔ±»ÕÛµşµÄstoreÖ¸Áî£¨ÒòÎªÃ»ÈËÓÃ£©
+                        item.second->abandonUse();  // åˆ é™¤ç°æœ‰å¯ä»¥è¢«æŠ˜å çš„storeæŒ‡ä»¤ï¼ˆå› ä¸ºæ²¡äººç”¨ï¼‰
                 }
                 return;
             }
@@ -70,14 +70,14 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
         else if ((*ins)->type == InstructionType::LOAD)
         {
             shared_ptr<LoadInstruction> load = s_p_c<LoadInstruction>(*ins);
-            if (load->address == alloc && load->offset->valueType == ValueType::NUMBER)  // Èç¹ûloadÊ±£¬offsetÎª³£Êı
+            if (load->address == alloc && load->offset->valueType == ValueType::NUMBER)  // å¦‚æœloadæ—¶ï¼Œoffsetä¸ºå¸¸æ•°
             {
                 shared_ptr<NumberValue> off = s_p_c<NumberValue>(load->offset);
-                if (arrValues.count(off->number) != 0)  // ´ËoffsetÔªËØµÄ¿É±»ÕÛµş  ÔòÌæ»»´ÊloadÖ¸ÁîµÄ¶ÔÏóÎªÒÑÖªµÄvalue
+                if (arrValues.count(off->number) != 0)  // æ­¤offsetå…ƒç´ çš„å¯è¢«æŠ˜å   åˆ™æ›¿æ¢è¯loadæŒ‡ä»¤çš„å¯¹è±¡ä¸ºå·²çŸ¥çš„value
                 {
                     shared_ptr<Value> val = arrValues.at(off->number);
                     unordered_set<shared_ptr<Value>> users = load->users;
-                    for (auto &u : users)  // ½«ËùÓĞÊ¹ÓÃloadµÄÖµµÄÖ¸ÁîÌæ»»ÎªÊ¹ÓÃvalue
+                    for (auto &u : users)  // å°†æ‰€æœ‰ä½¿ç”¨loadçš„å€¼çš„æŒ‡ä»¤æ›¿æ¢ä¸ºä½¿ç”¨value
                     {
                         shared_ptr<Value> toBeReplace = load;
                         u->replaceUse(toBeReplace, val);
@@ -88,13 +88,13 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
                         s_p_c<Instruction>(val)->caughtVarName = generateTempLeftValueName();
                     }
                     if (val->valueType != ValueType::NUMBER)
-                        canErase.erase(off->number);  // Èç¹û´ËÊ±offset´æµÄÖµ²»Îª³£Êı£¬ÔòÖ®ºó²»ÄÜ±»ÕÛµş
+                        canErase.erase(off->number);  // å¦‚æœæ­¤æ—¶offsetå­˜çš„å€¼ä¸ä¸ºå¸¸æ•°ï¼Œåˆ™ä¹‹åä¸èƒ½è¢«æŠ˜å 
                     load->abandonUse();
                     ins = bb->instructions.erase(ins);
                     continue;
                 }
             }
-            else if (load->address == alloc)  // ²»ÖªµÀloadÊı×éµÄÄÄÀï£¬ÔòËùÓĞÖµ¶¼²»ÄÜÕÛµş
+            else if (load->address == alloc)  // ä¸çŸ¥é“loadæ•°ç»„çš„å“ªé‡Œï¼Œåˆ™æ‰€æœ‰å€¼éƒ½ä¸èƒ½æŠ˜å 
             {
                 canErase.clear();
             }
@@ -104,7 +104,7 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
 }
 
 /**
- * @brief ¾Ö²¿Êı×éÕÛµş
+ * @brief å±€éƒ¨æ•°ç»„æŠ˜å 
  * @param module 
  */
 void array_folding(shared_ptr<Module> &module)
@@ -116,7 +116,7 @@ void array_folding(shared_ptr<Module> &module)
             vector<shared_ptr<Instruction>> instructions = bb->instructions;
             for (auto &ins : instructions)
             {
-                if (ins->type == InstructionType::ALLOC)  // ·ÖÎö¾Ö²¿Êı×é
+                if (ins->type == InstructionType::ALLOC)  // åˆ†æå±€éƒ¨æ•°ç»„
                 {
                     shared_ptr<AllocInstruction> alloc = s_p_c<AllocInstruction>(ins);
                     fold_array(alloc);

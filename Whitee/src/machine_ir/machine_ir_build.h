@@ -1,4 +1,4 @@
-#ifndef COMPILER_MACHINE_IR_BUILD_H
+﻿#ifndef COMPILER_MACHINE_IR_BUILD_H
 #define COMPILER_MACHINE_IR_BUILD_H
 
 #include "../ir/ir_build.h"

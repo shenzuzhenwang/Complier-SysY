@@ -1,9 +1,9 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb);
 
 /**
- * @brief ¾Ö²¿¹«¹²×Ó±í´ïÊ½É¾³ı   ·Ç×Ô¼ºĞ´
+ * @brief å±€éƒ¨å…¬å…±å­è¡¨è¾¾å¼åˆ é™¤   éè‡ªå·±å†™
  * @param module 
  */
 void local_common_subexpression_elimination(shared_ptr<Module> &module)
@@ -18,7 +18,7 @@ void local_common_subexpression_elimination(shared_ptr<Module> &module)
 }
 
 /**
- * @brief Ö÷ÒªÔÚÓÚ ¶Ô±ÈÁ½¸öÖ¸ÁîµÄ±í´ïÊ½ÊÇ·ñÏàÍ¬£¨hashCode£©£¬ÒÔ¼°¶Ô±ÈÏàÍ¬±í´ïÊ½µÄÁ½¸öÖµÏàÍ¬£¨equals£©
+ * @brief ä¸»è¦åœ¨äº å¯¹æ¯”ä¸¤ä¸ªæŒ‡ä»¤çš„è¡¨è¾¾å¼æ˜¯å¦ç›¸åŒï¼ˆhashCodeï¼‰ï¼Œä»¥åŠå¯¹æ¯”ç›¸åŒè¡¨è¾¾å¼çš„ä¸¤ä¸ªå€¼ç›¸åŒï¼ˆequalsï¼‰
  * @param bb 
  */
 void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb)
@@ -27,16 +27,16 @@ void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb)
     for (auto it = bb->instructions.begin(); it != bb->instructions.end();)
     {
         shared_ptr<Instruction> ins = *it;
-        if (ins->type == BINARY || ins->type == UNARY)  // ¿éÖĞµÄÒ»Ôª¶şÔªÔËËãÖ¸Áî
+        if (ins->type == BINARY || ins->type == UNARY)  // å—ä¸­çš„ä¸€å…ƒäºŒå…ƒè¿ç®—æŒ‡ä»¤
         {
-            unsigned long long hashCode = ins->hashCode();  // ÏàÍ¬µÄ±í´ïÊ½£¬Ó¦ÓĞÏàÍ¬µÄhashCode
+            unsigned long long hashCode = ins->hashCode();  // ç›¸åŒçš„è¡¨è¾¾å¼ï¼Œåº”æœ‰ç›¸åŒçš„hashCode
             if (hashMap.count(hashCode) != 0)
             {
                 unordered_set<shared_ptr<Value>> tempSet = hashMap.at(hashCode);
                 bool replace = false;
                 for (auto i : tempSet)
                 {
-                    if (ins->equals(i))  // µ±Á½¸öµÄÖµÏàÍ¬
+                    if (ins->equals(i))  // å½“ä¸¤ä¸ªçš„å€¼ç›¸åŒ
                     {
                         replace = true;
                         if (i->valueType != INSTRUCTION)
@@ -49,7 +49,7 @@ void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb)
                             insInMap->resultType = L_VAL_RESULT;
                             insInMap->caughtVarName = generateTempLeftValueName();
                         }
-                        unordered_set<shared_ptr<Value>> users = ins->users;  // ½«´ËÖ¸Áîins×ª»»ÒÑÓĞµÄ±í´ïÊ½iÖ¸Áî
+                        unordered_set<shared_ptr<Value>> users = ins->users;  // å°†æ­¤æŒ‡ä»¤insè½¬æ¢å·²æœ‰çš„è¡¨è¾¾å¼iæŒ‡ä»¤
                         shared_ptr<Value> toBeReplaced = ins;
                         for (auto &user : users)
                         {

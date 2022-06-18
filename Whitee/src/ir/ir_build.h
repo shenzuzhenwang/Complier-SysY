@@ -1,4 +1,4 @@
-#ifndef COMPILER_IR_BUILD_H
+﻿#ifndef COMPILER_IR_BUILD_H
 #define COMPILER_IR_BUILD_H
 
 #include "../basic/std/compile_std.h"

@@ -1,21 +1,21 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ¼ÆËãÃ¿¸ö±äÁ¿µÄÈ¨ÖØ£¬½«Ê¹ÓÃ¶ÔÏóµÄËùÔÚ¿éloop_depth´Î·½Ïà¼Ó  ¼ÆËãÈ¨ÖØ£ºbase + pow (_LOOP_WEIGHT_BASE, depth)
+ * @brief è®¡ç®—æ¯ä¸ªå˜é‡çš„æƒé‡ï¼Œå°†ä½¿ç”¨å¯¹è±¡çš„æ‰€åœ¨å—loop_depthæ¬¡æ–¹ç›¸åŠ   è®¡ç®—æƒé‡ï¼šbase + pow (_LOOP_WEIGHT_BASE, depth)
  * @param func
  */
 void calculateVariableWeight (shared_ptr<Function>& func)
 {
 	for (auto& arg : func->params)
 	{
-		unsigned int tempWeight = countWeight (0, 0);   // ³õÊ¼È¨ÖØ1
+		unsigned int tempWeight = countWeight (0, 0);   // åˆå§‹æƒé‡1
 		if (func->variableWeight.count (arg) != 0)
 		{
 			tempWeight = func->variableWeight.at (arg);
 		}
 		for (auto& user : arg->users)
 		{
-			if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)  // Ê¹ÓÃÖ¸ÁîÎª·ÇphiÖ¸Áî£¬ÔòÈ¨ÖØÀÛ¼Ó
+			if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)  // ä½¿ç”¨æŒ‡ä»¤ä¸ºéphiæŒ‡ä»¤ï¼Œåˆ™æƒé‡ç´¯åŠ 
 			{
 				tempWeight = countWeight (s_p_c<Instruction> (user)->block->loopDepth, tempWeight);
 			}
@@ -30,14 +30,14 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 	{
 		for (auto& ins : bb->instructions)
 		{
-			if (ins->resultType == L_VAL_RESULT && ins->type != PHI_MOV)  // ´ËÖ¸ÁîµÃµ½×óÖµ
+			if (ins->resultType == L_VAL_RESULT && ins->type != PHI_MOV)  // æ­¤æŒ‡ä»¤å¾—åˆ°å·¦å€¼
 			{
 				unsigned int tempWeight = 0;
 				if (func->variableWeight.count (ins) != 0)
 				{
 					tempWeight = func->variableWeight.at (ins);
 				}
-				tempWeight = countWeight (bb->loopDepth, tempWeight);  // ´ËÖ¸Áî¼ÓÈ¨
+				tempWeight = countWeight (bb->loopDepth, tempWeight);  // æ­¤æŒ‡ä»¤åŠ æƒ
 				for (auto& user : ins->users)
 				{
 					if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
@@ -51,7 +51,7 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 				}
 				func->variableWeight[ins] = tempWeight;
 			}
-			else if (ins->type == PHI_MOV)  // phi move¼ÓÈ¨
+			else if (ins->type == PHI_MOV)  // phi moveåŠ æƒ
 			{
 				unsigned int tempWeight = 0;
 				if (func->variableWeight.count (ins) != 0)
@@ -69,7 +69,7 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 			{
 				tempWeight = func->variableWeight.at (phi);
 			}
-			tempWeight = countWeight (bb->loopDepth, tempWeight); // phi¼ÓÈ¨
+			tempWeight = countWeight (bb->loopDepth, tempWeight); // phiåŠ æƒ
 			for (auto& user : phi->users)
 			{
 				if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
@@ -82,7 +82,7 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 				}
 			}
 			func->variableWeight[phi] = tempWeight;
-			for (auto& operand : phi->operands)   // phiµÄ²Ù×÷ÊıÔÙ´Î¼ÓÈ¨
+			for (auto& operand : phi->operands)   // phiçš„æ“ä½œæ•°å†æ¬¡åŠ æƒ
 			{
 				if (operand.second->valueType != INSTRUCTION)
 					continue;
@@ -98,7 +98,7 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 			{
 				cerr << "Error occurs in process calculate variable weight: null pointer phi move." << endl;
 			}
-			else    //phi_move¼ÓÈ¨
+			else    //phi_moveåŠ æƒ
 			{
 				shared_ptr<PhiMoveInstruction> phiMov = phi->phiMove;
 				unsigned int movWeight = 0;

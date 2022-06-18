@@ -1,31 +1,31 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir_optimize.cpp
- * @brief  IRÓÅ»¯
+ * @brief  IRä¼˜åŒ–
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   June 2022
  *********************************************************************/
 #include "ir_optimize.h"
 #include "../../basic/std/compile_std.h"
 
-// Î´¼ì²éIRÊÇ·ñÔÚÍ¨¹ıºó·¢Éú±ä»¯¡£
+// æœªæ£€æŸ¥IRæ˜¯å¦åœ¨é€šè¿‡åå‘ç”Ÿå˜åŒ–ã€‚
 
-const unsigned int OPTIMIZE_TIMES = 2;  // ÓÅ»¯ÖØ¸´´ÎÊı
+const unsigned int OPTIMIZE_TIMES = 2;  // ä¼˜åŒ–é‡å¤æ¬¡æ•°
 
-extern bool needIrCheck;      // ĞèÒª×îºó¼ì²éIR
-extern bool needIrPassCheck;  // ĞèÒªÃ¿´Î¼ì²éIR
+extern bool needIrCheck;      // éœ€è¦æœ€åæ£€æŸ¥IR
+extern bool needIrPassCheck;  // éœ€è¦æ¯æ¬¡æ£€æŸ¥IR
 
 /**
- * @brief ÓÅ»¯IR
- * @param module ÓÅ»¯IR¶ÔÏó
- * @param level ÓÅ»¯µÈ¼¶
+ * @brief ä¼˜åŒ–IR
+ * @param module ä¼˜åŒ–IRå¯¹è±¡
+ * @param level ä¼˜åŒ–ç­‰çº§
  */
 void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
 {
-    //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    £¿£¿£¿£¿¸Ğ¾õÃ»ÓÃ
+    //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ï¼Ÿï¼Ÿï¼Ÿï¼Ÿæ„Ÿè§‰æ²¡ç”¨
     //    deadCodeElimination(module);
 
-    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // Á¬ĞøÓÅ»¯2´Î
+    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // è¿ç»­ä¼˜åŒ–2æ¬¡
     {
         globalIrCorrect = true;
         if (level >= O1)
@@ -44,7 +44,7 @@ void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
                 cerr << "Error: Constant Folding." << endl;
         }
 
-        if (level >= O1)  // ¿ÉÒÔ²»ÓÃ
+        if (level >= O1)  // å¯ä»¥ä¸ç”¨
         {
             array_folding(module);
             dead_code_delete(module);

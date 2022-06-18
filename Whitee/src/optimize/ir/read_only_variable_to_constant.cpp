@@ -1,9 +1,9 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ²é¿´±äÁ¿ÊÇ·ñÓĞ±»Ğ´ÈëµÄ¿ÉÄÜ
- * @param globalVar È«¾Ö±äÁ¿
- * @return true ¿ÉÄÜ±»Ğ´Èë£»false ²»¿ÉÄÜ±»Ğ´Èë
+ * @brief æŸ¥çœ‹å˜é‡æ˜¯å¦æœ‰è¢«å†™å…¥çš„å¯èƒ½
+ * @param globalVar å…¨å±€å˜é‡
+ * @return true å¯èƒ½è¢«å†™å…¥ï¼›false ä¸å¯èƒ½è¢«å†™å…¥
  */
 bool global_var_has_write_user(const shared_ptr<Value> &globalVar)
 {
@@ -11,22 +11,22 @@ bool global_var_has_write_user(const shared_ptr<Value> &globalVar)
     {
         if (dynamic_cast<StoreInstruction *>(user.get()))
             return true;
-        if (dynamic_cast<InvokeInstruction *>(user.get())) // µ÷ÓÃÈ«¾Ö±äÁ¿Êı×é£¬×÷ÎªÖ¸Õë
+        if (dynamic_cast<InvokeInstruction *>(user.get())) // è°ƒç”¨å…¨å±€å˜é‡æ•°ç»„ï¼Œä½œä¸ºæŒ‡é’ˆ
             return true;
-        if (dynamic_cast<BinaryInstruction *>(user.get()))  // ×÷ÎªÖ¸Õë£¬¿ÉÄÜ±»¸Ä±ä
+        if (dynamic_cast<BinaryInstruction *>(user.get()))  // ä½œä¸ºæŒ‡é’ˆï¼Œå¯èƒ½è¢«æ”¹å˜
             if (global_var_has_write_user(user))
                 return true;
     }
     return false;
 }
 /**
- * @brief È«¾Ö±äÁ¿±äÎª³£Á¿
- * @param globalVar ´ËÈ«¾Ö±äÁ¿
+ * @brief å…¨å±€å˜é‡å˜ä¸ºå¸¸é‡
+ * @param globalVar æ­¤å…¨å±€å˜é‡
  * @param module 
  */
 void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module> &module)
 {
-    for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it) // É¾È¥È«¾Ö±äÁ¿
+    for (auto it = module->globalVariables.begin(); it != module->globalVariables.end(); ++it) // åˆ å»å…¨å±€å˜é‡
     {
         if (*it == globalVar)
         {
@@ -41,7 +41,7 @@ void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module
         unordered_set<shared_ptr<Value>> users = global->users;
         for (auto user : users)
         {
-            if (!dynamic_cast<LoadInstruction *>(user.get()))  // intÈ«¾Ö±äÁ¿£¬½öÔÊĞíload
+            if (!dynamic_cast<LoadInstruction *>(user.get()))  // intå…¨å±€å˜é‡ï¼Œä»…å…è®¸load
             {
                 cerr << "Error occurs in process global variable to constant: global has other type users except load."<< endl;
             }
@@ -52,12 +52,12 @@ void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module
                 {
                     loadUser->replaceUse(user, constantNumber);
                 }
-                user->abandonUse();  // È«¾Ö±äÁ¿×ªÎªÁË³£Êı£¬ÎŞĞèload²Ù×÷
+                user->abandonUse();  // å…¨å±€å˜é‡è½¬ä¸ºäº†å¸¸æ•°ï¼Œæ— éœ€loadæ“ä½œ
             }
         }
-        global->abandonUse();  // È«¾Ö±äÁ¿ÆúÓÃ
+        global->abandonUse();  // å…¨å±€å˜é‡å¼ƒç”¨
     }
-    else  // È«¾ÖÊı×é±äÎªconst array
+    else  // å…¨å±€æ•°ç»„å˜ä¸ºconst array
     {
         shared_ptr<Value> constantArray = make_shared<ConstantValue>(global);
         unordered_set<shared_ptr<Value>> users = global->users;
@@ -71,7 +71,7 @@ void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module
 }
 
 /**
- * @brief Ö»¶ÁÈ«¾Ö±äÁ¿×ªÎª³£Êı
+ * @brief åªè¯»å…¨å±€å˜é‡è½¬ä¸ºå¸¸æ•°
  * @param module 
  */
 void read_only_variable_to_constant(shared_ptr<Module> &module)

@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   machine_ir_build.cpp
- * @brief  »úÆ÷Âë¹¹½¨
+ * @brief  æœºå™¨ç æ„å»º
  *
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 #include <iostream>
@@ -19,15 +19,15 @@ extern bool judgeImmValid (unsigned int imm, bool mov);
 
 unordered_map<shared_ptr<BasicBlock>, shared_ptr<MachineBB>> IRB2MachB;
 
-int const_pool_id = 0;  // È«¾Ö±äÁ¿¼ÓÔØ´ÎÊı
-int ins_count = 0;   // »úÆ÷Ö¸ÁîÊıÁ¿
-int pre_ins_count = 0;   // ÉÏÒ»¶Î»úÆ÷Ö¸ÁîÊıÁ¿
-set<int> invalid_imm;  // ·Ç·¨Á¢¼´Êı
+int const_pool_id = 0;  // å…¨å±€å˜é‡åŠ è½½æ¬¡æ•°
+int ins_count = 0;   // æœºå™¨æŒ‡ä»¤æ•°é‡
+int pre_ins_count = 0;   // ä¸Šä¸€æ®µæœºå™¨æŒ‡ä»¤æ•°é‡
+set<int> invalid_imm;  // éæ³•ç«‹å³æ•°
 
-Cond cmp_op = NON;  // ±È½ÏµÄÊ§°ÜµÄÌõ¼ş
-bool true_cmp = false;   // Ìø×ªÇ°ÊÇ·ñ½øĞĞ¹ıÒ»´Î±È½Ï
+Cond cmp_op = NON;  // æ¯”è¾ƒçš„å¤±è´¥çš„æ¡ä»¶
+bool true_cmp = false;   // è·³è½¬å‰æ˜¯å¦è¿›è¡Œè¿‡ä¸€æ¬¡æ¯”è¾ƒ
 
-// »ã±àÖ¸Áî
+// æ±‡ç¼–æŒ‡ä»¤
 unordered_map<mit::InsType, string> instype2string = {
 	{mit::ADD, "ADD"},
 	{mit::SUB, "SUB"},
@@ -57,14 +57,14 @@ unordered_map<mit::InsType, string> instype2string = {
 	{mit::GLOBAL, "GLOBAL"},
 	{mit::COMMENT, "COMMENT"} };
 
-// ÒÆÎ»»ã±àÖ¸Áî
+// ç§»ä½æ±‡ç¼–æŒ‡ä»¤
 unordered_map<SType, string> stype2string {
 										  {NONE, ""},
 										  {ASR, "ASR"},
 										  {LSR, "LSR"},
 										  {LSL, "LSL"} };
 
-// Ìõ¼şµÄ»ã±àÖ¸Áî
+// æ¡ä»¶çš„æ±‡ç¼–æŒ‡ä»¤
 unordered_map<Cond, string> cond2string {
 										{NON, ""},
 										{EQ, "EQ"},
@@ -112,15 +112,15 @@ vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<
 
 vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineModule);
 
-set<string> tempRegPool; // Î´·ÖÅäÁÙÊ±¼Ä´æÆ÷
-unordered_map<shared_ptr<Value>, string> lValRegMap;  // ×óÖµ¶ÔÓ¦µÄ¼Ä´æÆ÷
-unordered_map<shared_ptr<Value>, string> rValRegMap;  // ÒÑÊ¹ÓÃµÄÁÙÊ±¼Ä´æÆ÷¼Ä´æÆ÷
-unordered_set<string> regInUse;  // ÕıÔÚÊ¹ÓÃ¼Ä´æÆ÷
+set<string> tempRegPool; // æœªåˆ†é…ä¸´æ—¶å¯„å­˜å™¨
+unordered_map<shared_ptr<Value>, string> lValRegMap;  // å·¦å€¼å¯¹åº”çš„å¯„å­˜å™¨
+unordered_map<shared_ptr<Value>, string> rValRegMap;  // å·²ä½¿ç”¨çš„ä¸´æ—¶å¯„å­˜å™¨å¯„å­˜å™¨
+unordered_set<string> regInUse;  // æ­£åœ¨ä½¿ç”¨å¯„å­˜å™¨
 
 /**
- * @brief ÔÚÕâÒ»²½ÖĞÎÒÃÇĞèÒª¼ÇÂ¼±äÁ¿µÄµØÖ·£¬¶ÔÓÚ±¾µØ±äÁ¿£¬ÎÒÃÇĞèÒª¼ÇÂ¼µ½SPµÄÆ«ÒÆÁ¿£¬¶ÔÓÚÈ«¾Ö±äÁ¿£¬ÎÒÃÇĞèÒª¼ÇÂ¼±êÇ©
+ * @brief åœ¨è¿™ä¸€æ­¥ä¸­æˆ‘ä»¬éœ€è¦è®°å½•å˜é‡çš„åœ°å€ï¼Œå¯¹äºæœ¬åœ°å˜é‡ï¼Œæˆ‘ä»¬éœ€è¦è®°å½•åˆ°SPçš„åç§»é‡ï¼Œå¯¹äºå…¨å±€å˜é‡ï¼Œæˆ‘ä»¬éœ€è¦è®°å½•æ ‡ç­¾
  * @param module
- * @return »úÆ÷Âë
+ * @return æœºå™¨ç 
  */
 shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 {
@@ -128,7 +128,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 	machineModule->globalConstants = module->globalConstants;
 	machineModule->globalVariables = module->globalVariables;
 
-	// ´¦ÀíÃ¿¸öº¯Êı
+	// å¤„ç†æ¯ä¸ªå‡½æ•°
 	for (auto& func : module->functions)
 	{
 		// if (_debugMachineIr) cout << func->name + ":" << endl;
@@ -140,7 +140,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		machineFunction->stackSize = func->requiredStackSize + _W_LEN;
 		machineFunction->stackPointer = 0;
 
-		/// begin: Çå³ı¼Ä´æÆ÷ĞÅÏ¢
+		/// begin: æ¸…é™¤å¯„å­˜å™¨ä¿¡æ¯
 		while (!tempRegPool.empty ())
 			tempRegPool.clear ();
 		regInUse.clear ();
@@ -149,18 +149,18 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 
 		for (int i = _TMP_REG_CNT - 2; i >= 0; --i)
 		{
-			tempRegPool.insert (to_string (_TMP_REG_START + i));  // Î´·ÖÅä¼Ä´æÆ÷R0-R3
+			tempRegPool.insert (to_string (_TMP_REG_START + i));  // æœªåˆ†é…å¯„å­˜å™¨R0-R3
 		}
 		tempRegPool.insert ("14");
 		for (auto& it : lValRegMap)
 			regInUse.insert (it.second);
-		/// end: Çå³ı¼Ä´æÆ÷ĞÅÏ¢
+		/// end: æ¸…é™¤å¯„å­˜å™¨ä¿¡æ¯
 
-		shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB> (func->blocks[0]->getValueId (), machineFunction);  // º¯Êı½øÈëºóµÄ»ù±¾´¦Àí
-		// ´¦Àíº¯Êı²ÎÊı
-		for (int i = 4; i < machineFunction->params.size (); ++i)  // µ±ĞÎ²Î´óÓÚ4¸ö
+		shared_ptr<MachineBB> func_epilogue = make_shared<MachineBB> (func->blocks[0]->getValueId (), machineFunction);  // å‡½æ•°è¿›å…¥åçš„åŸºæœ¬å¤„ç†
+		// å¤„ç†å‡½æ•°å‚æ•°
+		for (int i = 4; i < machineFunction->params.size (); ++i)  // å½“å½¢å‚å¤§äº4ä¸ª
 		{
-			if (lValRegMap.count (machineFunction->params[i]) != 0)  // ´ËÖµÓĞ¶ÔÓ¦µÄ¼Ä´æÆ÷£¬´Ósp + (i - 4) * 4´¦loadÖµÖÁÓ¦·ÅÈëµÄ¼Ä´æÆ÷
+			if (lValRegMap.count (machineFunction->params[i]) != 0)  // æ­¤å€¼æœ‰å¯¹åº”çš„å¯„å­˜å™¨ï¼Œä»sp + (i - 4) * 4å¤„loadå€¼è‡³åº”æ”¾å…¥çš„å¯„å­˜å™¨
 			{
 				shared_ptr<Operand> des = make_shared<Operand> (REG, lValRegMap.at (machineFunction->params[i]));
 				shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
@@ -168,14 +168,14 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				shared_ptr<MemoryIns> load_para = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, des, stack, offset);
 				func_epilogue->MachineInstructions.push_back (load_para);
 			}
-			else  // ÎŞ¶ÔÓ¦µÄ¼Ä´æÆ÷£¬ÔòÏòvar2offset¼ÇÂ¼£º´ËĞÎ²ÎµÄid <--> (i - 4) * 4 + stackSize
+			else  // æ— å¯¹åº”çš„å¯„å­˜å™¨ï¼Œåˆ™å‘var2offsetè®°å½•ï¼šæ­¤å½¢å‚çš„id <--> (i - 4) * 4 + stackSize
 			{
 				machineFunction->var2offset.insert (pair<string, int> (to_string (machineFunction->params[i]->id), (i - 4) * 4 + machineFunction->stackSize));
 			}
 		}
-		for (int i = 0; i < machineFunction->params.size () && i < 4; ++i)  // ËÄ¸öÒÔÏÂµÄĞÎ²Î
+		for (int i = 0; i < machineFunction->params.size () && i < 4; ++i)  // å››ä¸ªä»¥ä¸‹çš„å½¢å‚
 		{
-			if (lValRegMap.count (machineFunction->params[i]) == 0)   // ÕâĞ©ÖµÃ»ÓĞ¶ÔÓ¦µÄ¼Ä´æÆ÷£¬±£´æR0µ½R3µÄĞÎ²Î×÷Îª¾Ö²¿±äÁ¿´æÈësp-16ÖÁsp-4
+			if (lValRegMap.count (machineFunction->params[i]) == 0)   // è¿™äº›å€¼æ²¡æœ‰å¯¹åº”çš„å¯„å­˜å™¨ï¼Œä¿å­˜R0åˆ°R3çš„å½¢å‚ä½œä¸ºå±€éƒ¨å˜é‡å­˜å…¥sp-16è‡³sp-4
 			{
 				shared_ptr<Operand> para_reg = make_shared<Operand> (REG, to_string (i));
 				shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
@@ -184,7 +184,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				func_epilogue->MachineInstructions.push_back (storeParam);
 				machineFunction->var2offset.insert (pair<string, int> (to_string (machineFunction->params[i]->id), -16 + i * 4 + machineFunction->stackSize));
 			}
-			else   // ½«R0µ½R3µÄĞÎ²Îmovµ½¶ÔÓ¦µÄ¼Ä´æÆ÷
+			else   // å°†R0åˆ°R3çš„å½¢å‚movåˆ°å¯¹åº”çš„å¯„å­˜å™¨
 			{
 				shared_ptr<Operand> para_reg = make_shared<Operand> (REG, to_string (i));
 				shared_ptr<Operand> des_reg = make_shared<Operand> (REG, lValRegMap.at (machineFunction->params[i]));
@@ -192,15 +192,15 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				func_epilogue->MachineInstructions.push_back (mov2Des);
 			}
 		}
-		// lr: temp reg   lr¼´º¯Êı·µ»ØµØÖ·ÓÀÔ¶´æÔÚÄ¿Ç°Õ»µÄsp-20´¦
+		// lr: temp reg   lrå³å‡½æ•°è¿”å›åœ°å€æ°¸è¿œå­˜åœ¨ç›®å‰æ ˆçš„sp-20å¤„
 		shared_ptr<Operand> lr = make_shared<Operand> (REG, "14");
 		shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 		shared_ptr<Operand> lrSpace = make_shared<Operand> (IMM, "-20");
 		shared_ptr<MemoryIns> storeLR = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, lr, stack, lrSpace);
 		func_epilogue->MachineInstructions.push_back (storeLR);
 
-		/************************************   ´´½¨Õ»   *****************************************/
-		// ÒÆ¶¯sp£¬´óĞ¡ÎªÕ»µÄÖµ
+		/************************************   åˆ›å»ºæ ˆ   *****************************************/
+		// ç§»åŠ¨spï¼Œå¤§å°ä¸ºæ ˆçš„å€¼
 		shared_ptr<Operand> stack_size;
 		if (judgeImmValid (machineFunction->stackSize, false))
 		{
@@ -215,18 +215,18 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		func_epilogue->MachineInstructions.push_back (moveStack);
 		machineFunction->machineBlocks.push_back (func_epilogue);
 
-		/// ¶ÔÓÚfuncÖĞµÄÃ¿¸ö¿é£¬½«ÆäÓ³Éäµ½machineFuncÖĞ¡£
+		/// å¯¹äºfuncä¸­çš„æ¯ä¸ªå—ï¼Œå°†å…¶æ˜ å°„åˆ°machineFuncä¸­ã€‚
 		for (auto& bb : func->blocks)
 		{
 			// if (_debugMachineIr) cout << "block" + to_string(bb->id) + ":" << endl;
 			machineFunction->machineBlocks.push_back (bbToMachineBB (bb, machineFunction, module));
 		}
-		// ½«Ã¿¸ömachineFunction¼ÓÈëmachineModule
+		// å°†æ¯ä¸ªmachineFunctionåŠ å…¥machineModule
 		machineModule->machineFunctions.push_back (machineFunction);
 	}
-	// ËùÓĞº¯Êı¿éÒÑ´¦ÀíÍê
+	// æ‰€æœ‰å‡½æ•°å—å·²å¤„ç†å®Œ
 
-	for (auto& machineFunc : machineModule->machineFunctions)  // ÏòÃ¿¸ö¿éÇ°¼Ólabel
+	for (auto& machineFunc : machineModule->machineFunctions)  // å‘æ¯ä¸ªå—å‰åŠ label
 	{
 		for (auto& machineBB : machineFunc->machineBlocks)
 		{
@@ -235,30 +235,30 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		}
 	}
 
-	// Ã¿800Ö¸Áî£¬ÔÚ¿éµÄ×îºó£¬¼ÓÔØÒ»´ÎÈ«¾Ö±äÁ¿
+	// æ¯800æŒ‡ä»¤ï¼Œåœ¨å—çš„æœ€åï¼ŒåŠ è½½ä¸€æ¬¡å…¨å±€å˜é‡
 	for (auto& machineFunc : machineModule->machineFunctions)
 	{
 		for (auto& machineBB : machineFunc->machineBlocks)
 		{
-			for (auto it = machineBB->MachineInstructions.begin (); it != machineBB->MachineInstructions.end ();)  // ËùÓĞµÄ»úÆ÷Ö¸Áî
+			for (auto it = machineBB->MachineInstructions.begin (); it != machineBB->MachineInstructions.end ();)  // æ‰€æœ‰çš„æœºå™¨æŒ‡ä»¤
 			{
 				auto ins = *it;
-				if (ins->type == mit::COMMENT)  // ×¢ÊÍºöÂÔ
+				if (ins->type == mit::COMMENT)  // æ³¨é‡Šå¿½ç•¥
 				{
 					++it;
 					continue;
 				}
 				ins_count++;
-				if (ins->type == mit::PSEUDO_LOAD)  // ¼ÓÔØ·Ç·¨Á¢¼´Êı
+				if (ins->type == mit::PSEUDO_LOAD)  // åŠ è½½éæ³•ç«‹å³æ•°
 				{
 					shared_ptr<PseudoLoad> ldr = s_p_c<PseudoLoad> (ins);
-					if (ldr->isGlob)  // ÊÇÈ«¾Ö±äÁ¿
+					if (ldr->isGlob)  // æ˜¯å…¨å±€å˜é‡
 					{
 						ldr->label->value = ldr->label->value + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 					}
 					else
 					{
-						if (ldr->label->value.at (0) == '_')  // ½«·Ç·¨Á¢¼´Êı¼ÓÈëinvalid_imm
+						if (ldr->label->value.at (0) == '_')  // å°†éæ³•ç«‹å³æ•°åŠ å…¥invalid_imm
 						{
 							invalid_imm.insert (-stoi (ldr->label->value.substr (1)));
 						}
@@ -270,7 +270,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 						ldr->label->value = "invalid_imm_" + to_string (const_pool_id) + "_" + ldr->label->value;
 					}
 				}
-				if (ins_count - pre_ins_count >= 800)   // µ±³¬¹ı800Ìõ»úÆ÷Ö¸Áî£¬¼ÓÔØÒ»´ÎÈ«¾Ö±äÁ¿
+				if (ins_count - pre_ins_count >= 800)   // å½“è¶…è¿‡800æ¡æœºå™¨æŒ‡ä»¤ï¼ŒåŠ è½½ä¸€æ¬¡å…¨å±€å˜é‡
 				{
 					vector<shared_ptr<MachineIns>> res;
 					res = genGlobIns (machineModule);
@@ -283,7 +283,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 					++it;
 				}
 			}
-			if (ins_count - pre_ins_count >= 800)   // Ã¿800Ö¸Áî£¬»òÔÚ¿éµÄ×îºó£¬¼ÓÔØÒ»´ÎÈ«¾Ö±äÁ¿
+			if (ins_count - pre_ins_count >= 800)   // æ¯800æŒ‡ä»¤ï¼Œæˆ–åœ¨å—çš„æœ€åï¼ŒåŠ è½½ä¸€æ¬¡å…¨å±€å˜é‡
 			{
 				vector<shared_ptr<MachineIns>> res;
 				res = genGlobIns (machineModule);
@@ -300,7 +300,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 			}
 		}
 	}
-	// ×îºó¼ÓÔØÒ»´ÎÈ«¾Ö±äÁ¿
+	// æœ€ååŠ è½½ä¸€æ¬¡å…¨å±€å˜é‡
 	vector<shared_ptr<MachineIns>> res;
 	res = genGlobIns (machineModule);
 	shared_ptr<MachineBB> machineBB = machineModule->machineFunctions.back ()->machineBlocks.back ();
@@ -320,11 +320,11 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 }
 
 /**
- * @brief ½«IRµÄ¿é×ªÎª»úÆ÷Âë£¬¼ÓÈë»úÆ÷Âëº¯ÊıÖĞ
- * @param bb IRµÄ»ù±¾¿é
- * @param machineFunction »úÆ÷ÂëµÄº¯Êı
+ * @brief å°†IRçš„å—è½¬ä¸ºæœºå™¨ç ï¼ŒåŠ å…¥æœºå™¨ç å‡½æ•°ä¸­
+ * @param bb IRçš„åŸºæœ¬å—
+ * @param machineFunction æœºå™¨ç çš„å‡½æ•°
  * @param module
- * @return »úÆ÷ÂëµÄ¿é£¬°üº¬»ã±à
+ * @return æœºå™¨ç çš„å—ï¼ŒåŒ…å«æ±‡ç¼–
  */
 shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<MachineFunc>& machineFunction, shared_ptr<Module>& module)
 {
@@ -333,13 +333,13 @@ shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<Mach
 	for (auto& ins : bb->instructions)
 	{
 		/*
-		  * ¶ÔÓÚÃ¿¸ö ins£¬ÎÒÃÇĞèÒª½«ÆäÓ³Éäµ½ machineIns¡£
-		  * ¶ÔÓÚ³ı BR¡¢JMP¡¢RET¡¢STORE Ö®ÍâµÄÃ¿ÖÖÀàĞÍµÄ ins ÖĞµÄ½á¹û£¨ssa ×óÖµ£©£¬
-		  * ÎÒÃÇ½¨Òé½«Ëü×÷ÎªÒ»¸ö±¾µØ±äÁ¿£¬ÎÒÃÇĞèÒª¼ÇÂ¼ËüµÄÆ«ÒÆÁ¿²¢Ôö¼ÓstackSize¡£
+		  * å¯¹äºæ¯ä¸ª insï¼Œæˆ‘ä»¬éœ€è¦å°†å…¶æ˜ å°„åˆ° machineInsã€‚
+		  * å¯¹äºé™¤ BRã€JMPã€RETã€STORE ä¹‹å¤–çš„æ¯ç§ç±»å‹çš„ ins ä¸­çš„ç»“æœï¼ˆssa å·¦å€¼ï¼‰ï¼Œ
+		  * æˆ‘ä»¬å»ºè®®å°†å®ƒä½œä¸ºä¸€ä¸ªæœ¬åœ°å˜é‡ï¼Œæˆ‘ä»¬éœ€è¦è®°å½•å®ƒçš„åç§»é‡å¹¶å¢åŠ stackSizeã€‚
 		  */
 		vector<shared_ptr<MachineIns>> res;
 		string content = ins->toString ();
-		shared_ptr<Comment> ir = make_shared<Comment> (content);  // ×¢ÊÍÏÔÊ¾´ËIR
+		shared_ptr<Comment> ir = make_shared<Comment> (content);  // æ³¨é‡Šæ˜¾ç¤ºæ­¤IR
 		switch (ins->type)
 		{
 		case RET:
@@ -383,7 +383,7 @@ shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<Mach
 		default:
 			break;
 		}
-		// ½«´ËIR¶ÔÓ¦µÄ»úÆ÷Âë¼ÓÈë
+		// å°†æ­¤IRå¯¹åº”çš„æœºå™¨ç åŠ å…¥
 		machineBB->MachineInstructions.insert (machineBB->MachineInstructions.end (), ir);
 		machineBB->MachineInstructions.insert (machineBB->MachineInstructions.end (), res.begin (), res.end ());
 		if (tempRegPool.size () + rValRegMap.size () != _TMP_REG_CNT)
@@ -396,8 +396,8 @@ shared_ptr<MachineBB> bbToMachineBB (shared_ptr<BasicBlock>& bb, shared_ptr<Mach
 }
 
 /**
- * @brief ·ÖÅäÁÙÊ±¼Ä´æÆ÷
- * @return ·ÖÅäµÄ¼Ä´æÆ÷
+ * @brief åˆ†é…ä¸´æ—¶å¯„å­˜å™¨
+ * @return åˆ†é…çš„å¯„å­˜å™¨
  */
 string allocTempRegister ()
 {
@@ -420,8 +420,8 @@ string allocTempRegister ()
 }
 
 /**
- * @brief ÊÍ·ÅÁÙÊ±¼Ä´æÆ÷
- * @param reg ÁÙÊ±¼Ä´æÆ÷
+ * @brief é‡Šæ”¾ä¸´æ—¶å¯„å­˜å™¨
+ * @param reg ä¸´æ—¶å¯„å­˜å™¨
  */
 void releaseTempRegister (const string& reg)
 {
@@ -450,22 +450,22 @@ void releaseTempRegister (const string& reg)
 }
 
 /**
- * @brief loadÒ»¸öÁ¢¼´Êıµ½¼Ä´æÆ÷
- * @param num Á¢¼´Êı
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param res »ã±àÖ¸Áî
- * @param mov ¿É·ñÒÆÎ»
+ * @brief loadä¸€ä¸ªç«‹å³æ•°åˆ°å¯„å­˜å™¨
+ * @param num ç«‹å³æ•°
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param res æ±‡ç¼–æŒ‡ä»¤
+ * @param mov å¯å¦ç§»ä½
  */
 void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns>>& res, bool mov)
 {
 	shared_ptr<Operand> imm;
-	if (judgeImmValid (num, mov))  // ºÏ·¨Á¢¼´Êı
+	if (judgeImmValid (num, mov))  // åˆæ³•ç«‹å³æ•°
 	{
 		imm = make_shared<Operand> (IMM, to_string (num));
 		shared_ptr<MovIns> mov2Reg = make_shared<MovIns> (NON, NONE, 0, des, imm);
 		res.push_back (mov2Reg);
 	}
-	else  // ·Ç·¨Á¢¼´Êı£¬ĞèÒª¼ÓÔØÖÁ¼Ä´æÆ÷
+	else  // éæ³•ç«‹å³æ•°ï¼Œéœ€è¦åŠ è½½è‡³å¯„å­˜å™¨
 	{
 		if (_optimizeMachineIr)
 		{
@@ -496,11 +496,11 @@ void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns
 }
 
 /**
- * @brief ¼ÓÔØÒ»¸öoffset£¬Á¢¼´ÊıºÏ·¨ÔòÎªÁ¢¼´Êı£¬²»ºÏ·¨Ôò¼ÓÔØÖÁ¼Ä´æÆ÷
- * @param offset offset´óĞ¡
- * @param off offset¶ÔÏó
- * @param reg ¼Ä´æÆ÷
- * @param res »ã±àÖ¸Áî
+ * @brief åŠ è½½ä¸€ä¸ªoffsetï¼Œç«‹å³æ•°åˆæ³•åˆ™ä¸ºç«‹å³æ•°ï¼Œä¸åˆæ³•åˆ™åŠ è½½è‡³å¯„å­˜å™¨
+ * @param offset offsetå¤§å°
+ * @param off offsetå¯¹è±¡
+ * @param reg å¯„å­˜å™¨
+ * @param res æ±‡ç¼–æŒ‡ä»¤
  */
 void loadOffset (int offset, shared_ptr<Operand>& off, string reg, vector<shared_ptr<MachineIns>>& res)
 {
@@ -514,10 +514,10 @@ void loadOffset (int offset, shared_ptr<Operand>& off, string reg, vector<shared
 }
 
 /**
- * @brief load È«¾Ö±äÁ¿
- * @param glob È«¾Ö±äÁ¿
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param res »ã±àÖ¸Áî
+ * @brief load å…¨å±€å˜é‡
+ * @param glob å…¨å±€å˜é‡
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param res æ±‡ç¼–æŒ‡ä»¤
  */
 void loadGlobVar2Reg (shared_ptr<GlobalValue>& glob, shared_ptr<Operand>& des, vector<shared_ptr<MachineIns>>& res)
 {
@@ -535,10 +535,10 @@ void loadGlobVar2Reg (shared_ptr<GlobalValue>& glob, shared_ptr<Operand>& des, v
 }
 
 /**
- * @brief ¼ÓÔØ³£Á¿Êı×éÆğÊ¼µØÖ·
- * @param cons ³£Á¿Êı×é
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param res »ã±àÖ¸Áî
+ * @brief åŠ è½½å¸¸é‡æ•°ç»„èµ·å§‹åœ°å€
+ * @param cons å¸¸é‡æ•°ç»„
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param res æ±‡ç¼–æŒ‡ä»¤
  */
 void loadConst2Reg (shared_ptr<ConstantValue>& cons, shared_ptr<Operand>& des, vector<shared_ptr<MachineIns>>& res)
 {
@@ -548,16 +548,16 @@ void loadConst2Reg (shared_ptr<ConstantValue>& cons, shared_ptr<Operand>& des, v
 }
 
 /**
- * @brief ÒÔspÎª»ùµØÖ·È¡Êı
- * @param var ¾Ö²¿±äÁ¿
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param offset Æ«ÒÆÁ¿Ïà¶Ôsp
- * @param res »ã±àÖ¸Áî
+ * @brief ä»¥spä¸ºåŸºåœ°å€å–æ•°
+ * @param var å±€éƒ¨å˜é‡
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param offset åç§»é‡ç›¸å¯¹sp
+ * @param res æ±‡ç¼–æŒ‡ä»¤
  */
 void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_ptr<Operand>& offset, vector<shared_ptr<MachineIns>>& res)
 {
 	shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
-	if (var->valueType == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)  // Êı×éÆğÊ¼µØÖ·
+	if (var->valueType == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)  // æ•°ç»„èµ·å§‹åœ°å€
 	{   //use ADD instead of LDR+OFFSET
 		shared_ptr<BinaryIns> addrToReg = make_shared<BinaryIns> (mit::ADD, NON, NONE, 0, stack, offset, des);
 		res.push_back (addrToReg);
@@ -570,24 +570,24 @@ void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_pt
 }
 
 /**
- * @brief ¼ÓÔØÒ»¸öÖµµ½register
- * @param val ±»¼ÓÔØµÄÖµ
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param machineFunc ËùÔÚ»úÆ÷Âëº¯Êı
- * @param res Éú³ÉµÄ»úÆ÷Ö¸Áî
- * @param mov ¿É·ñÒÆ¶¯
- * @param compensate Ïà¶ÔÓÚµ±Ç°spµÄÆ«ÒÆÁ¿
- * @param reg Ä¿µÄ¼Ä´æÆ÷±àºÅ
+ * @brief åŠ è½½ä¸€ä¸ªå€¼åˆ°register
+ * @param val è¢«åŠ è½½çš„å€¼
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param machineFunc æ‰€åœ¨æœºå™¨ç å‡½æ•°
+ * @param res ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
+ * @param mov å¯å¦ç§»åŠ¨
+ * @param compensate ç›¸å¯¹äºå½“å‰spçš„åç§»é‡
+ * @param reg ç›®çš„å¯„å­˜å™¨ç¼–å·
  */
 void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc,
 				  vector<shared_ptr<MachineIns>>& res, bool mov, int compensate = 0, string reg = "3")
 {
-	if (val->valueType == NUMBER)  // ³£Êı
+	if (val->valueType == NUMBER)  // å¸¸æ•°
 	{
 		int imm = s_p_c<NumberValue> (val)->number;
 		loadImm2Reg (imm, des, res, mov);
 	}
-	else if (val->valueType == GLOBAL)  // È«¾Ö±äÁ¿
+	else if (val->valueType == GLOBAL)  // å…¨å±€å˜é‡
 	{
 		shared_ptr<GlobalValue> glob_var = s_p_c<GlobalValue> (val);
 		loadGlobVar2Reg (glob_var, des, res);
@@ -597,26 +597,26 @@ void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 		shared_ptr<ConstantValue> const_var = s_p_c<ConstantValue> (val);
 		loadConst2Reg (const_var, des, res);
 	}
-	else    // ¾Ö²¿±äÁ¿
+	else    // å±€éƒ¨å˜é‡
 	{
 		shared_ptr<Operand> off;
-		if (machineFunc->var2offset.count (to_string (val->id)) == 0)  // ÔÚ¼Ä´æÆ÷Àï
+		if (machineFunc->var2offset.count (to_string (val->id)) == 0)  // åœ¨å¯„å­˜å™¨é‡Œ
 		{
 			if (rValRegMap.count (val) != 0 || lValRegMap.count (val) != 0)
 			{
 				string exist_reg;
-				if (rValRegMap.count (val) != 0)  // ÁÙÊ±¼Ä´æÆ÷ÄÚ
+				if (rValRegMap.count (val) != 0)  // ä¸´æ—¶å¯„å­˜å™¨å†…
 					exist_reg = rValRegMap.at (val);
 				else
-					exist_reg = lValRegMap.at (val);  // ×óÖµ¼Ä´æÆ÷ÄÚ
-				if (exist_reg == des->value)  // ÏàÍ¬µÄ¼Ä´æÆ÷
+					exist_reg = lValRegMap.at (val);  // å·¦å€¼å¯„å­˜å™¨å†…
+				if (exist_reg == des->value)  // ç›¸åŒçš„å¯„å­˜å™¨
 				{
 					return;
 				}
-				else      // ²»Í¬µÄ¼Ä´æÆ÷
+				else      // ä¸åŒçš„å¯„å­˜å™¨
 				{
 					shared_ptr<Operand> ori = make_shared<Operand> (REG, exist_reg);
-					shared_ptr<MovIns> mov2Des = make_shared<MovIns> (NON, NONE, 0, des, ori);  // ´ÓÔ´¼Ä´æÆ÷ÒÆÖÁÄ¿µÄ¼Ä´æÆ÷
+					shared_ptr<MovIns> mov2Des = make_shared<MovIns> (NON, NONE, 0, des, ori);  // ä»æºå¯„å­˜å™¨ç§»è‡³ç›®çš„å¯„å­˜å™¨
 					res.push_back (mov2Des);
 					return;
 				}
@@ -624,9 +624,9 @@ void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 			cerr << "machine_ir_build: unalloc memory" << endl;
 			return;
 		}
-		// ²»ÔÚ¼Ä´æÆ÷Àï
+		// ä¸åœ¨å¯„å­˜å™¨é‡Œ
 		int offset = machineFunc->var2offset.at (to_string (val->id)) + compensate;
-		if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)  // Èç¹ûÊÇÊı×é£¬Ôò¼ÓÔØÆğÊ¼µØÖ·
+		if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)  // å¦‚æœæ˜¯æ•°ç»„ï¼Œåˆ™åŠ è½½èµ·å§‹åœ°å€
 		{ //use ADD instead of LDR+OFFSET
 			if (judgeImmValid (offset, false))
 			{
@@ -647,12 +647,12 @@ void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 }
 
 /**
- * @brief ¼ÓÈëÒ»¸öĞÂµÄ¾Ö²¿±äÁ¿
- * @param des Ä¿±ê¼Ä´æÆ÷
- * @param val_id valueµÄid
- * @param machineFunc ËùÔÚ»úÆ÷Âëº¯Êı
- * @param res »ã±àÖ¸Áî
- * @param reg ËùÔÚ¼Ä´æÆ÷
+ * @brief åŠ å…¥ä¸€ä¸ªæ–°çš„å±€éƒ¨å˜é‡
+ * @param des ç›®æ ‡å¯„å­˜å™¨
+ * @param val_id valueçš„id
+ * @param machineFunc æ‰€åœ¨æœºå™¨ç å‡½æ•°
+ * @param res æ±‡ç¼–æŒ‡ä»¤
+ * @param reg æ‰€åœ¨å¯„å­˜å™¨
  */
 void storeNewValue (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res, string reg = "3")
 {
@@ -666,15 +666,15 @@ void storeNewValue (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc
 }
 
 /**
- * @brief ´æ´¢ÖÁÄÚ´æ
- * @param des valueËùÔÚ¼Ä´æÆ÷
- * @param val_id valueµÄid
+ * @brief å­˜å‚¨è‡³å†…å­˜
+ * @param des valueæ‰€åœ¨å¯„å­˜å™¨
+ * @param val_id valueçš„id
  * @param machineFunc
- * @param res Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @param res ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res)
 {
-	// ´Ë¾Ö²¿±äÁ¿ÎªĞÂ
+	// æ­¤å±€éƒ¨å˜é‡ä¸ºæ–°
 	if (machineFunc->var2offset.count (to_string (val_id)) == 0)
 	{ // new value
 		string reg = allocTempRegister ();
@@ -683,7 +683,7 @@ void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>
 		releaseTempRegister (des->value);
 	}
 	else
-	{ // ´Ë¾Ö²¿±äÁ¿Ö®Ç°ÒÑÔÚÕ»ÖĞ
+	{ // æ­¤å±€éƒ¨å˜é‡ä¹‹å‰å·²åœ¨æ ˆä¸­
 		shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 		shared_ptr<Operand> offset;
 		string reg = allocTempRegister ();
@@ -696,14 +696,14 @@ void store2Memory (shared_ptr<Operand>& des, int val_id, shared_ptr<MachineFunc>
 }
 
 /**
- * @brief ¼ÓÔØoperandÖÁreg¼Ä´æÆ÷
- * @param val ĞèÒª¼ÓÔØµÄÖµ
- * @param des Ä¿µÄ¼Ä´æÆ÷
+ * @brief åŠ è½½operandè‡³regå¯„å­˜å™¨
+ * @param val éœ€è¦åŠ è½½çš„å€¼
+ * @param des ç›®çš„å¯„å­˜å™¨
  * @param machineFunc
- * @param res Éú³ÉµÄ»úÆ÷Ö¸Áî
- * @param mov ¿É·ñÒÆ¶¯
- * @param reg Ä¿µÄ¼Ä´æÆ÷±àºÅ
- * @param regRequired true ±ØĞëÊÇ¼Ä´æÆ÷£»false ¿ÉÒÔÊÇÁ¢¼´Êı
+ * @param res ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
+ * @param mov å¯å¦ç§»åŠ¨
+ * @param reg ç›®çš„å¯„å­˜å™¨ç¼–å·
+ * @param regRequired true å¿…é¡»æ˜¯å¯„å­˜å™¨ï¼›false å¯ä»¥æ˜¯ç«‹å³æ•°
  */
 void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc,
 				  vector<shared_ptr<MachineIns>>& res, bool mov, string reg = "3", bool regRequired = true)
@@ -717,7 +717,7 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 		if (val->valueType == NUMBER)
 		{
 			int imm = s_p_c<NumberValue> (val)->number;
-			if (judgeImmValid (imm, mov))  // ³£ÊıÇÒÎªºÏ·¨Á¢¼´Êı
+			if (judgeImmValid (imm, mov))  // å¸¸æ•°ä¸”ä¸ºåˆæ³•ç«‹å³æ•°
 			{
 				des->state = IMM;
 				des->value = to_string (imm);
@@ -735,33 +735,33 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 }
 
 /**
- * @brief ¶ÁÒ»¸öÖµ£¬²é¿´´ËÖµËùÔÚ¼Ä´æÆ÷»òÁ¢¼´Êıop
- * @param val ËùĞè¶ÁµÄÖµ
- * @param op Ä¿µÄ¼Ä´æÆ÷
+ * @brief è¯»ä¸€ä¸ªå€¼ï¼ŒæŸ¥çœ‹æ­¤å€¼æ‰€åœ¨å¯„å­˜å™¨æˆ–ç«‹å³æ•°op
+ * @param val æ‰€éœ€è¯»çš„å€¼
+ * @param op ç›®çš„å¯„å­˜å™¨
  * @param machineFunc 
- * @param res Éú³ÉµÄ»úÆ÷Ö¸Áî
- * @param mov ¿É·ñÒÆ¶¯
- * @param regRequired true ±ØĞëÊÇ¼Ä´æÆ÷£»false ¿ÉÒÔÊÇÁ¢¼´Êı
- * @return true ĞèÒªÊÍ·Å¼Ä´æÆ÷£»false ÎŞĞèÊÍ·Å
+ * @param res ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
+ * @param mov å¯å¦ç§»åŠ¨
+ * @param regRequired true å¿…é¡»æ˜¯å¯„å­˜å™¨ï¼›false å¯ä»¥æ˜¯ç«‹å³æ•°
+ * @return true éœ€è¦é‡Šæ”¾å¯„å­˜å™¨ï¼›false æ— éœ€é‡Šæ”¾
  */
 bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc,
 				   vector<shared_ptr<MachineIns>>& res, bool mov, bool regRequired)
 {
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT) // ´ËÖµÎª×óÖµ
+	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT) // æ­¤å€¼ä¸ºå·¦å€¼
 	{
-		if (lValRegMap.count (val) != 0)  // ÔÚ×óÖµ¼Ä´æÆ÷ÄÚ
+		if (lValRegMap.count (val) != 0)  // åœ¨å·¦å€¼å¯„å­˜å™¨å†…
 		{
 			op->value = lValRegMap.at (val);
 			return false;
 		}
-		else  // ĞèÒªÁÙÊ±·ÅÈë¼Ä´æÆ÷£¬²¢Ö®ºóÊÍ·Å
+		else  // éœ€è¦ä¸´æ—¶æ”¾å…¥å¯„å­˜å™¨ï¼Œå¹¶ä¹‹åé‡Šæ”¾
 		{
 			op->value = allocTempRegister ();
 			loadOperand (val, op, machineFunc, res, mov, op->value, regRequired);
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// ´ËÖµÎªÓÒÖµ
+	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// æ­¤å€¼ä¸ºå³å€¼
 	{
 		if (rValRegMap.count (val) == 0)
 		{
@@ -777,10 +777,10 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 	}
 	else
 	{
-		if (val->valueType == NUMBER)  // ´ËÖµÎª³£Êı
+		if (val->valueType == NUMBER)  // æ­¤å€¼ä¸ºå¸¸æ•°
 		{
 			int num = s_p_c<NumberValue> (val)->number;
-			if (regRequired)  // ±ØĞë´æÔÚ¼Ä´æÆ÷ÄÚ
+			if (regRequired)  // å¿…é¡»å­˜åœ¨å¯„å­˜å™¨å†…
 			{
 				op->value = allocTempRegister ();
 				op->state = REG;
@@ -804,7 +804,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 				}
 			}
 		}
-		if (val->valueType == GLOBAL)  // È«¾Ö±äÁ¿£¬¼ÓÔØºóÔÙÊÍ·Å
+		if (val->valueType == GLOBAL)  // å…¨å±€å˜é‡ï¼ŒåŠ è½½åå†é‡Šæ”¾
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -813,7 +813,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadGlobVar2Reg (glob_val, op, res);
 			return true;
 		}
-		if (val->valueType == CONSTANT)  // const array£¬¼ÓÔØºóÔÙÊÍ·Å
+		if (val->valueType == CONSTANT)  // const arrayï¼ŒåŠ è½½åå†é‡Šæ”¾
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -822,7 +822,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadConst2Reg (const_val, op, res);
 			return true;
 		}
-		if (val->valueType == PARAMETER) // ĞÎ²Î£¬¼ÓÔØºóÔÙÊÍ·Å
+		if (val->valueType == PARAMETER) // å½¢å‚ï¼ŒåŠ è½½åå†é‡Šæ”¾
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -830,7 +830,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadOperand (val, op, machineFunc, res, mov, reg, regRequired);
 			return true;
 		}
-		if (val->valueType == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)  // Êı×é£¬¼ÓÔØºóÔÙÊÍ·Å
+		if (val->valueType == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)  // æ•°ç»„ï¼ŒåŠ è½½åå†é‡Šæ”¾
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -844,36 +844,36 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 }
 
 /**
- * @brief Èç¹ûvalÖµÒÑÓĞ£¬ÔòopÎª´Ë¼Ä´æÆ÷£¬·ñÔò·ÖÅä¼Ä´æÆ÷
- * @param val ĞèÒªĞ´ÈëµÄÖµ
- * @param op Ä¿µÄ¼Ä´æÆ÷
+ * @brief å¦‚æœvalå€¼å·²æœ‰ï¼Œåˆ™opä¸ºæ­¤å¯„å­˜å™¨ï¼Œå¦åˆ™åˆ†é…å¯„å­˜å™¨
+ * @param val éœ€è¦å†™å…¥çš„å€¼
+ * @param op ç›®çš„å¯„å­˜å™¨
  * @param machineFunc 
- * @param res Éú³ÉµÄ»úÆ÷Ö¸Áî
- * @return true Èç¹û¼Ä´æÆ÷ĞèÒªÊÍ·Å£»false ÎŞĞèÊÍ·Å
+ * @param res ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
+ * @return true å¦‚æœå¯„å­˜å™¨éœ€è¦é‡Šæ”¾ï¼›false æ— éœ€é‡Šæ”¾
  */
 bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res)
 {
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)  // ×óÖµ
+	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)  // å·¦å€¼
 	{
-		if (lValRegMap.count (val) != 0)  // ÔÚ×óÖµ¼Ä´æÆ÷ÄÚ
+		if (lValRegMap.count (val) != 0)  // åœ¨å·¦å€¼å¯„å­˜å™¨å†…
 		{
 			op->value = lValRegMap.at (val);
 			return false;
 		}
-		else       // Ã»ÔÚ¼Ä´æÆ÷ÄÚ£¬·ÖÅäÒ»¸ö¼Ä´æÆ÷
+		else       // æ²¡åœ¨å¯„å­˜å™¨å†…ï¼Œåˆ†é…ä¸€ä¸ªå¯„å­˜å™¨
 		{
 			op->value = allocTempRegister ();
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)  // ÓÒÖµ
+	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)  // å³å€¼
 	{
-		if (rValRegMap.count (val) != 0)  // ÓÒÖµ²»ÄÜÒÑ·ÖÅä¼Ä´æÆ÷
+		if (rValRegMap.count (val) != 0)  // å³å€¼ä¸èƒ½å·²åˆ†é…å¯„å­˜å™¨
 		{
 			cerr << "Error occurs in process read register: write a r-value with register." << endl;
 			return false;
 		}
-		else   // ·ÖÅäÒ»¸ö¼Ä´æÆ÷£¬²¢¼ÓÈërValRegMap
+		else   // åˆ†é…ä¸€ä¸ªå¯„å­˜å™¨ï¼Œå¹¶åŠ å…¥rValRegMap
 		{
 			op->value = allocTempRegister ();
 			rValRegMap[val] = op->value;
@@ -887,21 +887,21 @@ bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<
 }
 
 /**
- * @brief ½«return×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†returnè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
-	//shared_ptr<BXIns> bx = make_shared<BXIns> (NON, NONE, 0); // bx lr  £¿£¿£¿£¿Ã»ÓÃ
+	//shared_ptr<BXIns> bx = make_shared<BXIns> (NON, NONE, 0); // bx lr  ï¼Ÿï¼Ÿï¼Ÿï¼Ÿæ²¡ç”¨
 
 	if (s_p_c<ReturnInstruction> (ins)->funcType == FUNC_INT)
 	{
 		shared_ptr<Operand> op1 = make_shared<Operand> (REG, "0");
 		shared_ptr<Value> ret_val = s_p_c<ReturnInstruction> (ins)->value;
-		if (rValRegMap.count (ret_val) != 0 || lValRegMap.count (ret_val) != 0)  // ·µ»ØÖµ´æÔÚ¼Ä´æÆ÷ÄÚ
+		if (rValRegMap.count (ret_val) != 0 || lValRegMap.count (ret_val) != 0)  // è¿”å›å€¼å­˜åœ¨å¯„å­˜å™¨å†…
 		{
 			string ret_reg;
 			if (rValRegMap.count (ret_val) != 0)
@@ -914,19 +914,19 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 			{
 				ret_reg = lValRegMap.at (ret_val);
 			}
-			if (ret_reg != "0")   // Èç¹û·µ»ØÖµÃ»ÔÚR0Àï  move to R0
+			if (ret_reg != "0")   // å¦‚æœè¿”å›å€¼æ²¡åœ¨R0é‡Œ  move to R0
 			{
 				shared_ptr<Operand> ori_reg = make_shared<Operand> (REG, ret_reg);
 				shared_ptr<MovIns> move2R0 = make_shared<MovIns> (NON, NONE, 0, op1, ori_reg);
 				res.push_back (move2R0);
 			}
 		}
-		else  // ÖµÎ´ÔÚ¼Ä´æÆ÷ÖĞ£¬Ö±½Óload
+		else  // å€¼æœªåœ¨å¯„å­˜å™¨ä¸­ï¼Œç›´æ¥load
 		{
 			loadVal2Reg (ret_val, op1, machineFunc, res, true);
 		}
 	}
-	// end of function  spÊÍ·ÅÕ»£¬ËùÓĞĞÎ²Î¾ù³öÕ»
+	// end of function  spé‡Šæ”¾æ ˆï¼Œæ‰€æœ‰å½¢å‚å‡å‡ºæ ˆ
 	shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 	int para_size;
 	int para_num = machineFunc->params.size ();
@@ -952,7 +952,7 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 	shared_ptr<BinaryIns> restore_func = make_shared<BinaryIns> (mit::ADD, NON, NONE, 0, stack, restore_stack, stack);
 	res.push_back (restore_func);
 
-	// ¼ÓÔØLRÖÁPC
+	// åŠ è½½LRè‡³PC
 	shared_ptr<Operand> pc = make_shared<Operand> (REG, "15");
 	shared_ptr<Operand> lrOff = make_shared<Operand> (IMM, to_string (-20 - para_size * 4));
 	shared_ptr<MemoryIns> restoreLR = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, pc, stack, lrOff);
@@ -962,14 +962,14 @@ vector<shared_ptr<MachineIns>> genRetIns (shared_ptr<Instruction>& ins, shared_p
 }
 
 /**
- * @brief ½«jump×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @brief å°†jumpè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genJmpIns (shared_ptr<Instruction>& ins)
 {
 	vector<shared_ptr<MachineIns>> res;
-	// Ö±½ÓÌø×ª
+	// ç›´æ¥è·³è½¬
 	string label = "block" + to_string (s_p_c<JumpInstruction> (ins)->targetBlock->id);
 	shared_ptr<BIns> b = make_shared<BIns> (NON, NONE, 0, label);
 
@@ -978,27 +978,27 @@ vector<shared_ptr<MachineIns>> genJmpIns (shared_ptr<Instruction>& ins)
 }
 
 /**
- * @brief ½«µ÷ÓÃº¯Êı×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†è°ƒç”¨å‡½æ•°è½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
  * @param module 
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc, shared_ptr<Module>& module)
 {
 	vector<shared_ptr<MachineIns>> res;
 	shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(ins);
-	/********************************* ±£´æÉÏÏÂÎÄ ****************************************/
-	bool useR0 = false;  // ÊÇ·ñÊ¹ÓÃR0
-	set<int> reg_index;   // ÕıÔÚÊ¹ÓÃµÄ¼Ä´æÆ÷
-	int context_size = 0;   // ÉÏÏÂÎÄµÄ´óĞ¡£¬¼´pushÈëµÄ´óĞ¡£¬½öÎª±£´æµÄµ±Ç°¼Ä´æÆ÷µÄÖµ£¬²»°üÀ¨µ÷ÓÃº¯ÊıµÄ²ÎÊı
+	/********************************* ä¿å­˜ä¸Šä¸‹æ–‡ ****************************************/
+	bool useR0 = false;  // æ˜¯å¦ä½¿ç”¨R0
+	set<int> reg_index;   // æ­£åœ¨ä½¿ç”¨çš„å¯„å­˜å™¨
+	int context_size = 0;   // ä¸Šä¸‹æ–‡çš„å¤§å°ï¼Œå³pushå…¥çš„å¤§å°ï¼Œä»…ä¸ºä¿å­˜çš„å½“å‰å¯„å­˜å™¨çš„å€¼ï¼Œä¸åŒ…æ‹¬è°ƒç”¨å‡½æ•°çš„å‚æ•°
 	for (auto& r_val : rValRegMap)
 	{
 		if (r_val.second == "0")
 			useR0 = true;
-		reg_index.insert (stoi (r_val.second));  // ¼ÓÈëÊ¹ÓÃµÄÁÙÊ±¼Ä´æÆ÷
+		reg_index.insert (stoi (r_val.second));  // åŠ å…¥ä½¿ç”¨çš„ä¸´æ—¶å¯„å­˜å™¨
 	}
-	shared_ptr<Function> current_func;  // µ±Ç°ËùÔÚµÄº¯Êı
+	shared_ptr<Function> current_func;  // å½“å‰æ‰€åœ¨çš„å‡½æ•°
 	for (const auto& func : module->functions)
 	{
 		if (func->name == machineFunc->name)
@@ -1007,10 +1007,10 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			break;
 		}
 	}
-	set<int> current_reg_index;   // µ±Ç°º¯ÊıÊ¹ÓÃµÄ×óÖµ¼Ä´æÆ÷
+	set<int> current_reg_index;   // å½“å‰å‡½æ•°ä½¿ç”¨çš„å·¦å€¼å¯„å­˜å™¨
 	if (current_func != nullptr)
 	{
-		for (auto& alive_val : ins->aliveValues)   // ½«´Ëµ÷ÓÃÖ¸ÁîÊ±£¬»îÔ¾µÄ±äÁ¿
+		for (auto& alive_val : ins->aliveValues)   // å°†æ­¤è°ƒç”¨æŒ‡ä»¤æ—¶ï¼Œæ´»è·ƒçš„å˜é‡
 		{
 			if (current_func->variableRegs.count (alive_val) != 0)
 			{
@@ -1018,10 +1018,10 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			}
 		}
 	}
-	reg_index.insert (current_reg_index.begin (), current_reg_index.end ());  // ¼ÓÈëÊ¹ÓÃµÄ×óÖµ¼Ä´æÆ÷
+	reg_index.insert (current_reg_index.begin (), current_reg_index.end ());  // åŠ å…¥ä½¿ç”¨çš„å·¦å€¼å¯„å­˜å™¨
 	
 	shared_ptr<StackIns> push = make_shared<StackIns> (NON, NONE, 0, true);
-	for (auto index : reg_index)  // ½«µ±Ç°Ê¹ÓÃµÄ¼Ä´æÆ÷ pushÈëÕ»ÖĞ
+	for (auto index : reg_index)  // å°†å½“å‰ä½¿ç”¨çš„å¯„å­˜å™¨ pushå…¥æ ˆä¸­
 	{
 		context_size += 4;
 		shared_ptr<Operand> reg = make_shared<Operand> (REG, to_string (index));
@@ -1032,17 +1032,17 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		res.push_back (push);
 	}
 
-	// ´«µİº¯Êı²ÎÊı
+	// ä¼ é€’å‡½æ•°å‚æ•°
 	int i;
 	int para_size = 0;
-	int compensate = context_size;  // Ïà¶ÔÓÚµ±Ç°spµÄÆ«ÒÆÁ¿£¬°üÀ¨±£´æµÄÉÏÏÂÎÄÓëº¯Êı²ÎÊı
-	for (i = invoke->params.size () - 1; i >= 4;)  // ËÄ¸öÒÔÉÏµÄ²ÎÊı£¬´ÓºóÏòÇ°ÒÀ´ÎpushÈëÕ»
+	int compensate = context_size;  // ç›¸å¯¹äºå½“å‰spçš„åç§»é‡ï¼ŒåŒ…æ‹¬ä¿å­˜çš„ä¸Šä¸‹æ–‡ä¸å‡½æ•°å‚æ•°
+	for (i = invoke->params.size () - 1; i >= 4;)  // å››ä¸ªä»¥ä¸Šçš„å‚æ•°ï¼Œä»åå‘å‰ä¾æ¬¡pushå…¥æ ˆ
 	{
 		para_size += 4;
 		int j = 0;
 		shared_ptr<StackIns> push_param = make_shared<StackIns> (NON, NONE, 0, true);
 		set<int> regs;
-		while (i >= 4 && j < 4)  // ²ÎÊı´ÓºóÏòÇ°´æÓÚR0ÖÁR3
+		while (i >= 4 && j < 4)  // å‚æ•°ä»åå‘å‰å­˜äºR0è‡³R3
 		{
 			shared_ptr<Operand> tmp_param = make_shared<Operand> (REG, to_string (3 - j));
 			loadVal2Reg (invoke->params[i], tmp_param, machineFunc, res, true, compensate, tmp_param->value);
@@ -1050,7 +1050,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 			j++;
 			i--;
 		}
-		for (auto reg : regs)  // È»ºó°´R0ÖÁR3ÒÀ´Îpush
+		for (auto reg : regs)  // ç„¶åæŒ‰R0è‡³R3ä¾æ¬¡push
 		{
 			shared_ptr<Operand> param = make_shared<Operand> (REG, to_string (reg));
 			push_param->regs.push_back (param);
@@ -1059,29 +1059,29 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		compensate += j * 4;
 	}
 
-	while (i >= 0)   // ËÄ¸öÒÔÄÚµÄ²ÎÊı£¬¼ÓÔØÈëR0ÖÁR3
+	while (i >= 0)   // å››ä¸ªä»¥å†…çš„å‚æ•°ï¼ŒåŠ è½½å…¥R0è‡³R3
 	{
 		shared_ptr<Operand> init_param = make_shared<Operand> (REG, to_string (i));
-		if (lValRegMap.count (invoke->params[i]) == 0 && rValRegMap.count (invoke->params[i]) == 0)  // ²»ÔÚ¼Ä´æÆ÷ÄÚ
+		if (lValRegMap.count (invoke->params[i]) == 0 && rValRegMap.count (invoke->params[i]) == 0)  // ä¸åœ¨å¯„å­˜å™¨å†…
 		{
 			loadVal2Reg (invoke->params[i], init_param, machineFunc, res, true, compensate, to_string (i));
 		}
-		else  // ÔÚ¼Ä´æÆ÷ÄÚ
+		else  // åœ¨å¯„å­˜å™¨å†…
 		{
 			string init_reg;
-			if (lValRegMap.count (invoke->params[i]) != 0)  // ÔÚ×óÖµ¼Ä´æÆ÷ÄÚ
+			if (lValRegMap.count (invoke->params[i]) != 0)  // åœ¨å·¦å€¼å¯„å­˜å™¨å†…
 			{
 				init_reg = lValRegMap.at (invoke->params[i]);
 			}
 			else
 			{
-				init_reg = rValRegMap.at (invoke->params[i]);  // ÔÚÁÙÊ±¼Ä´æÆ÷ÄÚ
+				init_reg = rValRegMap.at (invoke->params[i]);  // åœ¨ä¸´æ—¶å¯„å­˜å™¨å†…
 				rValRegMap.erase (invoke->params[i]);
 				releaseTempRegister (init_reg);
 			}
 			init_param->value = init_reg;
 		}
-		if (init_param->value != to_string (i))  // ÅÅĞòÓë¼Ä´æÆ÷±àºÅ²»Í¬£¬Ôòmoveµ½Ö¸¶¨ĞòºÅµÄ¼Ä´æÆ÷
+		if (init_param->value != to_string (i))  // æ’åºä¸å¯„å­˜å™¨ç¼–å·ä¸åŒï¼Œåˆ™moveåˆ°æŒ‡å®šåºå·çš„å¯„å­˜å™¨
 		{
 			shared_ptr<Operand> des = make_shared<Operand> (REG, to_string (i));
 			shared_ptr<MovIns> mov2R = make_shared<MovIns> (NON, NONE, 0, des, init_param);
@@ -1089,7 +1089,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		}
 		i--;
 	}
-	// Èç¹ûµ÷ÓÃµÄÊÇ_sysy_starttimeºÍ_sysy_stoptimeº¯Êı£¬Ôò mov R0 #1
+	// å¦‚æœè°ƒç”¨çš„æ˜¯_sysy_starttimeå’Œ_sysy_stoptimeå‡½æ•°ï¼Œåˆ™ mov R0 #1
 	if (invoke->targetFunction == nullptr && (invoke->targetName == "_sysy_starttime" || invoke->targetName == "_sysy_stoptime"))
 	{
 		shared_ptr<Operand> R0 = make_shared<Operand> (REG, "0");
@@ -1097,47 +1097,47 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		shared_ptr<MovIns> mov1 = make_shared<MovIns> (NON, NONE, 0, R0, one);
 		res.push_back (mov1);
 	}
-	// Ä¿±êº¯ÊıµÄº¯ÊıÃû
+	// ç›®æ ‡å‡½æ•°çš„å‡½æ•°å
 	string targetName;
-	if (invoke->targetFunction != nullptr)  // ×Ô¶¨Òåº¯Êı
+	if (invoke->targetFunction != nullptr)  // è‡ªå®šä¹‰å‡½æ•°
 	{
 		targetName = invoke->targetFunction->name;
 	}
-	else  // ÏµÍ³º¯Êı
+	else  // ç³»ç»Ÿå‡½æ•°
 	{
 		targetName = invoke->targetName;
-		if (targetName == "starttime" || targetName == "stoptime")  // ÏµÍ³Ê±¼äº¯Êı
+		if (targetName == "starttime" || targetName == "stoptime")  // ç³»ç»Ÿæ—¶é—´å‡½æ•°
 		{
 			targetName = "_sysy_" + targetName;
 		}
 	}
-	shared_ptr<BLIns> blink = make_shared<BLIns> (NON, NONE, 0, targetName);  // Ìø×ªµ½Ä¿±êº¯Êı
+	shared_ptr<BLIns> blink = make_shared<BLIns> (NON, NONE, 0, targetName);  // è·³è½¬åˆ°ç›®æ ‡å‡½æ•°
 	res.push_back (blink);
-	// ±£´æR0ÄÚµÄ·µ»ØÖµ
+	// ä¿å­˜R0å†…çš„è¿”å›å€¼
 	bool needFetch = false;
 	bool needMove = false;
-	// Èç¹ûÄ¿±êº¯ÊıÎªÏµÍ³º¯ÊıGETXXX£¬»ò·µ»ØintµÄ×Ô¶¨Òåº¯Êı£¬¼´ÓĞ·µ»ØÖµµÄº¯Êı
+	// å¦‚æœç›®æ ‡å‡½æ•°ä¸ºç³»ç»Ÿå‡½æ•°GETXXXï¼Œæˆ–è¿”å›intçš„è‡ªå®šä¹‰å‡½æ•°ï¼Œå³æœ‰è¿”å›å€¼çš„å‡½æ•°
 	if ((s_p_c<InvokeInstruction> (ins)->invokeType == GET_ARRAY || s_p_c<InvokeInstruction> (ins)->invokeType == GET_CHAR || s_p_c<InvokeInstruction> (ins)->invokeType == GET_INT ||
 		(s_p_c<InvokeInstruction> (ins)->targetFunction != nullptr && s_p_c<InvokeInstruction> (ins)->targetFunction->funcType == FUNC_INT)))
 	{
-		if (useR0)  // R0ÒÑ±»Ê¹ÓÃ
+		if (useR0)  // R0å·²è¢«ä½¿ç”¨
 		{
-			needFetch = true;   // ĞèÒª½«R0Öµ¼ÓÔØ»ØÀ´
+			needFetch = true;   // éœ€è¦å°†R0å€¼åŠ è½½å›æ¥
 			shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");
 			shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
 			shared_ptr<Operand> offset = make_shared<Operand> (IMM, "-4");
 			shared_ptr<MemoryIns> storeR0 = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, ret, stack, offset);
 			res.push_back (storeR0);  // store R0 -> SP-4
 		}
-		else    // R0Î´±»Ê¹ÓÃ
+		else    // R0æœªè¢«ä½¿ç”¨
 		{
-			needMove = true;  // ½öĞè±£´æR0Öµ
+			needMove = true;  // ä»…éœ€ä¿å­˜R0å€¼
 		}
 	}
-	/**************************************************** º¯Êıµ÷ÓÃÍê±Ï·µ»Ø *******************************************************/
-	// ÖØ½¨ÉÏÏÂÎÄ
+	/**************************************************** å‡½æ•°è°ƒç”¨å®Œæ¯•è¿”å› *******************************************************/
+	// é‡å»ºä¸Šä¸‹æ–‡
 	shared_ptr<StackIns> pop = make_shared<StackIns> (NON, NONE, 0, false);
-	for (int j = 0; j < push->regs.size (); ++j)  // ½«Ö®Ç°pushÈëÕ»µÄ¼Ä´æÆ÷£¬È«²¿³öÕ»
+	for (int j = 0; j < push->regs.size (); ++j)  // å°†ä¹‹å‰pushå…¥æ ˆçš„å¯„å­˜å™¨ï¼Œå…¨éƒ¨å‡ºæ ˆ
 	{
 		pop->regs.push_back (push->regs[j]);
 	}
@@ -1146,20 +1146,20 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		res.push_back (pop);
 	}
 	
-	if (needMove)  // ½öĞè±£´æR0·µ»ØÖµ£¬ÎŞĞè¼ÓÔØ»ØÀ´
+	if (needMove)  // ä»…éœ€ä¿å­˜R0è¿”å›å€¼ï¼Œæ— éœ€åŠ è½½å›æ¥
 	{
-		shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");   // ·µ»ØÖµÔÚR0
+		shared_ptr<Operand> ret = make_shared<Operand> (REG, "0");   // è¿”å›å€¼åœ¨R0
 		shared_ptr<Operand> final_des = make_shared<Operand> (REG, "1");
 		shared_ptr<Value> i_ins = ins;
 		bool release_des = writeRegister (i_ins, final_des, machineFunc, res);
-		shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, final_des, ret);  // ½«·µ»ØÖµ´ÓR0ÒÆµ½Ò»¸ö¿ÕÏĞµÄÁÙÊ±¼Ä´æÆ÷ÖĞ
+		shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, final_des, ret);  // å°†è¿”å›å€¼ä»R0ç§»åˆ°ä¸€ä¸ªç©ºé—²çš„ä¸´æ—¶å¯„å­˜å™¨ä¸­
 		res.push_back (move2Des);
 		if (release_des)
 		{
 			store2Memory (final_des, ins->id, machineFunc, res);
 		}
 	}
-	if (needFetch)  // ½«Ô­À´R0Öµ¼ÓÔØ»ØÀ´
+	if (needFetch)  // å°†åŸæ¥R0å€¼åŠ è½½å›æ¥
 	{
 		shared_ptr<Operand> final_des = make_shared<Operand> (REG, "1");
 		shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
@@ -1167,7 +1167,7 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 		bool release_des = writeRegister (i_ins, final_des, machineFunc, res);
 		shared_ptr<Operand> offset = make_shared<Operand> (IMM, to_string (-context_size - 4));
 		shared_ptr<MemoryIns> fetchR0 = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, final_des, stack, offset);
-		res.push_back (fetchR0);   // ´Ósp-4½«Öµ¼ÓÔØ»ØÀ´
+		res.push_back (fetchR0);   // ä»sp-4å°†å€¼åŠ è½½å›æ¥
 		if (release_des)
 		{
 			store2Memory (final_des, ins->id, machineFunc, res);
@@ -1177,21 +1177,21 @@ vector<shared_ptr<MachineIns>> genInvokeIns2 (shared_ptr<Instruction>& ins, shar
 }
 
 /**
- * @brief ½«Ò»Ôª±í´ïÊ½×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†ä¸€å…ƒè¡¨è¾¾å¼è½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	shared_ptr<UnaryInstruction> ui = s_p_c<UnaryInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (ui->op == "-")   // ¸ººÅ×ªÎª0-Öµ
+	if (ui->op == "-")   // è´Ÿå·è½¬ä¸º0-å€¼
 	{
 		shared_ptr<Operand> op1 = make_shared<Operand> (IMM, "0");
 		shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 		bool release2 = readRegister (ui->value, op2, machineFunc, res, true, true);
-		if (release2)  // Á¢¼´ÊÍ·Å¼Ä´æÆ÷£¬¼´Ä¿µÄ¼Ä´æÆ÷ºÍÔ´¼Ä´æÆ÷¿ÉÒÔÒ»Ñù
+		if (release2)  // ç«‹å³é‡Šæ”¾å¯„å­˜å™¨ï¼Œå³ç›®çš„å¯„å­˜å™¨å’Œæºå¯„å­˜å™¨å¯ä»¥ä¸€æ ·
 		{
 			releaseTempRegister (op2->value);
 		}
@@ -1201,17 +1201,17 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 
 		shared_ptr<BinaryIns> bi = make_shared<BinaryIns> (mit::RSB, NON, NONE, 0, op2, op1, rd);
 		res.push_back (bi);
-		if (release_rd)   // Èç¹û½á¹ûÖµµÄ¼Ä´æÆ÷ĞèÒªÊÍ·Å
+		if (release_rd)   // å¦‚æœç»“æœå€¼çš„å¯„å­˜å™¨éœ€è¦é‡Šæ”¾
 		{
 			store2Memory (rd, ui->id, machineFunc, res);
 		}
 	}
-	else  // È¡·´×ªÎªcmpÖµÓë0£¬ÏàµÈÔò±äÎª1£¬·ñÔò±äÎª0
+	else  // å–åè½¬ä¸ºcmpå€¼ä¸0ï¼Œç›¸ç­‰åˆ™å˜ä¸º1ï¼Œå¦åˆ™å˜ä¸º0
 	{
 		shared_ptr<Operand> op2 = make_shared<Operand> (IMM, "0");
 		shared_ptr<Operand> op1 = make_shared<Operand> (REG, "2");
 		bool release1 = readRegister (ui->value, op1, machineFunc, res, true, true);
-		if (release1)  // Á¢¼´ÊÍ·Å¼Ä´æÆ÷£¬¼´Ä¿µÄ¼Ä´æÆ÷ºÍÔ´¼Ä´æÆ÷¿ÉÒÔÒ»Ñù
+		if (release1)  // ç«‹å³é‡Šæ”¾å¯„å­˜å™¨ï¼Œå³ç›®çš„å¯„å­˜å™¨å’Œæºå¯„å­˜å™¨å¯ä»¥ä¸€æ ·
 		{
 			releaseTempRegister (op1->value);
 		}
@@ -1235,16 +1235,16 @@ vector<shared_ptr<MachineIns>> genUnaryIns (shared_ptr<Instruction>& ins, shared
 }
 
 /**
- * @brief ½«¶şÔª±í´ïÊ½×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†äºŒå…ƒè¡¨è¾¾å¼è½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
 	shared_ptr<Operand> rd;
-	if (s_p_c<BinaryInstruction> (ins)->op == "%")  // È¡ÓàĞèÒª£¬ÏÈ½øĞĞ³ı·¨£¬ÔÚ¶Ô½á¹û½øĞĞÈıÔª³Ë¼õ
+	if (s_p_c<BinaryInstruction> (ins)->op == "%")  // å–ä½™éœ€è¦ï¼Œå…ˆè¿›è¡Œé™¤æ³•ï¼Œåœ¨å¯¹ç»“æœè¿›è¡Œä¸‰å…ƒä¹˜å‡
 	{
 		shared_ptr<Operand> d_op1 = make_shared<Operand> (REG, "2");
 		shared_ptr<Value> lhs = s_p_c<BinaryInstruction> (ins)->lhs;
@@ -1256,7 +1256,7 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 		d_rd->value = allocTempRegister ();
 		shared_ptr<BinaryIns> sdiv = make_shared<BinaryIns> (mit::DIV, NON, NONE, 0, d_op1, d_op2, d_rd);  // d_rd = d_op1 / d_op2
 		res.push_back (sdiv);
-		// Ã»ÓĞÁ¢¼´ÊÍ·Å¼Ä´æÆ÷£¬¼´Ä¿µÄ¼Ä´æÆ÷ºÍÔ´¼Ä´æÆ÷²»Ò»Ñù£¬ÒòÎªÖ®ºó»¹Òª¼ÌĞøÓÃ
+		// æ²¡æœ‰ç«‹å³é‡Šæ”¾å¯„å­˜å™¨ï¼Œå³ç›®çš„å¯„å­˜å™¨å’Œæºå¯„å­˜å™¨ä¸ä¸€æ ·ï¼Œå› ä¸ºä¹‹åè¿˜è¦ç»§ç»­ç”¨
 		releaseTempRegister (d_rd->value);
 		if (release2)
 			releaseTempRegister (d_op2->value);
@@ -1275,7 +1275,7 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 	}
 	else   // + - * / && ||
 	{    
-		// ±È½Ï£¬×ªÎªgenCmpIns
+		// æ¯”è¾ƒï¼Œè½¬ä¸ºgenCmpIns
 		if (s_p_c<BinaryInstruction> (ins)->op == ">" || s_p_c<BinaryInstruction> (ins)->op == "<" ||
 			s_p_c<BinaryInstruction> (ins)->op == "<=" || s_p_c<BinaryInstruction> (ins)->op == ">=" ||
 			s_p_c<BinaryInstruction> (ins)->op == "==" || s_p_c<BinaryInstruction> (ins)->op == "!=")
@@ -1288,15 +1288,15 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 		shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 		shared_ptr<Value> rhs = s_p_c<BinaryInstruction> (ins)->rhs;
 		bool release2;
-		if (s_p_c<BinaryInstruction> (ins)->op == "*" || s_p_c<BinaryInstruction> (ins)->op == "/")  // ³Ë³ıµÄ²Ù×÷Êı¶¼±ØĞëÎª¼Ä´æÆ÷
+		if (s_p_c<BinaryInstruction> (ins)->op == "*" || s_p_c<BinaryInstruction> (ins)->op == "/")  // ä¹˜é™¤çš„æ“ä½œæ•°éƒ½å¿…é¡»ä¸ºå¯„å­˜å™¨
 		{
 			release2 = readRegister (rhs, op2, machineFunc, res, true, true);
 		}
-		else    // ÆäÓà²Ù×÷£¬Ò»¸ö²Ù×÷Êı¿ÉÎªÁ¢¼´Êı
+		else    // å…¶ä½™æ“ä½œï¼Œä¸€ä¸ªæ“ä½œæ•°å¯ä¸ºç«‹å³æ•°
 		{
 			release2 = readRegister (rhs, op2, machineFunc, res, false, false);
 		}
-		if (release2)   // Ô´¼Ä´æÆ÷ºÍÄ¿µÄ¼Ä´æÆ÷¿ÉÒÔÏàÍ¬
+		if (release2)   // æºå¯„å­˜å™¨å’Œç›®çš„å¯„å­˜å™¨å¯ä»¥ç›¸åŒ
 			releaseTempRegister (op2->value);
 		if (release1)
 			releaseTempRegister (op1->value);
@@ -1321,10 +1321,10 @@ vector<shared_ptr<MachineIns>> genBinaryIns (shared_ptr<Instruction>& ins, share
 }
 
 /**
- * @brief ½«cmp×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†cmpè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -1336,7 +1336,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 	shared_ptr<Operand> op2 = make_shared<Operand> (REG, "3");
 	shared_ptr<Value> rhs = bi->rhs;
 	bool release2 = readRegister (rhs, op2, machineFunc, res, false, false);
-	shared_ptr<CmpIns> cmp = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // ±È½Ï²Ù×÷ÎŞÄ¿µÄ¼Ä´æÆ÷£¬½á¹û¸üĞÂCPSR¼Ä´æÆ÷
+	shared_ptr<CmpIns> cmp = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // æ¯”è¾ƒæ“ä½œæ— ç›®çš„å¯„å­˜å™¨ï¼Œç»“æœæ›´æ–°CPSRå¯„å­˜å™¨
 	res.push_back (cmp);
 	if (release2)
 		releaseTempRegister (op2->value);
@@ -1350,7 +1350,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 	shared_ptr<Operand> zero = make_shared<Operand> (IMM, "0");
 	shared_ptr<MovIns> assign_t = make_shared<MovIns> (NON, NONE, 0, ans, one);
 	shared_ptr<MovIns> assign_f = make_shared<MovIns> (NON, NONE, 0, ans, zero);
-	if (bi->op == "==")    // Á½¸öÒÆ¶¯Ö¸Áî¸ù¾İ±È½Ï·û£¬À´¸ü¸ÄÒÆ¶¯Ìõ¼ş
+	if (bi->op == "==")    // ä¸¤ä¸ªç§»åŠ¨æŒ‡ä»¤æ ¹æ®æ¯”è¾ƒç¬¦ï¼Œæ¥æ›´æ”¹ç§»åŠ¨æ¡ä»¶
 	{
 		assign_t->cond = EQ;
 		assign_f->cond = NE;
@@ -1386,7 +1386,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 		assign_f->cond = LS;
 		cmp_op = LS;
 	}
-	if (!true_cmp)  // Èç¹û±È½Ï²»ÊÇÎªÁËÌø×ª£¬¼´¶şÔªÔËËã£¬ĞèÒª±£´æ½á¹û
+	if (!true_cmp)  // å¦‚æœæ¯”è¾ƒä¸æ˜¯ä¸ºäº†è·³è½¬ï¼Œå³äºŒå…ƒè¿ç®—ï¼Œéœ€è¦ä¿å­˜ç»“æœ
 	{
 		res.push_back (assign_t);
 		res.push_back (assign_f);
@@ -1395,7 +1395,7 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 			store2Memory (ans, bi->id, machineFunc, res);
 		}
 	}
-	else   // ·ñÔò£¬ÎªÁËÌø×ª£¬ÎŞĞè±£´æ½á¹û
+	else   // å¦åˆ™ï¼Œä¸ºäº†è·³è½¬ï¼Œæ— éœ€ä¿å­˜ç»“æœ
 	{
 		if (release_rd)
 			releaseTempRegister (ans->value);
@@ -1405,10 +1405,10 @@ vector<shared_ptr<MachineIns>> genCmpIns (shared_ptr<Instruction>& ins, shared_p
 }
 
 /**
- * @brief ½«branch×ªÎª»úÆ÷Âë£¬¸ù¾İÖ®Ç°±È½Ï£¬Ñ¡ÔñÌø×ª
- * @param ins IRÖ¸Áî
+ * @brief å°†branchè½¬ä¸ºæœºå™¨ç ï¼Œæ ¹æ®ä¹‹å‰æ¯”è¾ƒï¼Œé€‰æ‹©è·³è½¬
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
@@ -1417,16 +1417,16 @@ vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr
 	shared_ptr<Operand> op1 = make_shared<Operand> (REG, "2");
 	bool release1 = readRegister (br->condition, op1, machineFunc, res, true, true);
 	shared_ptr<Operand> op2 = make_shared<Operand> (IMM, "0");
-	shared_ptr<CmpIns> cmpIns = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // op1¼´conditionÓëop2¼´0½øĞĞ±È½Ï£¬!true_cmp¼´Ìø×ªÇ°Î´½øĞĞ±È½Ï²Å¼ÓÈë
+	shared_ptr<CmpIns> cmpIns = make_shared<CmpIns> (NON, NONE, 0, op1, op2);  // op1å³conditionä¸op2å³0è¿›è¡Œæ¯”è¾ƒï¼Œ!true_cmpå³è·³è½¬å‰æœªè¿›è¡Œæ¯”è¾ƒæ‰åŠ å…¥
 	if (release1)
 		releaseTempRegister (op1->value);
 	//false case
 	string false_label = "block" + to_string (br->falseBlock->id);
-	shared_ptr<BIns> bfIns = make_shared<BIns> (EQ, NONE, 0, false_label);  // condition==0ÔòÌøÈëfalse_label
+	shared_ptr<BIns> bfIns = make_shared<BIns> (EQ, NONE, 0, false_label);  // condition==0åˆ™è·³å…¥false_label
 	//true case
 	string true_label = "block" + to_string (br->trueBlock->id);
-	shared_ptr<BIns> btIns = make_shared<BIns> (NON, NONE, 0, true_label);  // ·ñÔòÌøÈëtrue_label
-	if (cmp_op != NON)  // ÓĞ¹ı±È½Ï,Ôò¼ÓÈëÉÏ´ÎµÄ±È½Ï·û
+	shared_ptr<BIns> btIns = make_shared<BIns> (NON, NONE, 0, true_label);  // å¦åˆ™è·³å…¥true_label
+	if (cmp_op != NON)  // æœ‰è¿‡æ¯”è¾ƒ,åˆ™åŠ å…¥ä¸Šæ¬¡çš„æ¯”è¾ƒç¬¦
 	{
 		bfIns->cond = cmp_op;
 	}
@@ -1436,14 +1436,14 @@ vector<shared_ptr<MachineIns>> genBIns (shared_ptr<Instruction>& ins, shared_ptr
 	}
 	res.push_back (bfIns);
 	res.push_back (btIns);
-	cmp_op = NON;  // ½øĞĞ¹ıµÄ±È½Ï·ûÇå¿Õ
+	cmp_op = NON;  // è¿›è¡Œè¿‡çš„æ¯”è¾ƒç¬¦æ¸…ç©º
 	return res;
 }
 
 /**
- * @brief ·ÖÅäÒ»¸ö¾Ö²¿±äÁ¿
+ * @brief åˆ†é…ä¸€ä¸ªå±€éƒ¨å˜é‡
  * @param machineFunc
- * @param ins IRÖ¸Áî
+ * @param ins IRæŒ‡ä»¤
  */
 void genAlloc (shared_ptr<MachineFunc>& machineFunc, shared_ptr<Instruction>& ins)
 {
@@ -1453,30 +1453,30 @@ void genAlloc (shared_ptr<MachineFunc>& machineFunc, shared_ptr<Instruction>& in
 }
 
 /**
- * @brief ½«load×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†loadè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	shared_ptr<LoadInstruction> li = s_p_c<LoadInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (li->address->valueType == PARAMETER || li->address->valueType == GLOBAL ||   // »ùµØÖ·ÓëÆ«ÒÆÁ¿ÒÑÖª
+	if (li->address->valueType == PARAMETER || li->address->valueType == GLOBAL ||   // åŸºåœ°å€ä¸åç§»é‡å·²çŸ¥
 		li->address->valueType == CONSTANT || (li->address->valueType == INSTRUCTION && s_p_c<Instruction> (li->address)->type == BINARY))
 	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
 		bool release_base = readRegister (li->address, t_base, machineFunc, res, true, true);
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
-		shared_ptr<Shift> t_s = make_shared<Shift> ();  // ÒÆÎ»·½Ê½
+		shared_ptr<Shift> t_s = make_shared<Shift> ();  // ç§»ä½æ–¹å¼
 		bool release_offset = false;
-		if (li->offset->valueType == NUMBER)  // offset Îª³£Êı
+		if (li->offset->valueType == NUMBER)  // offset ä¸ºå¸¸æ•°
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
 			string reg = allocTempRegister ();
 			t_offset->value = reg;
-			loadOffset (off, t_offset, reg, res);  // ¼ÓÔØoffset
-			release_offset = true;  // Îª¼Ä´æÆ÷ÔòĞèÒªÊÍ·Å£¬ÎªÁ¢¼´ÊıÔòÎŞĞè
+			loadOffset (off, t_offset, reg, res);  // åŠ è½½offset
+			release_offset = true;  // ä¸ºå¯„å­˜å™¨åˆ™éœ€è¦é‡Šæ”¾ï¼Œä¸ºç«‹å³æ•°åˆ™æ— éœ€
 			if (t_offset->state == IMM)
 			{
 				releaseTempRegister (reg);
@@ -1485,11 +1485,11 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else   // offsetÔÚ¼Ä´æÆ÷ÄÚ
+		else   // offsetåœ¨å¯„å­˜å™¨å†…
 		{
 			release_offset = readRegister (li->offset, t_offset, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;  // ×óÒÆÁ½Î»£¬¼´*4
+			t_s->shift = 2;  // å·¦ç§»ä¸¤ä½ï¼Œå³*4
 		}
 		if (release_offset)
 			releaseTempRegister (t_offset->value);
@@ -1505,26 +1505,26 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 			store2Memory (t_rd, li->id, machineFunc, res);
 		}
 	}
-	else  // ¾Ö²¿±äÁ¿
+	else  // å±€éƒ¨å˜é‡
 	{
-		// ¼ÆËãÏà¶ÔspÆ«ÒÆÁ¿
+		// è®¡ç®—ç›¸å¯¹spåç§»é‡
 		shared_ptr<Operand> f_pre = make_shared<Operand> (REG, "2");
 		f_pre->value = allocTempRegister ();
 		f_pre->state = REG;
 		loadImm2Reg (machineFunc->var2offset.at (to_string (li->address->id)), f_pre, res, true);
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_off;
-		shared_ptr<Shift> t_s = make_shared<Shift> ();  // ÒÆÎ»·½Ê½
-		if (li->offset->valueType == NUMBER)  // offset Îª³£Êı
+		shared_ptr<Shift> t_s = make_shared<Shift> ();  // ç§»ä½æ–¹å¼
+		if (li->offset->valueType == NUMBER)  // offset ä¸ºå¸¸æ•°
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
-			if (judgeImmValid (off, false))  // ºÏ·¨Á¢¼´Êı£¬Ö±½ÓÊ¹ÓÃ
+			if (judgeImmValid (off, false))  // åˆæ³•ç«‹å³æ•°ï¼Œç›´æ¥ä½¿ç”¨
 			{
 				t_off->state = IMM;
 				t_off->value = to_string (off);
 				release_off = false;
 			}
-			else    // ·Ç·¨Á¢¼´Êı£¬ĞèÒª¼ÓÔØÖÁ¼Ä´æÆ÷
+			else    // éæ³•ç«‹å³æ•°ï¼Œéœ€è¦åŠ è½½è‡³å¯„å­˜å™¨
 			{
 				t_off->value = allocTempRegister ();
 				t_off->state = REG;
@@ -1534,25 +1534,25 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else   // offsetÔÚ¼Ä´æÆ÷ÄÚ
+		else   // offsetåœ¨å¯„å­˜å™¨å†…
 		{
 			release_off = readRegister (li->offset, t_off, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;  // ×óÒÆÁ½Î»£¬¼´*4
+			t_s->shift = 2;  // å·¦ç§»ä¸¤ä½ï¼Œå³*4
 		}
 		if (release_off)
 			releaseTempRegister (t_off->value);
 		releaseTempRegister (f_pre->value);
-		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // ×îÖÕ½á¹û£¬Ïà¶ÔÓÚspÆ«ÒÆÁ¿
+		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // æœ€ç»ˆç»“æœï¼Œç›¸å¯¹äºspåç§»é‡
 		f_aft->value = allocTempRegister ();
 		f_aft->state = REG;
 		shared_ptr<BinaryIns> add = make_shared<BinaryIns> (mit::ADD, NON, t_s, f_pre, t_off, f_aft);
 		res.push_back (add);
 		releaseTempRegister (f_aft->value);
-		// ÒÔspÎª»ùµØÖ·£¬¼ÓÔØ
+		// ä»¥spä¸ºåŸºåœ°å€ï¼ŒåŠ è½½
 		shared_ptr<Operand> des = make_shared<Operand> (REG, "2");
 		shared_ptr<Value> l_ins = ins;
-		bool release_des = writeRegister (l_ins, des, machineFunc, res);  // ¶ÁÈ¡ÖµµÄÄ¿µÄ¼Ä´æÆ÷
+		bool release_des = writeRegister (l_ins, des, machineFunc, res);  // è¯»å–å€¼çš„ç›®çš„å¯„å­˜å™¨
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
 		shared_ptr<MemoryIns> load = make_shared<MemoryIns> (mit::LOAD, NON, NONE, 0, des, base, f_aft);
 		res.push_back (load);
@@ -1566,16 +1566,16 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 }
 
 /**
- * @brief ½«store×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†storeè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	shared_ptr<StoreInstruction> si = s_p_c<StoreInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (si->address->valueType == PARAMETER || si->address->valueType == GLOBAL ||   // »ùµØÖ·ÓëÆ«ÒÆÁ¿ÒÑÖª
+	if (si->address->valueType == PARAMETER || si->address->valueType == GLOBAL ||   // åŸºåœ°å€ä¸åç§»é‡å·²çŸ¥
 		(si->address->valueType == INSTRUCTION && s_p_c<Instruction> (si->address)->type == BINARY))
 	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
@@ -1585,13 +1585,13 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)  // offset Îª³£Êı
+		if (si->offset->valueType == NUMBER)  // offset ä¸ºå¸¸æ•°
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
 			string reg = allocTempRegister ();
 			t_offset->value = reg;
-			loadOffset (off, t_offset, t_offset->value, res); // ¼ÓÔØoffset
-			release_offset = true;  // Îª¼Ä´æÆ÷ÔòĞèÒªÊÍ·Å£¬ÎªÁ¢¼´ÊıÔòÎŞĞè
+			loadOffset (off, t_offset, t_offset->value, res); // åŠ è½½offset
+			release_offset = true;  // ä¸ºå¯„å­˜å™¨åˆ™éœ€è¦é‡Šæ”¾ï¼Œä¸ºç«‹å³æ•°åˆ™æ— éœ€
 			if (t_offset->state == IMM)
 			{
 				release_offset = false;
@@ -1600,24 +1600,24 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 			t_s->shift = 0;
 			t_s->type = NONE;
 		}
-		else   // offsetÔÚ¼Ä´æÆ÷ÄÚ
+		else   // offsetåœ¨å¯„å­˜å™¨å†…
 		{
 			release_offset = readRegister (si->offset, t_offset, machineFunc, res, true, true);
 			t_s->shift = 2;
-			t_s->type = LSL;  // ×óÒÆÁ½Î»£¬¼´*4
+			t_s->type = LSL;  // å·¦ç§»ä¸¤ä½ï¼Œå³*4
 		}
 		shared_ptr<MemoryIns> t_store = make_shared<MemoryIns> (mit::STORE, NON, t_s, t_rd, t_base, t_offset);
 		res.push_back (t_store);
-		if (release_offset)    // storeÍê£¬½«Ïà¹Ø¼Ä´æÆ÷ÊÍ·Å
+		if (release_offset)    // storeå®Œï¼Œå°†ç›¸å…³å¯„å­˜å™¨é‡Šæ”¾
 			releaseTempRegister (t_offset->value);
 		if (release_rd)
 			releaseTempRegister (t_rd->value);
 		if (release_base)
 			releaseTempRegister (t_base->value);
 	}
-	else   // ¾Ö²¿±äÁ¿
+	else   // å±€éƒ¨å˜é‡
 	{
-		// ¼ÆËãÏà¶ÔspÆ«ÒÆÁ¿
+		// è®¡ç®—ç›¸å¯¹spåç§»é‡
 		shared_ptr<Operand> f_pre = make_shared<Operand> (REG, "2");
 		f_pre->value = allocTempRegister ();
 		f_pre->state = REG;
@@ -1625,16 +1625,16 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)  // offset Îª³£Êı
+		if (si->offset->valueType == NUMBER)  // offset ä¸ºå¸¸æ•°
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
-			if (judgeImmValid (off, false))  // ºÏ·¨Á¢¼´Êı£¬Ö±½ÓÊ¹ÓÃ
+			if (judgeImmValid (off, false))  // åˆæ³•ç«‹å³æ•°ï¼Œç›´æ¥ä½¿ç”¨
 			{
 				t_off->value = to_string (off);
 				t_off->state = IMM;
 				release_offset = false;
 			}
-			else    // ·Ç·¨Á¢¼´Êı£¬ĞèÒª¼ÓÔØÖÁ¼Ä´æÆ÷
+			else    // éæ³•ç«‹å³æ•°ï¼Œéœ€è¦åŠ è½½è‡³å¯„å­˜å™¨
 			{
 				t_off->value = allocTempRegister ();
 				t_off->state = REG;
@@ -1644,23 +1644,23 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 			t_s->type = NONE;
 			t_s->shift = 0;
 		}
-		else   // offsetÔÚ¼Ä´æÆ÷ÄÚ
+		else   // offsetåœ¨å¯„å­˜å™¨å†…
 		{
 			release_offset = readRegister (si->offset, t_off, machineFunc, res, true, true);
 			t_s->type = LSL;
-			t_s->shift = 2;  // ×óÒÆÁ½Î»£¬¼´*4
+			t_s->shift = 2;  // å·¦ç§»ä¸¤ä½ï¼Œå³*4
 		}
 		releaseTempRegister (f_pre->value);
 		if (release_offset)
 			releaseTempRegister (t_off->value);
-		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // ×îÖÕ½á¹û£¬Ïà¶ÔÓÚspÆ«ÒÆÁ¿
+		shared_ptr<Operand> f_aft = make_shared<Operand> (REG, "3");  // æœ€ç»ˆç»“æœï¼Œç›¸å¯¹äºspåç§»é‡
 		f_aft->value = allocTempRegister ();
 		f_aft->state = REG;
 		shared_ptr<BinaryIns> add = make_shared<BinaryIns> (mit::ADD, NON, t_s, f_pre, t_off, f_aft);
 		res.push_back (add);
-		// ÒÔspÎª»ùµØÖ·£¬store
+		// ä»¥spä¸ºåŸºåœ°å€ï¼Œstore
 		shared_ptr<Operand> obj = make_shared<Operand> (REG, "2");
-		bool release_obj = readRegister (si->value, obj, machineFunc, res, true, true);  // ĞèÒªstoreµÄÖµ
+		bool release_obj = readRegister (si->value, obj, machineFunc, res, true, true);  // éœ€è¦storeçš„å€¼
 		shared_ptr<Operand> base = make_shared<Operand> (REG, "13");
 		shared_ptr<MemoryIns> store = make_shared<MemoryIns> (mit::STORE, NON, NONE, 0, obj, base, f_aft);
 		res.push_back (store);
@@ -1672,17 +1672,17 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 }
 
 /**
- * @brief ½«phi move×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†phi moveè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param basicBlock
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_ptr<BasicBlock>& basicBlock, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
 	shared_ptr<PhiMoveInstruction> p_move = s_p_c<PhiMoveInstruction>(ins);
-	shared_ptr<Value> target = p_move->phi->operands.at (basicBlock);  // phi_movĞèÒªcopyµÄÊı
+	shared_ptr<Value> target = p_move->phi->operands.at (basicBlock);  // phi_movéœ€è¦copyçš„æ•°
 	shared_ptr<Operand> op = make_shared<Operand> (REG, "3");
 	bool release_target = readRegister (target, op, machineFunc, res, true, true);
 	shared_ptr<Operand> des = make_shared<Operand> (REG, "2");
@@ -1690,7 +1690,7 @@ vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_p
 	if (release_target)
 		releaseTempRegister (op->value);
 	bool release_des = writeRegister (p_ins, des, machineFunc, res);
-	shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, des, op);  // movÖÁÒ»¸ö¼Ä´æÆ÷
+	shared_ptr<MovIns> move2Des = make_shared<MovIns> (NON, NONE, 0, des, op);  // movè‡³ä¸€ä¸ªå¯„å­˜å™¨
 	res.push_back (move2Des);
 	if (release_des)
 	{
@@ -1700,22 +1700,22 @@ vector<shared_ptr<MachineIns>> genPhiMov (shared_ptr<Instruction>& ins, shared_p
 }
 
 /**
- * @brief ½«phi×ªÎª»úÆ÷Âë
- * @param ins IRÖ¸Áî
+ * @brief å°†phiè½¬ä¸ºæœºå™¨ç 
+ * @param ins IRæŒ‡ä»¤
  * @param machineFunc
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<MachineFunc>& machineFunc)
 {
 	vector<shared_ptr<MachineIns>> res;
 	shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(ins);
 	shared_ptr<Operand> phi_mov = make_shared<Operand> (REG, "3");
-	shared_ptr<Value> p_mov = phi->phiMove;  // phi_move copyµÄÖµ
+	shared_ptr<Value> p_mov = phi->phiMove;  // phi_move copyçš„å€¼
 	bool release_mov = readRegister (p_mov, phi_mov, machineFunc, res, true, true);
 	shared_ptr<Operand> target = make_shared<Operand> (REG, "2");
 	shared_ptr<Value> p_ins = ins;
 	bool release_target = writeRegister (p_ins, target, machineFunc, res);
-	shared_ptr<MovIns> move2Target = make_shared<MovIns> (NON, NONE, 0, target, phi_mov);  // ½«copyµÄÖµÒÆÈëphiµÄÖµËùÔÚ¼Ä´æÆ÷£¬²»ÄÜÏàÍ¬
+	shared_ptr<MovIns> move2Target = make_shared<MovIns> (NON, NONE, 0, target, phi_mov);  // å°†copyçš„å€¼ç§»å…¥phiçš„å€¼æ‰€åœ¨å¯„å­˜å™¨ï¼Œä¸èƒ½ç›¸åŒ
 	res.push_back (move2Target);
 	if (release_target)
 	{
@@ -1727,9 +1727,9 @@ vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<
 }
 
 /**
- * @brief ½«È«¾Ö±äÁ¿×ªÎª»úÆ÷Âë
+ * @brief å°†å…¨å±€å˜é‡è½¬ä¸ºæœºå™¨ç 
  * @param machineModule
- * @return Éú³ÉµÄ»úÆ÷Ö¸Áî
+ * @return ç”Ÿæˆçš„æœºå™¨æŒ‡ä»¤
  */
 vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineModule)
 {
@@ -1737,22 +1737,22 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 	string pool_label = "next" + to_string (const_pool_id);
 	shared_ptr<BIns> skip = make_shared<BIns> (NON, NONE, 0, pool_label);
 	
-	bool need = false;  //ÊÇ·ñĞèÒªskipÌø×ª
+	bool need = false;  //æ˜¯å¦éœ€è¦skipè·³è½¬
 	for (auto& glob_var : machineModule->globalVariables)
 	{
 		string name = s_p_c<GlobalValue> (glob_var)->name + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 		string value = s_p_c<GlobalValue> (glob_var)->name;
 		shared_ptr<GlobalIns> glob_var_label = make_shared<GlobalIns> (name, value);
-		res.push_back (glob_var_label);  // ½«È«¾Ö±äÁ¿¼ÓÈë
-		need = true;  // ´æÔÚÈ«¾Ö±äÁ¿£¬ÔòĞèÒªskipÌø×ª
+		res.push_back (glob_var_label);  // å°†å…¨å±€å˜é‡åŠ å…¥
+		need = true;  // å­˜åœ¨å…¨å±€å˜é‡ï¼Œåˆ™éœ€è¦skipè·³è½¬
 	}
 	for (auto& glob_const : machineModule->globalConstants)
 	{
 		string name = s_p_c<ConstantValue> (glob_const)->name + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 		string value = s_p_c<ConstantValue> (glob_const)->name;
 		shared_ptr<GlobalIns> glob_const_label = make_shared<GlobalIns> (name, value);
-		res.push_back (glob_const_label);  // ½«const array¼ÓÈë
-		need = true;  // ´æÔÚconst array£¬ÔòĞèÒªskipÌø×ª
+		res.push_back (glob_const_label);  // å°†const arrayåŠ å…¥
+		need = true;  // å­˜åœ¨const arrayï¼Œåˆ™éœ€è¦skipè·³è½¬
 	}
 	for (int num : invalid_imm)
 	{
@@ -1767,17 +1767,17 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 		}
 		string value = to_string (num);
 		shared_ptr<GlobalIns> invalid_num_label = make_shared<GlobalIns> (name, value);
-		res.push_back (invalid_num_label);  // ½«·Ç·¨Á¢¼´Êı¼ÓÈë
-		need = true;  // ´æÔÚ·Ç·¨Á¢¼´Êı£¬ÔòĞèÒªskipÌø×ª
+		res.push_back (invalid_num_label);  // å°†éæ³•ç«‹å³æ•°åŠ å…¥
+		need = true;  // å­˜åœ¨éæ³•ç«‹å³æ•°ï¼Œåˆ™éœ€è¦skipè·³è½¬
 	}
 	invalid_imm.clear ();
 	string next_name = "next" + to_string (const_pool_id);
 	string value;
 	shared_ptr<GlobalIns> next = make_shared<GlobalIns> (next_name, value);
-	if (need)  // ĞèÒªskipÌø×ª
+	if (need)  // éœ€è¦skipè·³è½¬
 	{
-		res.insert (res.begin (), skip);  // ¿ªÊ¼¼ÓÈëskipÌø×ª
-		res.push_back (next);     // ×îºó¼ÓÈënextÊı
+		res.insert (res.begin (), skip);  // å¼€å§‹åŠ å…¥skipè·³è½¬
+		res.push_back (next);     // æœ€ååŠ å…¥nextæ•°
 		const_pool_id++;
 	}
 	return res;

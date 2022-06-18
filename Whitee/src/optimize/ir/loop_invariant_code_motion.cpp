@@ -1,12 +1,12 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 #include <algorithm>
 #include <queue>
 
-unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> inDominate;  // Ç°Çı¿éµÄ¹²ÓĞoutDominate
-unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> outDominate; // Ç°Çı¿éµÄ¹²ÓĞoutDominate¼ÓÉÏ´Ë¿é
-unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> loopBlocks;  // Ñ­»·ÄÚµÄ¿é
-unordered_map<shared_ptr<BasicBlock>, shared_ptr<BasicBlock>> newForwardBlocks;  // ĞÂµÄ²»±äÁ¿µÄ¿é
+unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> inDominate;  // å‰é©±å—çš„å…±æœ‰outDominate
+unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> outDominate; // å‰é©±å—çš„å…±æœ‰outDominateåŠ ä¸Šæ­¤å—
+unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>> loopBlocks;  // å¾ªç¯å†…çš„å—
+unordered_map<shared_ptr<BasicBlock>, shared_ptr<BasicBlock>> newForwardBlocks;  // æ–°çš„ä¸å˜é‡çš„å—
 
 void loop_invariant_motion(shared_ptr<Function> &func);
 
@@ -21,7 +21,7 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
 inline bool judge_loop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop);
 
 /**
- * @brief Ñ­»·²»±äÁ¿ÒÆ³ı
+ * @brief å¾ªç¯ä¸å˜é‡ç§»é™¤
  * @param module 
  */
 void loop_invariant_code_motion(shared_ptr<Module> &module)
@@ -52,13 +52,13 @@ void loop_invariant_motion(shared_ptr<Function> &func)
 }
 
 /**
- * @brief ´´½¨Ö§ÅäÊ÷
- * @param entryBlock º¯ÊıµÄÈë¿Ú¿é
- * @param func ËùÔÚº¯Êı
+ * @brief åˆ›å»ºæ”¯é…æ ‘
+ * @param entryBlock å‡½æ•°çš„å…¥å£å—
+ * @param func æ‰€åœ¨å‡½æ•°
  */
 void build_dominate_tree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function> &func)
 {
-    unordered_set<shared_ptr<BasicBlock>> uSet;  // º¯ÊıÖĞËùÓĞµÄ¿é
+    unordered_set<shared_ptr<BasicBlock>> uSet;  // å‡½æ•°ä¸­æ‰€æœ‰çš„å—
     for (auto &bb : func->blocks)
     {
         uSet.insert(bb);
@@ -66,7 +66,7 @@ void build_dominate_tree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function
     unordered_set<shared_ptr<BasicBlock>> tempSet;
     tempSet.insert(entryBlock);
     outDominate[entryBlock] = tempSet;
-    for (auto &bb : func->blocks)  // ³õÊ¼»¯£¬Ã¿¸ö¿éµÄoutDominateÎªËùÓĞ¿é£¬inDominateÎªentryBlock
+    for (auto &bb : func->blocks)  // åˆå§‹åŒ–ï¼Œæ¯ä¸ªå—çš„outDominateä¸ºæ‰€æœ‰å—ï¼ŒinDominateä¸ºentryBlock
     {
         if (bb != entryBlock)
         {
@@ -86,7 +86,7 @@ void build_dominate_tree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function
                 unordered_set<shared_ptr<BasicBlock>> inSet = uSet;
                 for (auto &pred : bb->predecessors)
                 {
-                    tempSet = outDominate.at(pred);  // ´Ë¿éÇ°Çı¿éµÄoutDominate
+                    tempSet = outDominate.at(pred);  // æ­¤å—å‰é©±å—çš„outDominate
                     for (auto item = inSet.begin(); item != inSet.end();)
                     {
                         if (tempSet.count(*item) == 0)
@@ -97,31 +97,31 @@ void build_dominate_tree(shared_ptr<BasicBlock> &entryBlock, shared_ptr<Function
                             ++item;
                     }
                 }
-                inDominate[bb] = inSet;  // ´Ë¿éinDominateÎªËùÓĞÇ°Çı¿éµÄ¹²ÓĞoutDominate
+                inDominate[bb] = inSet;  // æ­¤å—inDominateä¸ºæ‰€æœ‰å‰é©±å—çš„å…±æœ‰outDominate
                 unordered_set<shared_ptr<BasicBlock>> outSet = inSet;
                 outSet.insert(bb);
                 if (outSet.size() != outDominate.at(bb).size())
                     outChanged = true;
-                outDominate[bb] = outSet;  // ´Ë¿éoutDominateÎªËùÓĞÇ°Çı¿éµÄ¹²ÓĞoutDominate¼ÓÉÏ´Ë¿é
+                outDominate[bb] = outSet;  // æ­¤å—outDominateä¸ºæ‰€æœ‰å‰é©±å—çš„å…±æœ‰outDominateåŠ ä¸Šæ­¤å—
             }
         }
-    } while (outChanged);  // Ö±µ½DominateTree²»±ä
+    } while (outChanged);  // ç›´åˆ°DominateTreeä¸å˜
 }
 
 /**
- * @brief ÕÒµ½Ñ­»·¿é
+ * @brief æ‰¾åˆ°å¾ªç¯å—
  * @param func 
  */
 void find_loop_blocks(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)
     {
-        for (auto &suc : bb->successors)  // ²é¿´¿éµÄºó¼Ì
+        for (auto &suc : bb->successors)  // æŸ¥çœ‹å—çš„åç»§
         {
-            if (outDominate.at(bb).count(suc) != 0)  // ¿éµÄoutDominateÓĞ¿éµÄºó¼Ì£¬¼´´Ë¿éÔÚÑ­»·ÖĞ
+            if (outDominate.at(bb).count(suc) != 0)  // å—çš„outDominateæœ‰å—çš„åç»§ï¼Œå³æ­¤å—åœ¨å¾ªç¯ä¸­
             {
-                unordered_set<shared_ptr<BasicBlock>> tempLoopSet;  // Ñ­»·µÄ¿é
-                queue<shared_ptr<BasicBlock>> loopQueue;  // Ñ­»·¶ÓÁĞ
+                unordered_set<shared_ptr<BasicBlock>> tempLoopSet;  // å¾ªç¯çš„å—
+                queue<shared_ptr<BasicBlock>> loopQueue;  // å¾ªç¯é˜Ÿåˆ—
                 loopQueue.push(bb);
                 tempLoopSet.insert(bb);
                 tempLoopSet.insert(suc);
@@ -133,9 +133,9 @@ void find_loop_blocks(shared_ptr<Function> &func)
                 {
                     shared_ptr<BasicBlock> top = loopQueue.front();
                     loopQueue.pop();
-                    if (top != suc)  // ±ÜÃâÒ»Ö±Ñ­»·
+                    if (top != suc)  // é¿å…ä¸€ç›´å¾ªç¯
                     {
-                        for (auto &pred : top->predecessors)  // ²»¶ÏÏòÇ°Ñ°ÕÒ¿é£¬¼ÓÈëtempLoopSet
+                        for (auto &pred : top->predecessors)  // ä¸æ–­å‘å‰å¯»æ‰¾å—ï¼ŒåŠ å…¥tempLoopSet
                         {
                             if (tempLoopSet.count(pred) == 0)
                             {
@@ -144,12 +144,12 @@ void find_loop_blocks(shared_ptr<Function> &func)
                                     cerr << "Error occurs in process loop invariant code motion: predecessor's loop depth less than block." << endl;
                                 }
                                 tempLoopSet.insert(pred); 
-                                loopQueue.push(pred);  // ½«¿éÇ°Çı¼ÓÈë
+                                loopQueue.push(pred);  // å°†å—å‰é©±åŠ å…¥
                             }
                         }
                     }
                 }
-                // sucµÄloopBlocks¼ÓÈëtempLoopSet
+                // sucçš„loopBlocksåŠ å…¥tempLoopSet
                 if (loopBlocks.count(suc) != 0)
                 {
                     unordered_set<shared_ptr<BasicBlock>> newLoopSet = loopBlocks.at(suc);
@@ -166,8 +166,8 @@ void find_loop_blocks(shared_ptr<Function> &func)
 }
 
 /**
- * @brief Ñ°ÕÒ²»¶¯´úÂë
- * @param firstBlock ¿ªÊ¼Ñ°ÕÒµÄ¿é
+ * @brief å¯»æ‰¾ä¸åŠ¨ä»£ç 
+ * @param firstBlock å¼€å§‹å¯»æ‰¾çš„å—
  */
 void find_invariant_codes(shared_ptr<BasicBlock> &firstBlock)
 {
@@ -196,9 +196,9 @@ void find_invariant_codes(shared_ptr<BasicBlock> &firstBlock)
             }
             default:; // TODO: judge invoke, load or store.
             }
-            if (motion)  // ´ËÖ¸ÁîÎŞ±äÁ¿ÔÚÑ­»·ÄÚ
+            if (motion)  // æ­¤æŒ‡ä»¤æ— å˜é‡åœ¨å¾ªç¯å†…
             {
-                if (newForwardBlocks.count(firstBlock) == 0)  // ´Ë¿éµÄnewForwardBlocks´´½¨Ò»¸öĞÂµÄ¿é£¬ÇÒÑ­»·Éî¶È-1
+                if (newForwardBlocks.count(firstBlock) == 0)  // æ­¤å—çš„newForwardBlocksåˆ›å»ºä¸€ä¸ªæ–°çš„å—ï¼Œä¸”å¾ªç¯æ·±åº¦-1
                 {
                     shared_ptr<BasicBlock> newBb = make_shared<BasicBlock>(firstBlock->function, true, firstBlock->loopDepth - 1);
                     newForwardBlocks[firstBlock] = newBb;
@@ -211,7 +211,7 @@ void find_invariant_codes(shared_ptr<BasicBlock> &firstBlock)
                     ins->resultType = L_VAL_RESULT;
                     ins->caughtVarName = generateTempLeftValueName();
                 }
-                it = bb->instructions.erase(it);  // É¾È¥Ñ­»·²»±äµÄins
+                it = bb->instructions.erase(it);  // åˆ å»å¾ªç¯ä¸å˜çš„ins
             }
             else
                 ++it;
@@ -220,9 +220,9 @@ void find_invariant_codes(shared_ptr<BasicBlock> &firstBlock)
 }
 
 /**
- * @brief ²åÈëÑ­»·²»±äÁ¿µÄ¿é
- * @param func ËùÔÚº¯Êı
- * @param firstBlock Ñ­»·¿ªÊ¼µÚÒ»¸ö¿é
+ * @brief æ’å…¥å¾ªç¯ä¸å˜é‡çš„å—
+ * @param func æ‰€åœ¨å‡½æ•°
+ * @param firstBlock å¾ªç¯å¼€å§‹ç¬¬ä¸€ä¸ªå—
  */
 void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &firstBlock)
 {
@@ -230,12 +230,12 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
     shared_ptr<BasicBlock> newBlock = newForwardBlocks.at(firstBlock);
     unordered_set<shared_ptr<BasicBlock>> predecessors = firstBlock->predecessors;
     shared_ptr<JumpInstruction> jumpIns = make_shared<JumpInstruction>(firstBlock, newBlock);
-    newBlock->instructions.push_back(jumpIns);  // Ñ­»·²»±äÁ¿µÄ¿é×îºóÌøÈëÑ­»·¿é
+    newBlock->instructions.push_back(jumpIns);  // å¾ªç¯ä¸å˜é‡çš„å—æœ€åè·³å…¥å¾ªç¯å—
     for (auto &pred : predecessors)
     {
-        if (blocksInLoop.count(pred) == 0)  // pre²»ÔÙÑ­»·¿éÖĞ
+        if (blocksInLoop.count(pred) == 0)  // preä¸å†å¾ªç¯å—ä¸­
         {
-            pred->successors.erase(firstBlock); // ¸Ä±äÇ°Çıºó¼Ì£¬Ê¹µÃÑ­»·²»±äÁ¿µÄ¿éÇ°ÇıÎªpre£¬ºó¼ÌÎªÔ­Ñ­»·¿é
+            pred->successors.erase(firstBlock); // æ”¹å˜å‰é©±åç»§ï¼Œä½¿å¾—å¾ªç¯ä¸å˜é‡çš„å—å‰é©±ä¸ºpreï¼Œåç»§ä¸ºåŸå¾ªç¯å—
             firstBlock->predecessors.erase(pred);
             pred->successors.insert(newBlock);
             newBlock->predecessors.insert(pred);
@@ -243,7 +243,7 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
             {
                 cerr << "Error occurs in process loop invariant motion: empty instruction vector." << endl;
             }
-            else  // ¸Ä±äÌø×ªÄ¿±ê¿é
+            else  // æ”¹å˜è·³è½¬ç›®æ ‡å—
             {
                 auto it = pred->instructions.end() - 1;
                 if ((*it)->type == JMP)
@@ -273,7 +273,7 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
         shared_ptr<PhiInstruction> newPhi = make_shared<PhiInstruction>(phi->localVarName, newBlock);
         for (auto &it : operands)
         {
-            if (blocksInLoop.count(it.first) == 0)  //´ËphiµÄ²Ù×÷Êı²»ÔÚÑ­»·ÄÚ
+            if (blocksInLoop.count(it.first) == 0)  //æ­¤phiçš„æ“ä½œæ•°ä¸åœ¨å¾ªç¯å†…
             {
                 shared_ptr<Value> val = it.second;
                 newPhi->operands[it.first] = val;
@@ -309,9 +309,9 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
 }
 
 /**
- * @brief ÅĞ¶ÏÖµÊÇ·ñÔÚÑ­»·ÄÚ
- * @param value Öµ
- * @param blocksInLoop ÔÚÑ­»·ÀïµÄ¿é
+ * @brief åˆ¤æ–­å€¼æ˜¯å¦åœ¨å¾ªç¯å†…
+ * @param value å€¼
+ * @param blocksInLoop åœ¨å¾ªç¯é‡Œçš„å—
  * @return 
  */
 inline bool judge_loop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop)

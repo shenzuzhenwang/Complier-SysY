@@ -1,7 +1,7 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ·ÖÖ§Ìõ¼ş³£Êı×ª»¯
+ * @brief åˆ†æ”¯æ¡ä»¶å¸¸æ•°è½¬åŒ–
  * @param module 
  */
 void constant_branch_conversion(shared_ptr<Module> &module)
@@ -12,21 +12,21 @@ void constant_branch_conversion(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->type == InstructionType::BR)  // ·ÖÖ§Ö¸Áî
+                if (ins->type == InstructionType::BR)  // åˆ†æ”¯æŒ‡ä»¤
                 {
                     shared_ptr<BranchInstruction> br = s_p_c<BranchInstruction>(ins);
-                    if (br->condition->valueType == ValueType::NUMBER)  // ·ÖÖ§Ìõ¼şÎª³£Êı
+                    if (br->condition->valueType == ValueType::NUMBER)  // åˆ†æ”¯æ¡ä»¶ä¸ºå¸¸æ•°
                     {
                         shared_ptr<NumberValue> num = s_p_c<NumberValue>(br->condition);
                         if (num->number == 0)
                         {
-                            removeBlockPredecessor(br->trueBlock, bb);  // È¥µôÆätrueBlock
-                            ins = make_shared<JumpInstruction>(br->falseBlock, bb);  // ±ä·ÖÖ§Ö¸ÁîÎªÌø×ª
+                            removeBlockPredecessor(br->trueBlock, bb);  // å»æ‰å…¶trueBlock
+                            ins = make_shared<JumpInstruction>(br->falseBlock, bb);  // å˜åˆ†æ”¯æŒ‡ä»¤ä¸ºè·³è½¬
                             br->abandonUse();
                         }
                         else
                         {
-                            removeBlockPredecessor(br->falseBlock, bb);  // È¥µôÆäfalseBlock
+                            removeBlockPredecessor(br->falseBlock, bb);  // å»æ‰å…¶falseBlock
                             ins = make_shared<JumpInstruction>(br->trueBlock, bb);
                             br->abandonUse();
                         }

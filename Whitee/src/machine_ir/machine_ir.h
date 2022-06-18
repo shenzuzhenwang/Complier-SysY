@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   machine_ir.h
- * @brief  ²»Í¬µÄ»úÆ÷ÂëÖ¸Áî£¬´´½¨²»Í¬µÄÀà
+ * @brief  ä¸åŒçš„æœºå™¨ç æŒ‡ä»¤ï¼Œåˆ›å»ºä¸åŒçš„ç±»
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   June 2022
  *********************************************************************/
 #ifndef COMPILER_MACHINE_IR_H
@@ -65,33 +65,33 @@ namespace mit
 {
     enum InsType
     {
-        ADD,  // ¼Ó·¨
-        SUB,  // ¼õ·¨
-        RSB,  // ·´Ïà¼õ·¨
-        MUL,  // ³Ë·¨
-        DIV,  // ³ı·¨
-        MLS,  // ³Ë¼õ
-        MLA,  // ³Ë¼Ó
-        AND,  // Óë
-        ORR,  // »ò
-        ASR,  // ËãÊıÓÒÒÆ
-        LSR,  // Âß¼­ÓÒÒÆ
-        LSL,  // Âß¼­×óÒÆ
-        SMULL,// ³¤ÕûĞÍÓĞ·ûºÅ³Ë·¨
-        LOAD, // ¼ÓÔØ
-        PSEUDO_LOAD, //¼ÓÔØ·Ç·¨Á¢¼´Êı
-        STORE,// ´æ´¢
-        POP,  // µ¯³ö
-        PUSH, // ÍÆÈë
-        MOV,  // ÒÆ¶¯
+        ADD,  // åŠ æ³•
+        SUB,  // å‡æ³•
+        RSB,  // åç›¸å‡æ³•
+        MUL,  // ä¹˜æ³•
+        DIV,  // é™¤æ³•
+        MLS,  // ä¹˜å‡
+        MLA,  // ä¹˜åŠ 
+        AND,  // ä¸
+        ORR,  // æˆ–
+        ASR,  // ç®—æ•°å³ç§»
+        LSR,  // é€»è¾‘å³ç§»
+        LSL,  // é€»è¾‘å·¦ç§»
+        SMULL,// é•¿æ•´å‹æœ‰ç¬¦å·ä¹˜æ³•
+        LOAD, // åŠ è½½
+        PSEUDO_LOAD, //åŠ è½½éæ³•ç«‹å³æ•°
+        STORE,// å­˜å‚¨
+        POP,  // å¼¹å‡º
+        PUSH, // æ¨å…¥
+        MOV,  // ç§»åŠ¨
         MOVW, // 
-        MOVT, // ÒÆÖÁ¶¥²¿
-        CMP,  // ±È½Ï
-        BRANCH, // B Ìø×ª
+        MOVT, // ç§»è‡³é¡¶éƒ¨
+        CMP,  // æ¯”è¾ƒ
+        BRANCH, // B è·³è½¬
         BLINK,  // BL
         BRETURN, 
         GLOBAL,
-        COMMENT  // ×¢ÊÍ
+        COMMENT  // æ³¨é‡Š
     };
 }
 
@@ -101,9 +101,9 @@ namespace mit
 enum SType
 {
     NONE,
-    ASR,  // ËãÊıÓÒÒÆ
-    LSR,  // Âß¼­ÓÒÒÆ
-    LSL   // Âß¼­×óÒÆ
+    ASR,  // ç®—æ•°å³ç§»
+    LSR,  // é€»è¾‘å³ç§»
+    LSL   // é€»è¾‘å·¦ç§»
 };
 
 /**
@@ -127,7 +127,7 @@ enum State
 {
     GLOB_INT,
     GLOB_POINTER,
-    VIRTUAL, // ¾Ö²¿±äÁ¿
+    VIRTUAL, // å±€éƒ¨å˜é‡
     REG,   // register
     IMM,   // immediate
     LABEL
@@ -150,10 +150,10 @@ public:
     FuncType funcType;
     vector<shared_ptr<Value>> params;
     vector<shared_ptr<MachineBB>> machineBlocks;
-    unordered_map<string, int> var2offset;  // ¾Ö²¿±äÁ¿Æ«ÒÆ  id <--> Æ«ÒÆÁ¿
+    unordered_map<string, int> var2offset;  // å±€éƒ¨å˜é‡åç§»  id <--> åç§»é‡
     // stack size
     int stackSize;
-    int stackPointer;  // µ±Ç°Õ»¶¥µÄÖµ
+    int stackPointer;  // å½“å‰æ ˆé¡¶çš„å€¼
 
     void toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts);
 };
@@ -261,7 +261,7 @@ public:
 };
 
 /**
- * For loadºÍstore
+ * For loadå’Œstore
  */
 class MemoryIns : public MachineIns
 {
@@ -285,7 +285,7 @@ public:
 };
 
 /**
- * ¼ÓÔØ·Ç·¨Á¢¼´Êı.
+ * åŠ è½½éæ³•ç«‹å³æ•°.
  */
 class PseudoLoad : public MachineIns
 {
@@ -439,7 +439,7 @@ public:
     void toARM(shared_ptr<MachineFunc> &machineFunc) override;
 };
 
-class PhiTmp : public Value   //£¿£¿£¿£¿Ã»ÓÃ
+class PhiTmp : public Value   //ï¼Ÿï¼Ÿï¼Ÿï¼Ÿæ²¡ç”¨
 {
 public:
     PhiTmp() 

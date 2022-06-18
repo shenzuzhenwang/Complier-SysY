@@ -1,7 +1,7 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief È¥µôÖ»ÓĞstoreÖ¸ÁîµÄ±äÁ¿£¬°üÀ¨È«¾Ö±äÁ¿ÓëÊı×é
+ * @brief å»æ‰åªæœ‰storeæŒ‡ä»¤çš„å˜é‡ï¼ŒåŒ…æ‹¬å…¨å±€å˜é‡ä¸æ•°ç»„
  * @param module 
  */
 void dead_array_delete(shared_ptr<Module> &module)
@@ -12,7 +12,7 @@ void dead_array_delete(shared_ptr<Module> &module)
         unordered_set<shared_ptr<Value>> users = (*glb)->users;
         for (auto &user : users)
         {
-            if (!dynamic_cast<StoreInstruction *>(user.get()))  // ²»ÊÇstoreÖ¸Áî£¬Ôò»»ÏÂÒ»¸öÈ«¾Ö±äÁ¿
+            if (!dynamic_cast<StoreInstruction *>(user.get()))  // ä¸æ˜¯storeæŒ‡ä»¤ï¼Œåˆ™æ¢ä¸‹ä¸€ä¸ªå…¨å±€å˜é‡
             {
                 all_store = false;
                 break;
@@ -20,7 +20,7 @@ void dead_array_delete(shared_ptr<Module> &module)
         }
         if (all_store)
         {
-            for (auto& user : users)  // Ö»ÓĞstoreÖ¸Áî£¬Ôò½«storeÖ¸ÁîÈ¥³ı£¬²¢½«´ËÈ«¾Ö±äÁ¿È¥³ı
+            for (auto& user : users)  // åªæœ‰storeæŒ‡ä»¤ï¼Œåˆ™å°†storeæŒ‡ä»¤å»é™¤ï¼Œå¹¶å°†æ­¤å…¨å±€å˜é‡å»é™¤
             {
                 user->abandonUse ();
             }
@@ -41,13 +41,13 @@ void dead_array_delete(shared_ptr<Module> &module)
                     bool canDelete = true;
                     for (auto &user : ins->users)
                     {
-                        if (!dynamic_cast<StoreInstruction *>(user.get()))  // ³öÏÖ·ÇstoreÖ¸Áî
+                        if (!dynamic_cast<StoreInstruction *>(user.get()))  // å‡ºç°éstoreæŒ‡ä»¤
                         {
                             canDelete = false;
                             break;
                         }
                     }
-                    if (canDelete) // Ö»ÓĞstoreÖ¸Áî£¬Ôò½«storeÖ¸ÁîÈ¥³ı£¬²¢½«´Ë±äÁ¿È¥³ı
+                    if (canDelete) // åªæœ‰storeæŒ‡ä»¤ï¼Œåˆ™å°†storeæŒ‡ä»¤å»é™¤ï¼Œå¹¶å°†æ­¤å˜é‡å»é™¤
                     {
                         ins->abandonUse();
                         unordered_set<shared_ptr<Value>> users = ins->users;

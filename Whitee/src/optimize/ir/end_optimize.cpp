@@ -1,4 +1,4 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 #include <set>
 #include <stack>
@@ -6,9 +6,9 @@
 void outputRegisterAllocResult(const shared_ptr<Module> &module);
 
 /**
- * @brief ×îºóµÄÓÅ»¯
+ * @brief æœ€åçš„ä¼˜åŒ–
  * @param module 
- * @param level ÓÅ»¯µÈ¼¶
+ * @param level ä¼˜åŒ–ç­‰çº§
  */
 void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
 {
@@ -47,7 +47,7 @@ void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
 }
 
 /**
- * @brief Êä³ö¼Ä´æÆ÷·ÖÅä½á¹û
+ * @brief è¾“å‡ºå¯„å­˜å™¨åˆ†é…ç»“æœ
  * @param module 
  */
 void outputRegisterAllocResult(const shared_ptr<Module> &module)

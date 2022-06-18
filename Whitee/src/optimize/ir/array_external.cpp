@@ -1,7 +1,7 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 /**
- * @brief ¾Ö²¿³£Á¿Êı×éÈ«¾Ö»¯
+ * @brief å±€éƒ¨å¸¸é‡æ•°ç»„å…¨å±€åŒ–
  * @param module 
  */
 void array_external(shared_ptr<Module> &module)
@@ -12,17 +12,17 @@ void array_external(shared_ptr<Module> &module)
         {
             for (auto &ins : bb->instructions)
             {
-                if (ins->type == InstructionType::ALLOC)  // ¶ÔÓÚÒ»¸ö¾Ö²¿Êı×é
+                if (ins->type == InstructionType::ALLOC)  // å¯¹äºä¸€ä¸ªå±€éƒ¨æ•°ç»„
                 {
                     bool canExternalLift = true;
                     map<int, int> constValues;
                     unordered_set<shared_ptr<Value>> insUsers = ins->users;
                     for (auto &user : insUsers)
                     {
-                        if (dynamic_cast<StoreInstruction *>(user.get()))  // Êı×éµÄstoreÖ¸Áî
+                        if (dynamic_cast<StoreInstruction *>(user.get()))  // æ•°ç»„çš„storeæŒ‡ä»¤
                         {
                             shared_ptr<StoreInstruction> store = s_p_c<StoreInstruction>(user);
-                            if (store->value->valueType == NUMBER && store->offset->valueType == NUMBER)  // storeµÄvalueÓëoffset¾ùÎª³£Êı
+                            if (store->value->valueType == NUMBER && store->offset->valueType == NUMBER)  // storeçš„valueä¸offsetå‡ä¸ºå¸¸æ•°
                             {
                                 int number = s_p_c<NumberValue>(store->offset)->number;
                                 if (constValues.count(number) != 0)
@@ -30,7 +30,7 @@ void array_external(shared_ptr<Module> &module)
                                     canExternalLift = false;
                                     break;
                                 }
-                                else  // ÇÒÃ¿¸öÔªËØÖ»ÓĞÒ»´Îstore
+                                else  // ä¸”æ¯ä¸ªå…ƒç´ åªæœ‰ä¸€æ¬¡store
                                 {
                                     constValues[number] = s_p_c<NumberValue>(store->value)->number;
                                 }
@@ -41,7 +41,7 @@ void array_external(shared_ptr<Module> &module)
                                 break;
                             }
                         }
-                        else if (!dynamic_cast<LoadInstruction *>(user.get()))  // Èç¹ûÆäÖĞÓĞ·ÇloadºÍstoreÖ¸Áî£¨¼´µ±×öÊı×éÊ¹ÓÃ£©£¬Ôò²»ÄÜ
+                        else if (!dynamic_cast<LoadInstruction *>(user.get()))  // å¦‚æœå…¶ä¸­æœ‰éloadå’ŒstoreæŒ‡ä»¤ï¼ˆå³å½“åšæ•°ç»„ä½¿ç”¨ï¼‰ï¼Œåˆ™ä¸èƒ½
                         {
                             canExternalLift = false;
                             break;
@@ -57,7 +57,7 @@ void array_external(shared_ptr<Module> &module)
                         constant->dimensions = vector({alloc->units});
                         constant->values = constValues;
                         constant->name = alloc->name;
-                        module->globalConstants.push_back(constant);  // ¾Ö²¿Êı×é×ª»»ÎªÈ«¾Ö³£Á¿Êı×é
+                        module->globalConstants.push_back(constant);  // å±€éƒ¨æ•°ç»„è½¬æ¢ä¸ºå…¨å±€å¸¸é‡æ•°ç»„
                         unordered_set<shared_ptr<Value>> users = alloc->users;
                         for (auto &user : users)
                         {

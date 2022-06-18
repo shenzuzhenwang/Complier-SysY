@@ -1,23 +1,23 @@
-#include "ir_optimize.h"
+ï»¿#include "ir_optimize.h"
 
 #include <stack>
 #include <queue>
 #include <ctime>
 #include <set>
 
-time_t startAllocTime;  // ¿ªÊ¼¹¹½¨³åÍ»Í¼Ê±¼ä
-bool conflictGraphBuildSuccess;   // ³åÍ»Í¼³É¹¦¹¹½¨
-unsigned long CONFLICT_GRAPH_TIMEOUT = 10;  // ³åÍ»Í¼¹¹½¨³¬Ê±ÏŞ¶È£º10s
+time_t startAllocTime;  // å¼€å§‹æ„å»ºå†²çªå›¾æ—¶é—´
+bool conflictGraphBuildSuccess;   // å†²çªå›¾æˆåŠŸæ„å»º
+unsigned long CONFLICT_GRAPH_TIMEOUT = 10;  // å†²çªå›¾æ„å»ºè¶…æ—¶é™åº¦ï¼š10s
 
-unordered_map<shared_ptr<Value>, shared_ptr<unordered_set<shared_ptr<Value>>>> conflictGraph;  // ³åÍ»Í¼  V <--> ³åÍ»¶ÔÏó
-// ¿éµÄÂ·¾¶  ÆğÊ¼¿é <--> ÖĞÖ¹¿é <--> Â·¾¶¿é
+unordered_map<shared_ptr<Value>, shared_ptr<unordered_set<shared_ptr<Value>>>> conflictGraph;  // å†²çªå›¾  V <--> å†²çªå¯¹è±¡
+// å—çš„è·¯å¾„  èµ·å§‹å— <--> ä¸­æ­¢å— <--> è·¯å¾„å—
 unordered_map<shared_ptr<BasicBlock>, shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>>> blockPath;
 
 /**
- * @brief ³åÍ»Í¼ÊÇ·ñ¹¹½¨³¬Ê±
- * @param startTime ¿ªÊ¼Ê±¼ä
- * @param timeout ³¬Ê±ÏŞ¶È
- * @return true ³¬Ê±£»false Î´³¬Ê±
+ * @brief å†²çªå›¾æ˜¯å¦æ„å»ºè¶…æ—¶
+ * @param startTime å¼€å§‹æ—¶é—´
+ * @param timeout è¶…æ—¶é™åº¦
+ * @return true è¶…æ—¶ï¼›false æœªè¶…æ—¶
  */
 inline bool checkRegAllocTimeout(time_t startTime, unsigned long timeout)
 {
@@ -46,7 +46,7 @@ void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> 
 void outputConflictGraph(const string &funcName);
 
 /**
- * @brief ¼Ä´æÆ÷·ÖÅä
+ * @brief å¯„å­˜å™¨åˆ†é…
  * @param func 
  */
 void registerAlloc(shared_ptr<Function> &func)
@@ -60,7 +60,7 @@ void registerAlloc(shared_ptr<Function> &func)
     if (_debugIrOptimize)
         outputConflictGraph(func->name);
 
-    if (conflictGraphBuildSuccess)  // ³åÍ»Í¼¹¹½¨³É¹¦
+    if (conflictGraphBuildSuccess)  // å†²çªå›¾æ„å»ºæˆåŠŸ
         allocRegister(func);
     else
     {
@@ -69,12 +69,12 @@ void registerAlloc(shared_ptr<Function> &func)
 }
 
 /**
- * @brief ³õÊ¼»¯³åÍ»Í¼£¬¸øÃ¿¸ö×óÖµ¸³ÓèÒ»¸ö¿Õset£¬¼´Ã¿¸öÖµÄ¿Ç°ÎŞ³åÍ»
+ * @brief åˆå§‹åŒ–å†²çªå›¾ï¼Œç»™æ¯ä¸ªå·¦å€¼èµ‹äºˆä¸€ä¸ªç©ºsetï¼Œå³æ¯ä¸ªå€¼ç›®å‰æ— å†²çª
  * @param func 
  */
 void initConflictGraph(shared_ptr<Function> &func)
 {
-    for (auto &arg : func->params)  // º¯Êı²ÎÊı³åÍ»³õÊ¼»¯Îª¿Õ
+    for (auto &arg : func->params)  // å‡½æ•°å‚æ•°å†²çªåˆå§‹åŒ–ä¸ºç©º
     {
         shared_ptr<unordered_set<shared_ptr<Value>>> tempSet = make_shared<unordered_set<shared_ptr<Value>>>();
         conflictGraph[arg] = tempSet;
@@ -83,7 +83,7 @@ void initConflictGraph(shared_ptr<Function> &func)
     {
         for (auto &ins : bb->instructions)
         {
-            if (ins->resultType == L_VAL_RESULT && conflictGraph.count(ins) == 0)  // ËùÓĞ×óÖµµÄ³åÍ»³õÊ¼»¯Îª¿Õ
+            if (ins->resultType == L_VAL_RESULT && conflictGraph.count(ins) == 0)  // æ‰€æœ‰å·¦å€¼çš„å†²çªåˆå§‹åŒ–ä¸ºç©º
             {
                 shared_ptr<unordered_set<shared_ptr<Value>>> tempSet = make_shared<unordered_set<shared_ptr<Value>>>();
                 conflictGraph[ins] = tempSet;
@@ -93,12 +93,12 @@ void initConflictGraph(shared_ptr<Function> &func)
 }
 
 /**
- * @brief ¹¹½¨³åÍ»Í¼
+ * @brief æ„å»ºå†²çªå›¾
  * @param func 
  */
 void buildConflictGraph(shared_ptr<Function> &func)
 {
-    for (auto &ins : func->params)  // º¯Êı²ÎÊı£¬´Óº¯Êı¿ªÊ¼£¬ÖÁÊ¹ÓÃÍê±Ï£¬¶¼ÊÇ±£³Ö»îÔ¾µÄ
+    for (auto &ins : func->params)  // å‡½æ•°å‚æ•°ï¼Œä»å‡½æ•°å¼€å§‹ï¼Œè‡³ä½¿ç”¨å®Œæ¯•ï¼Œéƒ½æ˜¯ä¿æŒæ´»è·ƒçš„
     {
         if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
             return;
@@ -114,9 +114,9 @@ void buildConflictGraph(shared_ptr<Function> &func)
             if (userIns->type == PHI)
             {
                 shared_ptr<PhiMoveInstruction> phiMov = s_p_c<PhiInstruction>(userIns)->phiMove;
-                for (auto &op : phiMov->phi->operands)  // ´Ëphi¶ÔÓ¦µÄËùÓĞ²Ù×÷Êı
+                for (auto &op : phiMov->phi->operands)  // æ­¤phiå¯¹åº”çš„æ‰€æœ‰æ“ä½œæ•°
                 {
-                    if (op.second == ins)  // ²Ù×÷ÊıÎªins
+                    if (op.second == ins)  // æ“ä½œæ•°ä¸ºins
                     {
                         shared_ptr<BasicBlock> phiMovLocation = op.first;
                         if (phiMovLocation->aliveValues.count(ins) != 0)
@@ -125,7 +125,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                             continue;
                         auto it = func->entryBlock->instructions.begin();
                         bool searchOtherBlocks = true;
-                        // userInsÔÚinsVal¿éÄÚ£¬entryBlockÖÁphiMovÉèÎª»îÔ¾
+                        // userInsåœ¨insValå—å†…ï¼ŒentryBlockè‡³phiMovè®¾ä¸ºæ´»è·ƒ
                         while (it != func->entryBlock->instructions.end())
                         {
                             addAliveValue(ins, *it, func->entryBlock);
@@ -138,7 +138,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                         }
                         if (searchOtherBlocks)
                         {
-                            // Î¬»¤Â·¾¶¿é£¬²¢½«ËüÃÇÌí¼Óµ½»îÔ¾½ÚµãÖĞ£ºÂ·¾¶ÎªentryBlockËùÔÚ¿éÖÁphiMovLocationµÄ¶ÔÓ¦Ö¸Áî
+                            // ç»´æŠ¤è·¯å¾„å—ï¼Œå¹¶å°†å®ƒä»¬æ·»åŠ åˆ°æ´»è·ƒèŠ‚ç‚¹ä¸­ï¼šè·¯å¾„ä¸ºentryBlockæ‰€åœ¨å—è‡³phiMovLocationçš„å¯¹åº”æŒ‡ä»¤
                             unordered_set<shared_ptr<BasicBlock>> pathNodes;
                             if (blockPath.count(func->entryBlock) != 0)
                             {
@@ -169,35 +169,35 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                 }
             }
-            else  // ·ÇphiÖ¸Áî
+            else  // éphiæŒ‡ä»¤
             {
                 if (userIns->block->aliveValues.count(ins) != 0 || userIns->aliveValues.count(ins) != 0)
                 {
                     continue;
                 }
-                else  // ´ËÖ¸ÁîÎ´½«insÉèÎª»îÔ¾£¬ÔòÔÚÍ¨ÍùuserInsµÄËùÓĞÂ·¾¶ÉÏ¶¼½«ins±ê¼ÇÎª»îÔ¾¡£
+                else  // æ­¤æŒ‡ä»¤æœªå°†insè®¾ä¸ºæ´»è·ƒï¼Œåˆ™åœ¨é€šå¾€userInsçš„æ‰€æœ‰è·¯å¾„ä¸Šéƒ½å°†insæ ‡è®°ä¸ºæ´»è·ƒã€‚
                 {
                     auto it = func->entryBlock->instructions.begin();
-                    bool searchOtherBlocks = true;  // userIns²»ÔÙentryBlockÖĞ
-                    // ´ÓÍ·ÖÁuserIns½«insÉèÎª»îÔ¾
+                    bool searchOtherBlocks = true;  // userInsä¸å†entryBlockä¸­
+                    // ä»å¤´è‡³userInså°†insè®¾ä¸ºæ´»è·ƒ
                     while (it != func->entryBlock->instructions.end())
                     {
                         addAliveValue(ins, *it, func->entryBlock);
-                        if (*it == userIns)     // Ö±µ½ÔÚentryBlockÕÒµ½userIns
+                        if (*it == userIns)     // ç›´åˆ°åœ¨entryBlockæ‰¾åˆ°userIns
                         {
                             searchOtherBlocks = false;
                             break;
                         }
                         ++it;
                     }
-                    // userInsÔÚentryBlockÍâ
+                    // userInsåœ¨entryBlockå¤–
                     if (searchOtherBlocks)
                     {
-                        // Î¬»¤Â·¾¶¿é£¬²¢½«ËüÃÇÌí¼Óµ½»îÔ¾½ÚµãÖĞ£ºÂ·¾¶ÎªentryBlockÖÁuserIns->blockµÄ¶ÔÓ¦Ö¸Áî
+                        // ç»´æŠ¤è·¯å¾„å—ï¼Œå¹¶å°†å®ƒä»¬æ·»åŠ åˆ°æ´»è·ƒèŠ‚ç‚¹ä¸­ï¼šè·¯å¾„ä¸ºentryBlockè‡³userIns->blockçš„å¯¹åº”æŒ‡ä»¤
                         unordered_set<shared_ptr<BasicBlock>> pathNodes;
-                        if (blockPath.count(func->entryBlock) != 0)  // entryBlockÒÑ¼ÓÈëblockPath
+                        if (blockPath.count(func->entryBlock) != 0)  // entryBlockå·²åŠ å…¥blockPath
                         {
-                            if (blockPath.at(func->entryBlock)->count(userIns->block) != 0)  // ÒÑ¼ÆËãentryBlockÖÁuserIns->blockÂ·¾¶
+                            if (blockPath.at(func->entryBlock)->count(userIns->block) != 0)  // å·²è®¡ç®—entryBlockè‡³userIns->blockè·¯å¾„
                             {
                                 pathNodes = blockPath.at(func->entryBlock)->at(userIns->block);
                             }
@@ -206,20 +206,20 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 pathNodes = getBlockPathPoints(func->entryBlock, userIns->block);
                             }
                         }
-                        else  // entryBlockÎ´¼ÓÈëblockPath£¬¼´Î´×÷ÎªÆğµã
+                        else  // entryBlockæœªåŠ å…¥blockPathï¼Œå³æœªä½œä¸ºèµ·ç‚¹
                         {
                             pathNodes = getBlockPathPoints(func->entryBlock, userIns->block);
                         }
-                        for (auto &b : pathNodes)  // Â·¾¶¿éÖĞµÄÃ¿¸ö¿é£¬½«insÊÓÎª»îÔ¾
+                        for (auto &b : pathNodes)  // è·¯å¾„å—ä¸­çš„æ¯ä¸ªå—ï¼Œå°†insè§†ä¸ºæ´»è·ƒ
                         {
                             b->aliveValues.insert(ins);
                         }
-                        // ËÑË÷userIns->block²¢±ê¼ÇÎª»îÔ¾
+                        // æœç´¢userIns->blockå¹¶æ ‡è®°ä¸ºæ´»è·ƒ
                         it = userIns->block->instructions.begin();
                         while (it != userIns->block->instructions.end())
                         {
                             addAliveValue(ins, *it, userIns->block);
-                            if (*it == userIns)  // ½«userIns->blockÖĞÖ±µ½userIns¾ùÎª»îÔ¾
+                            if (*it == userIns)  // å°†userIns->blockä¸­ç›´åˆ°userInså‡ä¸ºæ´»è·ƒ
                             {
                                 break;
                             }
@@ -234,12 +234,12 @@ void buildConflictGraph(shared_ptr<Function> &func)
     {
         if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
             return;
-        for (auto ins = bb->instructions.begin(); ins != bb->instructions.end(); ++ins)  // ±éÀúÃ¿ÌõÖ¸Áî
+        for (auto ins = bb->instructions.begin(); ins != bb->instructions.end(); ++ins)  // éå†æ¯æ¡æŒ‡ä»¤
         {
             if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
                 return;
             shared_ptr<Instruction> insVal = *ins;
-            if (insVal->type != PHI_MOV && insVal->resultType == L_VAL_RESULT)  // ×óÖµ
+            if (insVal->type != PHI_MOV && insVal->resultType == L_VAL_RESULT)  // å·¦å€¼
             {
                 for (auto &user : insVal->users)
                 {
@@ -252,13 +252,13 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
                     if (userIns->type == PHI)
                     {
-                        // ÕÒµ½ËùÓĞµÄphi_movÎ»ÖÃ
+                        // æ‰¾åˆ°æ‰€æœ‰çš„phi_movä½ç½®
                         shared_ptr<PhiMoveInstruction> phiMov = s_p_c<PhiInstruction>(userIns)->phiMove;
                         for (auto &op : phiMov->phi->operands)
                         {
                             if (op.second == insVal)
                             {
-                                shared_ptr<BasicBlock> phiMovLocation = op.first;  // phi²Ù×÷ÊıÎªinsValËùÔÚµÄ¿éphiMovLocation
+                                shared_ptr<BasicBlock> phiMovLocation = op.first;  // phiæ“ä½œæ•°ä¸ºinsValæ‰€åœ¨çš„å—phiMovLocation
                                 if (phiMovLocation->aliveValues.count(insVal) != 0)
                                 {
                                     continue;
@@ -269,7 +269,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 }
                                 auto it = ins + 1;
                                 bool searchOtherBlocks = true;
-                                // userInsÔÚinsVal¿éÄÚ£¬insÖÁuserInsÉèÎª»îÔ¾
+                                // userInsåœ¨insValå—å†…ï¼Œinsè‡³userInsè®¾ä¸ºæ´»è·ƒ
                                 while (it != bb->instructions.end())
                                 {
                                     addAliveValue(insVal, *it, bb);
@@ -280,10 +280,10 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                     }
                                     ++it;
                                 }
-                                // userIns²»ÊÇÔÚphiMovLocation¿éÄÚ£¬ËÑË÷Õû¸ö¿éÂ·¾¶¡£
+                                // userInsä¸æ˜¯åœ¨phiMovLocationå—å†…ï¼Œæœç´¢æ•´ä¸ªå—è·¯å¾„ã€‚
                                 if (searchOtherBlocks)
                                 {
-                                    // Î¬»¤Â·¾¶¿é£¬²¢½«ËüÃÇÌí¼Óµ½»îÔ¾½ÚµãÖĞ£ºÂ·¾¶ÎªinsValËùÔÚ¿éÖÁphiMovLocationµÄ¶ÔÓ¦Ö¸Áî
+                                    // ç»´æŠ¤è·¯å¾„å—ï¼Œå¹¶å°†å®ƒä»¬æ·»åŠ åˆ°æ´»è·ƒèŠ‚ç‚¹ä¸­ï¼šè·¯å¾„ä¸ºinsValæ‰€åœ¨å—è‡³phiMovLocationçš„å¯¹åº”æŒ‡ä»¤
                                     unordered_set<shared_ptr<BasicBlock>> pathNodes;
                                     if (blockPath.count(bb) != 0)
                                     {
@@ -320,11 +320,11 @@ void buildConflictGraph(shared_ptr<Function> &func)
                         {
                             continue;
                         }
-                        else  // ´ËÖ¸ÁîÎ´½«insÉèÎª»îÔ¾£¬ÔòÔÚÍ¨ÍùuserInsµÄËùÓĞÂ·¾¶ÉÏ¶¼½«ins±ê¼ÇÎª»îÔ¾¡£
+                        else  // æ­¤æŒ‡ä»¤æœªå°†insè®¾ä¸ºæ´»è·ƒï¼Œåˆ™åœ¨é€šå¾€userInsçš„æ‰€æœ‰è·¯å¾„ä¸Šéƒ½å°†insæ ‡è®°ä¸ºæ´»è·ƒã€‚
                         {
                             auto it = ins + 1;
                             bool searchOtherBlocks = true;
-                            // userInsÔÚinsVal¿éÄÚ£¬insÖÁuserInsÉèÎª»îÔ¾
+                            // userInsåœ¨insValå—å†…ï¼Œinsè‡³userInsè®¾ä¸ºæ´»è·ƒ
                             while (it != bb->instructions.end())
                             {
                                 addAliveValue(insVal, *it, bb);
@@ -335,10 +335,10 @@ void buildConflictGraph(shared_ptr<Function> &func)
                                 }
                                 ++it;
                             }
-                            // userIns²»ÊÇÔÚinsVal¿éÄÚ£¬ËÑË÷Õû¸ö¿éÂ·¾¶¡£
+                            // userInsä¸æ˜¯åœ¨insValå—å†…ï¼Œæœç´¢æ•´ä¸ªå—è·¯å¾„ã€‚
                             if (searchOtherBlocks)
                             {
-                                // Î¬»¤Â·¾¶¿é£¬²¢½«ËüÃÇÌí¼Óµ½»îÔ¾½ÚµãÖĞ£ºÂ·¾¶ÎªinsValËùÔÚ¿éÖÁuserIns->blockµÄ¶ÔÓ¦Ö¸Áî
+                                // ç»´æŠ¤è·¯å¾„å—ï¼Œå¹¶å°†å®ƒä»¬æ·»åŠ åˆ°æ´»è·ƒèŠ‚ç‚¹ä¸­ï¼šè·¯å¾„ä¸ºinsValæ‰€åœ¨å—è‡³userIns->blockçš„å¯¹åº”æŒ‡ä»¤
                                 unordered_set<shared_ptr<BasicBlock>> pathNodes;
                                 if (blockPath.count(bb) != 0)
                                 {
@@ -378,9 +378,9 @@ void buildConflictGraph(shared_ptr<Function> &func)
             else if (insVal->type == PHI_MOV)
             {
                 shared_ptr<PhiMoveInstruction> phiMove = s_p_c<PhiMoveInstruction>(insVal);
-                shared_ptr<BasicBlock> targetPhiBlock = phiMove->phi->block;  // phiËùÔÚµÄÄ¿±ê¿é
+                shared_ptr<BasicBlock> targetPhiBlock = phiMove->phi->block;  // phiæ‰€åœ¨çš„ç›®æ ‡å—
                 auto it = ins + 1;
-                while (it != bb->instructions.end())  // ½«insValÖÁ¿éÄ©Î²Ö¸Áî£¬½«insValÉèÎª»îÔ¾
+                while (it != bb->instructions.end())  // å°†insValè‡³å—æœ«å°¾æŒ‡ä»¤ï¼Œå°†insValè®¾ä¸ºæ´»è·ƒ
                 {
                     addAliveValue(insVal, *it, bb);
                     ++it;
@@ -388,7 +388,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 if (targetPhiBlock->aliveValues.count(insVal) != 0 || phiMove->phi->aliveValues.count(insVal) != 0)
                     continue;
                 it = targetPhiBlock->instructions.begin();
-                while (it != targetPhiBlock->instructions.end())   // ½«phiËùÔÚµÄÄ¿±ê¿éÄÚ´ÓÍ·ÖÁphiÖ¸Áî£¬½«insValÉèÎª»îÔ¾
+                while (it != targetPhiBlock->instructions.end())   // å°†phiæ‰€åœ¨çš„ç›®æ ‡å—å†…ä»å¤´è‡³phiæŒ‡ä»¤ï¼Œå°†insValè®¾ä¸ºæ´»è·ƒ
                 {
                     addAliveValue(insVal, *it, targetPhiBlock);
                     if (*it == phiMove->phi)
@@ -398,14 +398,14 @@ void buildConflictGraph(shared_ptr<Function> &func)
             }
         }
     }
-    // ¼ÆËãÍêÁËËùÓĞÖµµÄ»îÔ¾ÆÚ
-    for (auto &bb : func->blocks)  // bbÔËĞĞÆÚ¼ä
+    // è®¡ç®—å®Œäº†æ‰€æœ‰å€¼çš„æ´»è·ƒæœŸ
+    for (auto &bb : func->blocks)  // bbè¿è¡ŒæœŸé—´
     {
         for (auto &aliveVal : bb->aliveValues)
         {
-            for (auto &aliveValInside : bb->aliveValues)  // bbÆÚ¼ä»îÔ¾µÄÖµÏà»¥³åÍ»£¬aliveValInsideºÍaliveValInside¶¼ÔÚbbÆÚ¼ä»îÔ¾
+            for (auto &aliveValInside : bb->aliveValues)  // bbæœŸé—´æ´»è·ƒçš„å€¼ç›¸äº’å†²çªï¼ŒaliveValInsideå’ŒaliveValInsideéƒ½åœ¨bbæœŸé—´æ´»è·ƒ
             {
-                if (aliveVal != aliveValInside)  // Èç¹ûÁ½¸öÖµ²»Ò»Ñù£¬Ôò³åÍ»
+                if (aliveVal != aliveValInside)  // å¦‚æœä¸¤ä¸ªå€¼ä¸ä¸€æ ·ï¼Œåˆ™å†²çª
                 {
                     if (conflictGraph.count(aliveVal) == 0)
                     {
@@ -417,7 +417,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                     }
                 }
             }
-            for (auto &ins : bb->instructions)  // aliveValInsideÔÚbbÆÚ¼ä»îÔ¾£¬ÔòÓëbbÄÚÖ¸Áî³åÍ»
+            for (auto &ins : bb->instructions)  // aliveValInsideåœ¨bbæœŸé—´æ´»è·ƒï¼Œåˆ™ä¸bbå†…æŒ‡ä»¤å†²çª
             {
                 if (ins->resultType == L_VAL_RESULT)
                 {
@@ -426,9 +426,9 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 }
             }
         }
-        for (auto &ins : bb->instructions)  // insÆÚ¼ä
+        for (auto &ins : bb->instructions)  // insæœŸé—´
         {
-            unordered_set<shared_ptr<Value>> aliveValues;  // insÆÚ¼ä»îÔ¾µÄÖµ
+            unordered_set<shared_ptr<Value>> aliveValues;  // insæœŸé—´æ´»è·ƒçš„å€¼
             if (ins->type != PHI_MOV)
             {
                 aliveValues = ins->aliveValues;
@@ -441,7 +441,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
             {
                 for (auto &aliveValInside : aliveValues)
                 {
-                    if (aliveVal != aliveValInside)   // insÆÚ¼ä»îÔ¾µÄÖµÏà»¥³åÍ»
+                    if (aliveVal != aliveValInside)   // insæœŸé—´æ´»è·ƒçš„å€¼ç›¸äº’å†²çª
                     {
                         if (conflictGraph.count(aliveVal) == 0)
                         {
@@ -459,7 +459,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
 }
 
 /**
- * @brief ·ÖÅäÎïÀí¼Ä´æÆ÷£¬Í¼×ÅÉ«
+ * @brief åˆ†é…ç‰©ç†å¯„å­˜å™¨ï¼Œå›¾ç€è‰²
  * @param func 
  */
 void allocRegister(shared_ptr<Function> &func)
@@ -470,24 +470,24 @@ ALLOC_REGISTER_START:
     for (auto &it : tempGraph)
     {
         shared_ptr<Value> var = it.first;
-        if (it.second->size() < _GLB_REG_CNT)  // Óë_GLB_REG_CNTÒÔÏÂÖµ³åÍ»
+        if (it.second->size() < _GLB_REG_CNT)  // ä¸_GLB_REG_CNTä»¥ä¸‹å€¼å†²çª
         {
             for (auto &val : *it.second)
             {
-                tempGraph.at(val)->erase(var);  // ¼õÈ¥ÓëvarÁ¬½ÓµÄ±ß
+                tempGraph.at(val)->erase(var);  // å‡å»ä¸varè¿æ¥çš„è¾¹
             }
             tempGraph.erase(var);
-            variableWithRegs.push(var);  // ½«varÈëÕ»
+            variableWithRegs.push(var);  // å°†varå…¥æ ˆ
             goto ALLOC_REGISTER_START;
         }
     }
-    if (!tempGraph.empty())  // ÆäÖĞÓĞ×ÅÒç³öµÄÖµ£¬¼´×îÖÕÒ²Óë_GLB_REG_CNTÒÔÉÏÖµ³åÍ»
+    if (!tempGraph.empty())  // å…¶ä¸­æœ‰ç€æº¢å‡ºçš„å€¼ï¼Œå³æœ€ç»ˆä¹Ÿä¸_GLB_REG_CNTä»¥ä¸Šå€¼å†²çª
     {
-        shared_ptr<Value> abandon = tempGraph.begin()->first;  // Ñ¡È¡Ò»¸ö±ØĞëÉáÆúµÄÖµ£¬¼´·ÅÈëÄÚ´æµÄÖµ
+        shared_ptr<Value> abandon = tempGraph.begin()->first;  // é€‰å–ä¸€ä¸ªå¿…é¡»èˆå¼ƒçš„å€¼ï¼Œå³æ”¾å…¥å†…å­˜çš„å€¼
         for (auto &it : tempGraph)
         {
             shared_ptr<Value> ins = it.first;
-            // Ñ¡È¡È¨ÖØ×îĞ¡µÄÖµ
+            // é€‰å–æƒé‡æœ€å°çš„å€¼
             if (func->variableWeight.at(ins) < func->variableWeight.at(abandon) || (func->variableWeight.at(ins) == func->variableWeight.at(abandon) && ins->id < abandon->id))
             {
                 abandon = ins;
@@ -503,50 +503,50 @@ ALLOC_REGISTER_START:
             conflictGraph.at(it)->erase(abandon);
         }
         conflictGraph.erase(abandon);
-        func->variableWithoutReg.insert(abandon);  // ½«´ËÖµ¼Æ»®·ÅÈëÄÚ´æ
-        goto ALLOC_REGISTER_START;   // ÖØĞÂ·ÖÅä
+        func->variableWithoutReg.insert(abandon);  // å°†æ­¤å€¼è®¡åˆ’æ”¾å…¥å†…å­˜
+        goto ALLOC_REGISTER_START;   // é‡æ–°åˆ†é…
     }
 
     unordered_set<string> validRegs;
     for (int i = 0; i < _GLB_REG_CNT; ++i)
-        validRegs.insert(to_string(i + _GLB_REG_START));  // ¼Ä´æÆ÷R4-R12ÎªÓĞĞ§¼Ä´æÆ÷
+        validRegs.insert(to_string(i + _GLB_REG_START));  // å¯„å­˜å™¨R4-R12ä¸ºæœ‰æ•ˆå¯„å­˜å™¨
     while (!variableWithRegs.empty())
     {
         unordered_set<string> regs = validRegs;
-        shared_ptr<Value> value = variableWithRegs.top();  // ÒÀ´Î³öÕ»·ÖÅä¼Ä´æÆ÷
+        shared_ptr<Value> value = variableWithRegs.top();  // ä¾æ¬¡å‡ºæ ˆåˆ†é…å¯„å­˜å™¨
         variableWithRegs.pop();
-        for (auto &it : *conflictGraph.at(value))  // ±ÜÃâ³åÍ»
+        for (auto &it : *conflictGraph.at(value))  // é¿å…å†²çª
         {
             if (func->variableRegs.count(it) != 0)
                 regs.erase(func->variableRegs.at(it));
         }
-        func->variableRegs[value] = *regs.begin();  // ·ÖÅä³É¹¦¼Ä´æÆ÷
+        func->variableRegs[value] = *regs.begin();  // åˆ†é…æˆåŠŸå¯„å­˜å™¨
     }
 }
 
 /**
- * @brief »ñµÃ´ÓfromÖÁtoµÄ¾­¹ıµÄ¿é
- * @param from ÆğÊ¼¿é
- * @param to ÖÕµã¿ì
- * @return Â·¾¶
+ * @brief è·å¾—ä»fromè‡³toçš„ç»è¿‡çš„å—
+ * @param from èµ·å§‹å—
+ * @param to ç»ˆç‚¹å¿«
+ * @return è·¯å¾„
  */
 unordered_set<shared_ptr<BasicBlock>> getBlockPathPoints(shared_ptr<BasicBlock> &from, shared_ptr<BasicBlock> &to)
 {
     unordered_set<shared_ptr<BasicBlock>> fromReachable;
     unordered_set<shared_ptr<BasicBlock>> ans;
     unordered_set<shared_ptr<BasicBlock>> tempReachable;
-    getBlockReachableBlocks(from, from, fromReachable);  // ´Ófrom¿ªÊ¼µÄÂ·¾¶£¬Èç¹û»Øµ½fromÔòÊÇÑ­»·µÄÂ·¾¶£¬Èç¹û²»Ñ­»·ÊÇµ½º¯ÊıÎ²µÄÂ·¾¶
+    getBlockReachableBlocks(from, from, fromReachable);  // ä»fromå¼€å§‹çš„è·¯å¾„ï¼Œå¦‚æœå›åˆ°fromåˆ™æ˜¯å¾ªç¯çš„è·¯å¾„ï¼Œå¦‚æœä¸å¾ªç¯æ˜¯åˆ°å‡½æ•°å°¾çš„è·¯å¾„
     for (auto bb : fromReachable)
     {
         tempReachable.clear();
-        getBlockReachableBlocks(bb, from, tempReachable);  // ´Ófrom¿ªÊ¼Â·¾¶µÄÃ¿¸ö¿é¿ªÊ¼£¬Èç¹ûÂ·¾¶°üº¬to£¬Ôòans¼ÓÉÏ´Ë¿é
+        getBlockReachableBlocks(bb, from, tempReachable);  // ä»fromå¼€å§‹è·¯å¾„çš„æ¯ä¸ªå—å¼€å§‹ï¼Œå¦‚æœè·¯å¾„åŒ…å«toï¼Œåˆ™ansåŠ ä¸Šæ­¤å—
         if (tempReachable.count(to) != 0)
         {
             ans.insert(bb);
         }
     }
     ans.erase(from);
-    if (blockPath.count(from) != 0)  // from×ö¹ıÆğµã
+    if (blockPath.count(from) != 0)  // fromåšè¿‡èµ·ç‚¹
     {
         shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>> tempMap = blockPath.at(from);
         if (tempMap->count(to) != 0)
@@ -555,11 +555,11 @@ unordered_set<shared_ptr<BasicBlock>> getBlockPathPoints(shared_ptr<BasicBlock> 
         }
         else
         {
-            tempMap->insert({to, ans});  // ½«Â·¾¶¼ÓÈëblockPath
+            tempMap->insert({to, ans});  // å°†è·¯å¾„åŠ å…¥blockPath
             blockPath[from] = tempMap;
         }
     }
-    else  // fromÎ´×ö¹ıÆğµã
+    else  // fromæœªåšè¿‡èµ·ç‚¹
     {
         shared_ptr<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>> tempMap = make_shared<unordered_map<shared_ptr<BasicBlock>, unordered_set<shared_ptr<BasicBlock>>>>();
         tempMap->insert({to, ans});
@@ -569,10 +569,10 @@ unordered_set<shared_ptr<BasicBlock>> getBlockPathPoints(shared_ptr<BasicBlock> 
 }
 
 /**
- * @brief »ñµÃ´ÓbbÖÁcannotArriveµÄ¿ÉÄÜ¾­¹ıµÄ¿é£¬Èç¹ûbb²»¾­¹ıcannotArrive£¬ÔòansÎª´Óbb¿ªÊ¼µÄËùÓĞÂ·¾¶
- * @param bb ÆğÊ¼¿é
- * @param cannotArrive ÖÕµã¿é
- * @param ans Â·¾¶¿é
+ * @brief è·å¾—ä»bbè‡³cannotArriveçš„å¯èƒ½ç»è¿‡çš„å—ï¼Œå¦‚æœbbä¸ç»è¿‡cannotArriveï¼Œåˆ™ansä¸ºä»bbå¼€å§‹çš„æ‰€æœ‰è·¯å¾„
+ * @param bb èµ·å§‹å—
+ * @param cannotArrive ç»ˆç‚¹å—
+ * @param ans è·¯å¾„å—
  */
 void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &cannotArrive, unordered_set<shared_ptr<BasicBlock>> &ans)
 {
@@ -594,16 +594,16 @@ void getBlockReachableBlocks(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> 
 }
 
 /**
- * @brief ½«ownerBlockÖĞownerÊ±£¬valueÉèÎª»îÔ¾
- * @param value »îÔ¾µÄÖµ
- * @param owner »îÔ¾ÆÚ¼äµÄÖ¸Áî
- * @param ownerBlock »îÔ¾ÆÚ¼äÖ¸Áî´æÔÚµÄ¿é
+ * @brief å°†ownerBlockä¸­owneræ—¶ï¼Œvalueè®¾ä¸ºæ´»è·ƒ
+ * @param value æ´»è·ƒçš„å€¼
+ * @param owner æ´»è·ƒæœŸé—´çš„æŒ‡ä»¤
+ * @param ownerBlock æ´»è·ƒæœŸé—´æŒ‡ä»¤å­˜åœ¨çš„å—
  */
 void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock)
 {
     if (value->resultType == L_VAL_RESULT)
     {
-        if (owner->type == PHI_MOV)  // phi_moveÖ¸Áî£¬ÔÚblockALiveValues¼ÓÈë»îÔ¾value
+        if (owner->type == PHI_MOV)  // phi_moveæŒ‡ä»¤ï¼Œåœ¨blockALiveValuesåŠ å…¥æ´»è·ƒvalue
         {
             s_p_c<PhiMoveInstruction>(owner)->blockALiveValues.at(ownerBlock).insert(value);
         }
@@ -613,10 +613,10 @@ void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owne
 }
 
 /**
- * @brief ½«ownerBlockÖĞownerÊ±£¬valueÉèÎª»îÔ¾
- * @param value »îÔ¾µÄÖµ
- * @param owner »îÔ¾ÆÚ¼äµÄÖ¸Áî
- * @param ownerBlock »îÔ¾ÆÚ¼äÖ¸Áî´æÔÚµÄ¿é
+ * @brief å°†ownerBlockä¸­owneræ—¶ï¼Œvalueè®¾ä¸ºæ´»è·ƒ
+ * @param value æ´»è·ƒçš„å€¼
+ * @param owner æ´»è·ƒæœŸé—´çš„æŒ‡ä»¤
+ * @param ownerBlock æ´»è·ƒæœŸé—´æŒ‡ä»¤å­˜åœ¨çš„å—
  */
 void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock)
 {
@@ -627,7 +627,7 @@ void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner, sha
     }
     else if (value->valueType == PARAMETER)
     {
-        if (owner->type == PHI_MOV)  // phi_moveÖ¸Áî£¬ÔÚblockALiveValues¼ÓÈë»îÔ¾value
+        if (owner->type == PHI_MOV)  // phi_moveæŒ‡ä»¤ï¼Œåœ¨blockALiveValuesåŠ å…¥æ´»è·ƒvalue
         {
             s_p_c<PhiMoveInstruction>(owner)->blockALiveValues.at(ownerBlock).insert(value);
         }

@@ -1,18 +1,18 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   ir_check.cpp
- * @brief  ¶ÔIR½øĞĞ¼ì²é
+ * @brief  å¯¹IRè¿›è¡Œæ£€æŸ¥
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   June 2022
  *********************************************************************/
 #include "ir_check.h"
 
 #include <iostream>
 
-bool globalIrCorrect = true;  // È«¾ÖIR¶¼ÕıÈ·
-bool irUserCheck = false;      // ¼ì²éÊÇ·ñÓĞÊ¹ÓÃÖ¸Áî
+bool globalIrCorrect = true;  // å…¨å±€IRéƒ½æ­£ç¡®
+bool irUserCheck = false;      // æ£€æŸ¥æ˜¯å¦æœ‰ä½¿ç”¨æŒ‡ä»¤
 
-bool globalWarningPermit = false;  // ÆôÓÃ¾¯¸æ
+bool globalWarningPermit = false;  // å¯ç”¨è­¦å‘Š
 
 void irError(string &&);
 
@@ -27,8 +27,8 @@ void instructionCheck(const shared_ptr<Instruction> &);
 void phiCheck(const shared_ptr<PhiInstruction> &);
 
 /**
- * @brief ¼ì²éIRµÄÓï·¨
- * @param module ±»¼ì²éµÄIR¶ÔÏó
+ * @brief æ£€æŸ¥IRçš„è¯­æ³•
+ * @param module è¢«æ£€æŸ¥çš„IRå¯¹è±¡
  * @return true if IR has no bugs.
  */
 bool irCheck(const shared_ptr<Module> &module)
