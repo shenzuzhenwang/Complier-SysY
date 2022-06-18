@@ -1,4 +1,4 @@
-#ifndef COMPILER_COMPILE_STD_H
+ï»¿#ifndef COMPILER_COMPILE_STD_H
 #define COMPILER_COMPILE_STD_H
 
 extern bool _debugSyntax;
@@ -12,25 +12,25 @@ extern bool _optimizeMachineIr;
 
 //enum OptimizeLevel
 //{
-//    O0,  // SSA IRÉú³ÉÓÅ»¯ ³£Á¿´«²¥¡¢¸´ÖÆ´«²¥£¬FIRÓÅ»¯ ÁÙÊ±¼Ä´æÆ÷·ÖÅä
-//    O1,  // SSA IRÓÅ»¯ ËÀ´úÂëÉ¾³ý¡¢³£Á¿ÕÛµþ£¬MIRÓÅ»¯ »ã±à¿ú¿×ÓÅ»¯
-//    O2,  // SSA IRÓÅ»¯ º¯ÊýÄÚÁª£¬MIRÓÅ»¯ ³Ë³ýÓÅ»¯
-//    O3   // SSA IRÓÅ»¯ ¾Ö²¿Êý×é´«²¥¡¢³£Á¿Êý×éÈ«¾Ö»¯
+//    O0,  // SSA IRç”Ÿæˆä¼˜åŒ– å¸¸é‡ä¼ æ’­ã€å¤åˆ¶ä¼ æ’­ï¼ŒFIRä¼˜åŒ– ä¸´æ—¶å¯„å­˜å™¨åˆ†é…
+//    O1,  // SSA IRä¼˜åŒ– æ­»ä»£ç åˆ é™¤ã€å¸¸é‡æŠ˜å ï¼ŒMIRä¼˜åŒ– æ±‡ç¼–çª¥å­”ä¼˜åŒ–
+//    O2,  // SSA IRä¼˜åŒ– å‡½æ•°å†…è”ï¼ŒMIRä¼˜åŒ– ä¹˜é™¤ä¼˜åŒ–
+//    O3   // SSA IRä¼˜åŒ– å±€éƒ¨æ•°ç»„ä¼ æ’­ã€å¸¸é‡æ•°ç»„å…¨å±€åŒ–
 //};
 enum OptimizeLevel
 {
-    O0,  // SSA IRÉú³ÉÓÅ»¯ ³£Á¿´«²¥¡¢¸´ÖÆ´«²¥£¬FIRÓÅ»¯ ÁÙÊ±¼Ä´æÆ÷·ÖÅä
-    O1,  // SSA IRÓÅ»¯ ËÀ´úÂëÉ¾³ý¡¢³£Á¿ÕÛµþ¡¢¾Ö²¿Êý×é´«²¥¡¢³£Á¿Êý×éÈ«¾Ö»¯
-    O2,  // MIRÓÅ»¯ »ã±à¿ú¿×ÓÅ»¯
+    O0,  // SSA IRç”Ÿæˆä¼˜åŒ– å¸¸é‡ä¼ æ’­ã€å¤åˆ¶ä¼ æ’­ï¼ŒFIRä¼˜åŒ– ä¸´æ—¶å¯„å­˜å™¨åˆ†é…
+    O1,  // SSA IRä¼˜åŒ– æ­»ä»£ç åˆ é™¤ã€å¸¸é‡æŠ˜å ã€å±€éƒ¨æ•°ç»„ä¼ æ’­ã€å¸¸é‡æ•°ç»„å…¨å±€åŒ–
+    O2,  // MIRä¼˜åŒ– æ±‡ç¼–çª¥å­”ä¼˜åŒ–
 };
 
-#define s_p_c static_pointer_cast  // ¾²Ì¬Ö¸ÕëÀàÐÍ×ª»»
+#define s_p_c static_pointer_cast  // é™æ€æŒ‡é’ˆç±»åž‹è½¬æ¢
 
 #define _W_LEN 4
-#define _GLB_REG_CNT 9    // R4-R12Îªº¯Êý×óÖµ¼Ä´æÆ÷£¨Í¼×ÅÉ«·ÖÅä£©
+#define _GLB_REG_CNT 9    // R4-R12ä¸ºå‡½æ•°å·¦å€¼å¯„å­˜å™¨ï¼ˆå›¾ç€è‰²åˆ†é…ï¼‰
 #define _TMP_REG_CNT 5
-#define _GLB_REG_START 4  // R0-R3ÎªÁÙÊ±¼Ä´æÆ÷
-#define _TMP_REG_START 0   // R13ÎªSP£¬R14ÎªLR£¬R15ÎªPC
+#define _GLB_REG_START 4  // R0-R3ä¸ºä¸´æ—¶å¯„å­˜å™¨
+#define _TMP_REG_START 0   // R13ä¸ºSPï¼ŒR14ä¸ºLRï¼ŒR15ä¸ºPC
 #define _LOOP_WEIGHT_BASE 10
 #define _MAX_DEPTH 6
 #define _MAX_LOOP_WEIGHT 1000000000

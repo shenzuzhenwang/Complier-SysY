@@ -1,8 +1,8 @@
-/*********************************************************************
+ï»¿/*********************************************************************
  * @file   symbol_table.cpp
- * @brief  ·ûºÅ±íµÄ¶¨Òå
+ * @brief  ç¬¦å·è¡¨çš„å®šä¹‰
  * 
- * @author Éñ×æ
+ * @author ç¥ç¥–
  * @date   May 2022
  *********************************************************************/
 #include "symbol_table.h"
@@ -12,12 +12,12 @@
 #include <iostream>
 
  /**
-  * @brief ÓÃÓÚ°´Ãû×ÖÒÀ´ÎÏòÍâ²éÕÒÄ³¸ö±äÁ¿
-  * @details Í¨¹ıÆğÊ¼¿éµÄidÀ´²éÕÒ·ûºÅ£¬µİ¹é²éÕÒµ½×îÉÏÃæµÄ¿é¡£
-  * Ó¦¸ÃÇø·Öº¯ÊıºÍ±äÁ¿£¬ÒòÎªËüÃÇÔÚÒ»¸ö¿éÖĞ¿ÉÄÜÓĞÏàÍ¬µÄÃû×Ö¡£
-  * @param startBlockId: Ñ°ÕÒÆğÊ¼¿éµÄID£¬ÔÚµİ¹é¹ı³ÌÖĞ¸Ä±äÕâ¸öº¯Êı¡£
-  * @param symbolName: ²éÕÒ·ûºÅµÄÃû³Æ¡£
-  * @return SymbolTableItem ÕÒµ½µÄ·ûºÅ
+  * @brief ç”¨äºæŒ‰åå­—ä¾æ¬¡å‘å¤–æŸ¥æ‰¾æŸä¸ªå˜é‡
+  * @details é€šè¿‡èµ·å§‹å—çš„idæ¥æŸ¥æ‰¾ç¬¦å·ï¼Œé€’å½’æŸ¥æ‰¾åˆ°æœ€ä¸Šé¢çš„å—ã€‚
+  * åº”è¯¥åŒºåˆ†å‡½æ•°å’Œå˜é‡ï¼Œå› ä¸ºå®ƒä»¬åœ¨ä¸€ä¸ªå—ä¸­å¯èƒ½æœ‰ç›¸åŒçš„åå­—ã€‚
+  * @param startBlockId: å¯»æ‰¾èµ·å§‹å—çš„IDï¼Œåœ¨é€’å½’è¿‡ç¨‹ä¸­æ”¹å˜è¿™ä¸ªå‡½æ•°ã€‚
+  * @param symbolName: æŸ¥æ‰¾ç¬¦å·çš„åç§°ã€‚
+  * @return SymbolTableItem æ‰¾åˆ°çš„ç¬¦å·
   */
 shared_ptr<SymbolTableItem> findSymbol(pair<int, int> startBlockId, string &symbolName, bool isF)
 {
@@ -42,9 +42,9 @@ shared_ptr<SymbolTableItem> findSymbol(pair<int, int> startBlockId, string &symb
 } 
 
 /**
- * @brief ¸ù¾İblockµÄIDÀ´½«SymbolTableItem¼ÓÈësymbolTable
- * @param blockId ´ËblockµÄID
- * @param symbol ĞèÒª²åÈëµÄsymbol
+ * @brief æ ¹æ®blockçš„IDæ¥å°†SymbolTableItemåŠ å…¥symbolTable
+ * @param blockId æ­¤blockçš„ID
+ * @param symbol éœ€è¦æ’å…¥çš„symbol
  */
 void insertSymbol(pair<int, int> blockId, shared_ptr<SymbolTableItem> symbol)
 {
@@ -52,9 +52,9 @@ void insertSymbol(pair<int, int> blockId, shared_ptr<SymbolTableItem> symbol)
 }
 
 /**
- * @brief ½«Ò»¸öĞÂµÄBlock¼ÓÈësymbolTable
- * @param blockId ´ËblockµÄID
- * @param fatherBlockId ´ËBlockµÄÉÏÒ»²ã¿éID
+ * @brief å°†ä¸€ä¸ªæ–°çš„BlockåŠ å…¥symbolTable
+ * @param blockId æ­¤blockçš„ID
+ * @param fatherBlockId æ­¤Blockçš„ä¸Šä¸€å±‚å—ID
  */
 void insertBlock(pair<int, int> blockId, pair<int, int> fatherBlockId)
 {
@@ -63,10 +63,10 @@ void insertBlock(pair<int, int> blockId, pair<int, int> fatherBlockId)
 }
 
 /**
- * @brief ·ÖÅäÒ»¸ö¿éID
- * @param layerId ´Ë¿éµÄ²ãÊı
- * @param fatherBlockId ´ËBlockµÄÉÏÒ»²ã¿éID
- * @return ´Ë¿éµÄID
+ * @brief åˆ†é…ä¸€ä¸ªå—ID
+ * @param layerId æ­¤å—çš„å±‚æ•°
+ * @param fatherBlockId æ­¤Blockçš„ä¸Šä¸€å±‚å—ID
+ * @return æ­¤å—çš„ID
  */
 pair<int, int> distributeBlockId(int layerId, pair<int, int> fatherBlockId)
 {

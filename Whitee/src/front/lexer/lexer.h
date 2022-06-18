@@ -1,4 +1,4 @@
-#ifndef COMPILER_LEXER_H
+ï»¿#ifndef COMPILER_LEXER_H
 #define COMPILER_LEXER_H
 
 #include <cwchar>
@@ -6,7 +6,7 @@
 #include <vector>
 using namespace std;
 
-enum TokenType  // ´Ê·¨ÀàĞÍ
+enum TokenType  // è¯æ³•ç±»å‹
 {
     IDENT,
     INTCONST,
@@ -53,7 +53,7 @@ private:
     string name;
     int value;
 
-    // ²»Í¬µÄ¹Ø¼ü×Ö£¬²»Í¬µÄtype_token
+    // ä¸åŒçš„å…³é”®å­—ï¼Œä¸åŒçš„type_token
     // which can save message specially and set interface for symbolTable
 public:
     explicit TokenInfo(TokenType sym);

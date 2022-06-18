@@ -1,4 +1,4 @@
-#include "lexer.h"
+﻿#include "lexer.h"
 
 TokenInfo::TokenInfo(TokenType sym)
 {

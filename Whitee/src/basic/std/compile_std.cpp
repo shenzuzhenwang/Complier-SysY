@@ -1,12 +1,12 @@
-#include "compile_std.h"
+ï»¿#include "compile_std.h"
 
-bool _debugSyntax = false;  // Êä³öÓï·¨
-bool _debugLexer = false;  // Êä³ö´Ê·¨
-bool _debugIr = true;  // Êä³öIR
-bool _debugAst = true;  // Êä³öAST
-bool _debugIrOptimize = true;  // IRÓÅ»¯
-bool _debugMachineIr = true;  // »úÆ÷IR
+bool _debugSyntax = false;  // è¾“å‡ºè¯­æ³•
+bool _debugLexer = false;  // è¾“å‡ºè¯æ³•
+bool _debugIr = true;  // è¾“å‡ºIR
+bool _debugAst = true;  // è¾“å‡ºAST
+bool _debugIrOptimize = true;  // IRä¼˜åŒ–
+bool _debugMachineIr = true;  // æœºå™¨IR
 
-bool _optimizeMachineIr = false;  // »úÆ÷IRÓÅ»¯ O2
+bool _optimizeMachineIr = false;  // æœºå™¨IRä¼˜åŒ– O2
 
 bool _isBuildingIr = true; // Used for IR Phi.

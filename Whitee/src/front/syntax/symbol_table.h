@@ -1,4 +1,4 @@
-#ifndef COMPILER_SYMBOL_TABLE_H
+ï»¿#ifndef COMPILER_SYMBOL_TABLE_H
 #define COMPILER_SYMBOL_TABLE_H
 
 #include <vector>
@@ -9,25 +9,25 @@
 #include "syntax_tree.h"
 
 /**
- * @brief Ä³Ò»ÌØ¶¨Çø¿éµÄ·ûºÅ±í¡£
- * °üÀ¨Ò»¸öfatherBlockIdÀ´²éÕÒ¸¸¿é¡£
- * µ±Ñ°ÕÒÄ³¸ö·ûºÅ£¬²¢ÇÒ¸Ã·ûºÅÔÚÕâ¸ö¿éÖĞÃ»ÓĞÕÒµ½Ê±¡£
- * if isTop == false. ÊÔÍ¼ÔÚÆä¸¸¿éÖĞÕÒµ½Õâ¸ö·ûºÅ¡£
- * if isTop == true, fatherBlockIdÎª{0, 0}¡£
+ * @brief æŸä¸€ç‰¹å®šåŒºå—çš„ç¬¦å·è¡¨ã€‚
+ * åŒ…æ‹¬ä¸€ä¸ªfatherBlockIdæ¥æŸ¥æ‰¾çˆ¶å—ã€‚
+ * å½“å¯»æ‰¾æŸä¸ªç¬¦å·ï¼Œå¹¶ä¸”è¯¥ç¬¦å·åœ¨è¿™ä¸ªå—ä¸­æ²¡æœ‰æ‰¾åˆ°æ—¶ã€‚
+ * if isTop == false. è¯•å›¾åœ¨å…¶çˆ¶å—ä¸­æ‰¾åˆ°è¿™ä¸ªç¬¦å·ã€‚
+ * if isTop == true, fatherBlockIdä¸º{0, 0}ã€‚
  */
 class SymbolTablePerBlock
 {
 public:
     pair<int, int> blockId;
     bool isTop;                        // blockId.first == 0
-    pair<int, int> fatherBlockId;  // ÉÏÒ»²ã¿éµÄID
-    unordered_map<string, shared_ptr<SymbolTableItem>> symbolTableThisBlock; // Ãû×Ö<-->¶ÔÏó
+    pair<int, int> fatherBlockId;  // ä¸Šä¸€å±‚å—çš„ID
+    unordered_map<string, shared_ptr<SymbolTableItem>> symbolTableThisBlock; // åå­—<-->å¯¹è±¡
 
     SymbolTablePerBlock(pair<int, int> &blockId, bool &isTop, pair<int, int> &fatherBlockId)
         : blockId(blockId), isTop(isTop), fatherBlockId(fatherBlockId){};
 };
 
-extern unordered_map<pair<int, int>, shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // ¿éID<-->¿éÄÚ¶ÔÏó
+extern unordered_map<pair<int, int>, shared_ptr<SymbolTablePerBlock>, pair_hash> symbolTable;  // å—ID<-->å—å†…å¯¹è±¡
 
 extern shared_ptr<SymbolTableItem> findSymbol(pair<int, int> startBlockId, string &symbolName, bool isF);
 

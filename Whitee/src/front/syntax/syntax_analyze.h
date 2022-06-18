@@ -1,4 +1,4 @@
-#ifndef COMPILER_SYNTAX_ANALYZE_H
+﻿#ifndef COMPILER_SYNTAX_ANALYZE_H
 #define COMPILER_SYNTAX_ANALYZE_H
 
 #include "syntax_tree.h"

@@ -1,4 +1,4 @@
-#ifndef COMPILER_PAIR_HASH_H
+﻿#ifndef COMPILER_PAIR_HASH_H
 #define COMPILER_PAIR_HASH_H
 
 #include <functional>
