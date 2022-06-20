@@ -254,6 +254,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 					shared_ptr<PseudoLoad> ldr = s_p_c<PseudoLoad> (ins);
 					if (ldr->isGlob)  // 是全局变量
 					{
+						// 全局变量的地址，可能有很多个加载，故需要作出区分
 						ldr->label->value = ldr->label->value + to_string (const_pool_id) + "_whitee_" + to_string (const_pool_id);
 					}
 					else
@@ -270,8 +271,8 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 						ldr->label->value = "invalid_imm_" + to_string (const_pool_id) + "_" + ldr->label->value;
 					}
 				}
-				if (ins_count - pre_ins_count >= 800)   // 当超过800条机器指令，加载一次全局变量
-				{
+				if (ins_count - pre_ins_count >= 1000)   // 当超过1000条机器指令，加载一次全局变量
+				{                                        // 因为LDR指令加载一个地址（全局变量的地址），需要保证在4K以内
 					vector<shared_ptr<MachineIns>> res;
 					res = genGlobIns (machineModule);
 					it = machineBB->MachineInstructions.insert (it + 1, res.begin (), res.end ()) + res.size ();
@@ -283,7 +284,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 					++it;
 				}
 			}
-			if (ins_count - pre_ins_count >= 800)   // 每800指令，或在块的最后，加载一次全局变量
+			if (ins_count - pre_ins_count >= 1000)   // 每1000指令，或在块的最后，加载一次全局变量
 			{
 				vector<shared_ptr<MachineIns>> res;
 				res = genGlobIns (machineModule);
@@ -291,7 +292,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 				pre_ins_count = ins_count;
 				ins_count += res.size ();
 			}
-			if (!_optimizeMachineIr)
+			if (!_optimizeMachineIr)   // 每1000指令，或在块的最后，加载一次全局变量
 			{
 				vector<shared_ptr<MachineIns>> res;
 				res = genGlobIns (machineModule);
@@ -312,7 +313,7 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 		delete_imm_jump (machineModule);
 		delete_useless_compute (machineModule);
 		reduce_redundant_move (machineModule);
-		merge_mla_and_mls (machineModule);
+		//merge_mla_and_mls (machineModule);
 		exchange_branch_ins (machineModule);
 	}
 
@@ -467,31 +468,40 @@ void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns
 	}
 	else  // 非法立即数，需要加载至寄存器
 	{
-		if (_optimizeMachineIr)
-		{
-			unsigned short low16 = (unsigned int) num & 0x0000FFFFU;
-			unsigned short high16 = ((unsigned int) num & 0xFFFF0000U) >> 16U;
-			shared_ptr<Operand> low = make_shared<Operand> (IMM, to_string (low16));
-			shared_ptr<Operand> high = make_shared<Operand> (IMM, to_string (high16));
-			shared_ptr<MovIns> movw = make_shared<MovIns> (mit::MOVW, NON, NONE, 0, des, low);
-			shared_ptr<MovIns> movt = make_shared<MovIns> (mit::MOVT, NON, NONE, 0, des, high);
-			res.push_back (movw);
-			if (high16 != 0)
-				res.push_back (movt);
-		}
-		else
-		{
-			if (num < 0)
-			{
-				imm = make_shared<Operand> (LABEL, "_" + to_string (abs (num)));
-			}
-			else
-			{
-				imm = make_shared<Operand> (LABEL, to_string (num));
-			}
-			shared_ptr<PseudoLoad> load2Reg = make_shared<PseudoLoad> (NON, NONE, 0, imm, des, false);
-			res.push_back (load2Reg);
-		}
+		unsigned short low16 = (unsigned int) num & 0x0000FFFFU;
+		unsigned short high16 = ((unsigned int) num & 0xFFFF0000U) >> 16U;
+		shared_ptr<Operand> low = make_shared<Operand> (IMM, to_string (low16));
+		shared_ptr<Operand> high = make_shared<Operand> (IMM, to_string (high16));
+		shared_ptr<MovIns> movw = make_shared<MovIns> (mit::MOVW, NON, NONE, 0, des, low);
+		shared_ptr<MovIns> movt = make_shared<MovIns> (mit::MOVT, NON, NONE, 0, des, high);
+		res.push_back (movw);
+		if (high16 != 0)
+			res.push_back (movt);
+		//if (_optimizeMachineIr)
+		//{
+		//	unsigned short low16 = (unsigned int) num & 0x0000FFFFU;
+		//	unsigned short high16 = ((unsigned int) num & 0xFFFF0000U) >> 16U;
+		//	shared_ptr<Operand> low = make_shared<Operand> (IMM, to_string (low16));
+		//	shared_ptr<Operand> high = make_shared<Operand> (IMM, to_string (high16));
+		//	shared_ptr<MovIns> movw = make_shared<MovIns> (mit::MOVW, NON, NONE, 0, des, low);
+		//	shared_ptr<MovIns> movt = make_shared<MovIns> (mit::MOVT, NON, NONE, 0, des, high);
+		//	res.push_back (movw);
+		//	if (high16 != 0)
+		//		res.push_back (movt);
+		//}
+		//else
+		//{
+		//	if (num < 0)
+		//	{
+		//		imm = make_shared<Operand> (LABEL, "_" + to_string (abs (num)));
+		//	}
+		//	else
+		//	{
+		//		imm = make_shared<Operand> (LABEL, to_string (num));
+		//	}
+		//	shared_ptr<PseudoLoad> load2Reg = make_shared<PseudoLoad> (NON, NONE, 0, imm, des, false);
+		//	res.push_back (load2Reg);
+		//}
 	}
 }
 
@@ -1727,7 +1737,7 @@ vector<shared_ptr<MachineIns>> genPhi (shared_ptr<Instruction>& ins, shared_ptr<
 }
 
 /**
- * @brief 将全局变量转为机器码
+ * @brief 将全局变量转为机器码，因为全局变量地址未知，故需要使用一个label来确定全局变量地址，然后再进行LDR
  * @param machineModule
  * @return 生成的机器指令
  */
@@ -1774,7 +1784,7 @@ vector<shared_ptr<MachineIns>> genGlobIns (shared_ptr<MachineModule>& machineMod
 	string next_name = "next" + to_string (const_pool_id);
 	string value;
 	shared_ptr<GlobalIns> next = make_shared<GlobalIns> (next_name, value);
-	if (need)  // 需要skip跳转
+	if (need)  // 需要skip跳转，因为里面只是地址，不能执行
 	{
 		res.insert (res.begin (), skip);  // 开始加入skip跳转
 		res.push_back (next);     // 最后加入next数

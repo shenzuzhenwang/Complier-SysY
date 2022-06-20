@@ -1,4 +1,4 @@
-#include "machine_optimize.h"
+﻿#include "machine_optimize.h"
 
 unsigned int countPowerOfTwo(unsigned int x)
 {

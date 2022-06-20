@@ -8,42 +8,42 @@ using namespace std;
 
 enum TokenType  // 词法类型
 {
-    IDENT,
-    INTCONST,
-    STRCONST,
-    CONST_TK,
-    INT_TK,
-    VOID_TK,
-    IF_TK,
-    ELSE_TK,
-    WHILE_TK,
-    BREAK_TK,
-    CONTINUE_TK,
-    RETURN_TK,
-    COMMA,
-    SEMICOLON,
-    LBRACKET,
-    RBRACKET,
-    LBRACE,
-    RBRACE,
-    LPAREN,
-    RPAREN,
-    ASSIGN,
-    PLUS,
-    MINUS,
-    NOT,
-    MULT,
-    DIV,
-    REMAIN,
-    LESS,
-    LARGE,
-    LEQ,
-    LAQ,
-    EQUAL,
-    NEQUAL,
-    AND,
-    OR,
-    END
+    IDENT,   // 标识符，函数或变量的名字
+    INTCONST,  // 数字常量
+    STRCONST,  // 字符串常量
+    CONST_TK,  // const
+    INT_TK,    // int
+    VOID_TK,   // void
+    IF_TK,     // if
+    ELSE_TK,   // else
+    WHILE_TK,  // while
+    BREAK_TK,  // break
+    CONTINUE_TK,// continue
+    RETURN_TK, // return
+    COMMA,     // ,
+    SEMICOLON, // ;
+    LBRACKET,  // [
+    RBRACKET,  // ]
+    LBRACE,    // {
+    RBRACE,    // }
+    LPAREN,    // (
+    RPAREN,    // )
+    ASSIGN,    // =
+    PLUS,      // +
+    MINUS,     // -
+    NOT,       // !
+    MULT,      // *
+    DIV,       // /
+    REMAIN,    // %
+    LESS,      // <
+    LARGE,     // >
+    LEQ,       // <=
+    LAQ,       // >=
+    EQUAL,     // ==
+    NEQUAL,    // !=
+    AND,       // &&
+    OR,        // ||
+    END        // 结束符
 };
 
 class TokenInfo

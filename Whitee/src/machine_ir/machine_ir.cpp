@@ -171,40 +171,6 @@ string convertImm(int imm, const string &reg)
     return convertImm(imm, reg, false);
 }
 
-// @deprecated
-void insert_reference(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<Value>> &global_consts)
-{
-    //generate jump to skip constant pool
-    machineIrStream << "        B next" + to_string(const_pool_id) << endl;
-    //generate constant pool reference
-    for (const auto &glob_var : global_vars)
-    {
-        machineIrStream << s_p_c<GlobalValue>(glob_var)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id) + ":" << endl;
-        machineIrStream << "    .long " + s_p_c<GlobalValue>(glob_var)->name << endl;
-    }
-    for (const auto &glob_const : global_consts)
-    {
-        machineIrStream << s_p_c<ConstantValue>(glob_const)->name + to_string(const_pool_id) + "_whitee_" + to_string(const_pool_id) + ":" << endl;
-        machineIrStream << "    .long " + s_p_c<ConstantValue>(glob_const)->name << endl;
-    }
-    for (int invalid_int : invalid_imm)
-    {
-        if (invalid_int < 0)
-        {
-            machineIrStream << "invalid_imm_" + to_string(const_pool_id) + "__" + to_string(abs(invalid_int)) + ":" << endl;
-        }
-        else
-        {
-            machineIrStream << "invalid_imm_" + to_string(const_pool_id) + "_" + to_string(invalid_int) + ":" << endl;
-        }
-        machineIrStream << "    .long " + to_string(invalid_int) << endl;
-    }
-    invalid_imm.clear();
-    //generate branch label
-    machineIrStream << "    next" + to_string(const_pool_id) + ":" << endl;
-    const_pool_id++;
-}
-
 void BinaryIns::toARM(shared_ptr<MachineFunc> &machineFunc)
 {
     string t_op1;

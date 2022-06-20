@@ -1,4 +1,4 @@
-#ifndef COMPILER_MACHINE_OPTIMIZE_H
+﻿#ifndef COMPILER_MACHINE_OPTIMIZE_H
 #define COMPILER_MACHINE_OPTIMIZE_H
 
 #include "../../machine_ir/machine_ir.h"

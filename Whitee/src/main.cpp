@@ -29,7 +29,7 @@ OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // 代码优化等级
 bool needIrCheck = true;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
 
-string sourceCodeFile = "D:\\complier_test\\Whitee-main\\function\\028_if_test1.c";  // 源程序路径
+string sourceCodeFile = "D:\\complier_test\\function\\crypto-1.c";  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
 string debugMessageDirectory;  // debug信息路径
 
@@ -209,6 +209,11 @@ int setCompileOptions(int argc, char **argv)
                 _optimizeMachineIr = true;
             }
         }
+    }
+
+    if (optimizeLevel >= OptimizeLevel::O2)
+    {
+        _optimizeMachineIr = true;
     }
     return _SCO_SUCCESS;
 }

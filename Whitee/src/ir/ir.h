@@ -69,7 +69,7 @@ enum ValueType
 {
     CONSTANT,  // const array
     NUMBER,  // 临时变量即数字
-    STRING,
+    STRING,  // 字符串
     GLOBAL,  // 全局变量，包括数组或公共变量
     PARAMETER,  // 函数形参
     UNDEFINED,  // 未定义SSA
