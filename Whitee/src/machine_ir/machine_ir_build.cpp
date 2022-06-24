@@ -33,7 +33,7 @@ unordered_map<mit::InsType, string> instype2string = {
 	{mit::SUB, "SUB"},
 	{mit::RSB, "RSB"},
 	{mit::MUL, "MUL"},
-	{mit::DIV, "SDIV"},
+	{mit::DIV, "SDIV"},  // 坑，只有armv7ve才能用
 	{mit::AND, "AND"},
 	{mit::ORR, "ORR"},
 	{mit::ASR, "ASR"},

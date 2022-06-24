@@ -1,4 +1,11 @@
-﻿#include "machine_ir.h"
+﻿/*********************************************************************
+ * @file   machine_ir.cpp
+ * @brief  使用的arm架构为armv7ve，不知道为啥armv7不支持除法
+ * 
+ * @author 神祖
+ * @date   June 2022
+ *********************************************************************/
+#include "machine_ir.h"
 
 #include <iostream>
 #include <set>
@@ -23,7 +30,6 @@ string convertImm(int imm, const string &reg, bool mov);
 
 void MachineModule::toARM()   // 汇编载入全局变量与const array
 {
-    machineIrStream << ".arch armv7ve" << endl;
     machineIrStream << ".data" << endl;
     for (const auto &variable : globalVariables)
     {
