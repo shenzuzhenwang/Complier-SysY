@@ -15,11 +15,11 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 		}
 		for (auto& user : arg->users)
 		{
-			if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)  // 使用指令为非phi指令，则权重累加
+			if (user->value_type == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)  // 使用指令为非phi指令，则权重累加
 			{
 				tempWeight = countWeight (s_p_c<Instruction> (user)->block->loopDepth, tempWeight);
 			}
-			else if (user->valueType != INSTRUCTION)
+			else if (user->value_type != INSTRUCTION)
 			{
 				cerr << "Error occurs in process calculate variable weight: user is not an instruction." << endl;
 			}
@@ -40,11 +40,11 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 				tempWeight = countWeight (bb->loopDepth, tempWeight);  // 此指令加权
 				for (auto& user : ins->users)
 				{
-					if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
+					if (user->value_type == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
 					{
 						tempWeight = countWeight (s_p_c<Instruction> (user)->block->loopDepth, tempWeight);
 					}
-					else if (user->valueType != INSTRUCTION)
+					else if (user->value_type != INSTRUCTION)
 					{
 						cerr << "Error occurs in process calculate variable weight: user is not an instruction." << endl;
 					}
@@ -72,11 +72,11 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 			tempWeight = countWeight (bb->loopDepth, tempWeight); // phi加权
 			for (auto& user : phi->users)
 			{
-				if (user->valueType == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
+				if (user->value_type == INSTRUCTION && s_p_c<Instruction> (user)->type != PHI)
 				{
 					tempWeight = countWeight (s_p_c<Instruction> (user)->block->loopDepth, tempWeight);
 				}
-				else if (user->valueType != INSTRUCTION)
+				else if (user->value_type != INSTRUCTION)
 				{
 					cerr << "Error occurs in process calculate variable weight: user is not an instruction." << endl;
 				}
@@ -84,7 +84,7 @@ void calculateVariableWeight (shared_ptr<Function>& func)
 			func->variableWeight[phi] = tempWeight;
 			for (auto& operand : phi->operands)   // phi的操作数再次加权
 			{
-				if (operand.second->valueType != INSTRUCTION)
+				if (operand.second->value_type != INSTRUCTION)
 					continue;
 				unsigned int opWeight = 0;
 				if (func->variableWeight.count (operand.second) != 0)

@@ -551,7 +551,7 @@ void loadConst2Reg (shared_ptr<ConstantValue>& cons, shared_ptr<Operand>& des, v
 void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_ptr<Operand>& offset, vector<shared_ptr<MachineIns>>& res)
 {
 	shared_ptr<Operand> stack = make_shared<Operand> (REG, "13");
-	if (var->valueType == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)  // 数组起始地址
+	if (var->value_type == INSTRUCTION && s_p_c<Instruction> (var)->type == ALLOC)  // 数组起始地址
 	{   //use ADD instead of LDR+OFFSET
 		shared_ptr<BinaryIns> addrToReg = make_shared<BinaryIns> (mit::ADD, NON, NONE, 0, stack, offset, des);
 		res.push_back (addrToReg);
@@ -576,17 +576,17 @@ void loadMemory2Reg (shared_ptr<Value>& var, shared_ptr<Operand>& des, shared_pt
 void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<MachineFunc>& machineFunc,
 				  vector<shared_ptr<MachineIns>>& res, bool mov, int compensate = 0, string reg = "3")
 {
-	if (val->valueType == NUMBER)  // 常数
+	if (val->value_type == NUMBER)  // 常数
 	{
 		int imm = s_p_c<NumberValue> (val)->number;
 		loadImm2Reg (imm, des, res, mov);
 	}
-	else if (val->valueType == GLOBAL)  // 全局变量
+	else if (val->value_type == GLOBAL)  // 全局变量
 	{
 		shared_ptr<GlobalValue> glob_var = s_p_c<GlobalValue> (val);
 		loadGlobVar2Reg (glob_var, des, res);
 	}
-	else if (val->valueType == CONSTANT)  // const array
+	else if (val->value_type == CONSTANT)  // const array
 	{
 		shared_ptr<ConstantValue> const_var = s_p_c<ConstantValue> (val);
 		loadConst2Reg (const_var, des, res);
@@ -620,7 +620,7 @@ void loadVal2Reg (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 		}
 		// 不在寄存器里
 		int offset = machineFunc->var2offset.at (to_string (val->id)) + compensate;
-		if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)  // 如果是数组，则加载起始地址
+		if (val->value_type == INSTRUCTION && s_p_c<Instruction> (val)->type == ALLOC)  // 如果是数组，则加载起始地址
 		{ //use ADD instead of LDR+OFFSET
 			if (judgeImmValid (offset, false))
 			{
@@ -708,7 +708,7 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 	}
 	else
 	{
-		if (val->valueType == NUMBER)
+		if (val->value_type == NUMBER)
 		{
 			int imm = s_p_c<NumberValue> (val)->number;
 			if (judgeImmValid (imm, mov))  // 常数且为合法立即数
@@ -741,7 +741,7 @@ void loadOperand (shared_ptr<Value>& val, shared_ptr<Operand>& des, shared_ptr<M
 bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc,
 				   vector<shared_ptr<MachineIns>>& res, bool mov, bool regRequired)
 {
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT) // 此值为左值
+	if (val->value_type == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT) // 此值为左值
 	{
 		if (lValRegMap.count (val) != 0)  // 在左值寄存器内
 		{
@@ -755,7 +755,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// 此值为右值
+	else if (val->value_type == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)// 此值为右值
 	{
 		if (rValRegMap.count (val) == 0)
 		{
@@ -771,7 +771,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 	}
 	else
 	{
-		if (val->valueType == NUMBER)  // 此值为常数
+		if (val->value_type == NUMBER)  // 此值为常数
 		{
 			int num = s_p_c<NumberValue> (val)->number;
 			if (regRequired)  // 必须存在寄存器内
@@ -798,7 +798,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 				}
 			}
 		}
-		if (val->valueType == GLOBAL)  // 全局变量，加载后再释放
+		if (val->value_type == GLOBAL)  // 全局变量，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -807,7 +807,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadGlobVar2Reg (glob_val, op, res);
 			return true;
 		}
-		if (val->valueType == CONSTANT)  // const array，加载后再释放
+		if (val->value_type == CONSTANT)  // const array，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -816,7 +816,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadConst2Reg (const_val, op, res);
 			return true;
 		}
-		if (val->valueType == PARAMETER) // 形参，加载后再释放
+		if (val->value_type == PARAMETER) // 形参，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -824,7 +824,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
 			loadOperand (val, op, machineFunc, res, mov, reg, regRequired);
 			return true;
 		}
-		if (val->valueType == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)  // 数组，加载后再释放
+		if (val->value_type == INSTRUCTION && static_pointer_cast<Instruction>(val)->type == ALLOC)  // 数组，加载后再释放
 		{
 			string reg = allocTempRegister ();
 			op->value = reg;
@@ -847,7 +847,7 @@ bool readRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<M
  */
 bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<MachineFunc>& machineFunc, vector<shared_ptr<MachineIns>>& res)
 {
-	if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)  // 左值
+	if (val->value_type == INSTRUCTION && s_p_c<Instruction> (val)->resultType == L_VAL_RESULT)  // 左值
 	{
 		if (lValRegMap.count (val) != 0)  // 在左值寄存器内
 		{
@@ -860,7 +860,7 @@ bool writeRegister (shared_ptr<Value>& val, shared_ptr<Operand>& op, shared_ptr<
 			return true;
 		}
 	}
-	else if (val->valueType == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)  // 右值
+	else if (val->value_type == INSTRUCTION && s_p_c<Instruction> (val)->resultType == R_VAL_RESULT)  // 右值
 	{
 		if (rValRegMap.count (val) != 0)  // 右值不能已分配寄存器
 		{
@@ -1456,15 +1456,15 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 {
 	shared_ptr<LoadInstruction> li = s_p_c<LoadInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (li->address->valueType == PARAMETER || li->address->valueType == GLOBAL ||   // 基地址与偏移量已知
-		li->address->valueType == CONSTANT || (li->address->valueType == INSTRUCTION && s_p_c<Instruction> (li->address)->type == BINARY))
+	if (li->address->value_type == PARAMETER || li->address->value_type == GLOBAL ||   // 基地址与偏移量已知
+		li->address->value_type == CONSTANT || (li->address->value_type == INSTRUCTION && s_p_c<Instruction> (li->address)->type == BINARY))
 	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
 		bool release_base = readRegister (li->address, t_base, machineFunc, res, true, true);
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
 		shared_ptr<Shift> t_s = make_shared<Shift> ();  // 移位方式
 		bool release_offset = false;
-		if (li->offset->valueType == NUMBER)  // offset 为常数
+		if (li->offset->value_type == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
 			string reg = allocTempRegister ();
@@ -1509,7 +1509,7 @@ vector<shared_ptr<MachineIns>> genLoadIns (shared_ptr<Instruction>& ins, shared_
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_off;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();  // 移位方式
-		if (li->offset->valueType == NUMBER)  // offset 为常数
+		if (li->offset->value_type == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (li->offset)->number * 4;
 			if (judgeImmValid (off, false))  // 合法立即数，直接使用
@@ -1569,8 +1569,8 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 {
 	shared_ptr<StoreInstruction> si = s_p_c<StoreInstruction> (ins);
 	vector<shared_ptr<MachineIns>> res;
-	if (si->address->valueType == PARAMETER || si->address->valueType == GLOBAL ||   // 基地址与偏移量已知
-		(si->address->valueType == INSTRUCTION && s_p_c<Instruction> (si->address)->type == BINARY))
+	if (si->address->value_type == PARAMETER || si->address->value_type == GLOBAL ||   // 基地址与偏移量已知
+		(si->address->value_type == INSTRUCTION && s_p_c<Instruction> (si->address)->type == BINARY))
 	{
 		shared_ptr<Operand> t_base = make_shared<Operand> (REG, "1");
 		bool release_base = readRegister (si->address, t_base, machineFunc, res, true, true);
@@ -1579,7 +1579,7 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_offset = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)  // offset 为常数
+		if (si->offset->value_type == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
 			string reg = allocTempRegister ();
@@ -1619,7 +1619,7 @@ vector<shared_ptr<MachineIns>> genStoreIns (shared_ptr<Instruction>& ins, shared
 		shared_ptr<Operand> t_off = make_shared<Operand> (REG, "3");
 		bool release_offset;
 		shared_ptr<Shift> t_s = make_shared<Shift> ();
-		if (si->offset->valueType == NUMBER)  // offset 为常数
+		if (si->offset->value_type == NUMBER)  // offset 为常数
 		{
 			int off = s_p_c<NumberValue> (si->offset)->number * 4;
 			if (judgeImmValid (off, false))  // 合法立即数，直接使用

@@ -10,7 +10,7 @@ string notOp = "!";
  */
 void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
 {
-    if (oldVal->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(oldVal)->resultType == L_VAL_RESULT) // oldVal为左值，new也为同名变量
+    if (oldVal->value_type == ValueType::INSTRUCTION && s_p_c<Instruction>(oldVal)->resultType == L_VAL_RESULT) // oldVal为左值，new也为同名变量
     {
         s_p_c<Instruction>(newVal)->resultType = L_VAL_RESULT;
         s_p_c<Instruction>(newVal)->caughtVarName = s_p_c<Instruction>(oldVal)->caughtVarName;
@@ -23,113 +23,113 @@ void maintainLeftValue(shared_ptr<Value> &newVal, shared_ptr<Value> &oldVal)
  */
 void fold(shared_ptr<Instruction> &ins)
 {
-    shared_ptr<Value> newVal;
-    shared_ptr<Value> insVal = ins;
+    shared_ptr<Value> newv;
+    shared_ptr<Value> val = ins;
     bool replace = false;
     switch (ins->type)
     {
     case InstructionType::BINARY:
     case InstructionType::CMP:  // 两个操作数
     {
-        shared_ptr<BinaryInstruction> bIns = s_p_c<BinaryInstruction>(ins);
-        if (bIns->lhs->valueType == ValueType::NUMBER && bIns->rhs->valueType == ValueType::NUMBER)  // 两操作数均为常量，则直接得出结果
+        shared_ptr<BinaryInstruction> b_ins = s_p_c<BinaryInstruction>(ins);
+        if (b_ins->lhs->value_type == ValueType::NUMBER && b_ins->rhs->value_type == ValueType::NUMBER)  // 两操作数均为常量，则直接得出结果
         {
-            shared_ptr<NumberValue> lOpVal = s_p_c<NumberValue>(bIns->lhs);
-            shared_ptr<NumberValue> rOpVal = s_p_c<NumberValue>(bIns->rhs);
-            if ((bIns->op == "/" || bIns->op == "%") && rOpVal->number == 0)  // 除零操作
+            shared_ptr<NumberValue> l_val = s_p_c<NumberValue>(b_ins->lhs);
+            shared_ptr<NumberValue> r_val = s_p_c<NumberValue>(b_ins->rhs);
+            if ((b_ins->op == "/" || b_ins->op == "%") && r_val->number == 0)  // 除零操作
             {
                 cerr << "Error occurs in process constant folding: divide 0." << endl;
                 return;
             }
-            if (bIns->op == "+")
-                newVal = getNumberValue(lOpVal->number + rOpVal->number);
-            else if (bIns->op == "-")
-                newVal = getNumberValue(lOpVal->number - rOpVal->number);
-            else if (bIns->op == "*")
-                newVal = getNumberValue(lOpVal->number * rOpVal->number);
-            else if (bIns->op == "/")
-                newVal = getNumberValue(lOpVal->number / rOpVal->number);
-            else if (bIns->op == "%")
-                newVal = getNumberValue(lOpVal->number % rOpVal->number);
-            else if (bIns->op == ">")
-                newVal = getNumberValue(lOpVal->number > rOpVal->number);
-            else if (bIns->op == "<")
-                newVal = getNumberValue(lOpVal->number < rOpVal->number);
-            else if (bIns->op == "<=")
-                newVal = getNumberValue(lOpVal->number <= rOpVal->number);
-            else if (bIns->op == ">=")
-                newVal = getNumberValue(lOpVal->number >= rOpVal->number);
-            else if (bIns->op == "==")
-                newVal = getNumberValue(lOpVal->number == rOpVal->number);
-            else if (bIns->op == "!=")
-                newVal = getNumberValue(lOpVal->number != rOpVal->number);
-            else if (bIns->op == "&&")
-                newVal = getNumberValue((int)((unsigned)lOpVal->number & (unsigned)rOpVal->number));
-            else if (bIns->op == "||")
-                newVal = getNumberValue((int)((unsigned)lOpVal->number | (unsigned)rOpVal->number));
+            if (b_ins->op == "+")
+                newv = Number(l_val->number + r_val->number);
+            else if (b_ins->op == "-")
+                newv = Number(l_val->number - r_val->number);
+            else if (b_ins->op == "*")
+                newv = Number(l_val->number * r_val->number);
+            else if (b_ins->op == "/")
+                newv = Number(l_val->number / r_val->number);
+            else if (b_ins->op == "%")
+                newv = Number(l_val->number % r_val->number);
+            else if (b_ins->op == ">")
+                newv = Number(l_val->number > r_val->number);
+            else if (b_ins->op == "<")
+                newv = Number(l_val->number < r_val->number);
+            else if (b_ins->op == "<=")
+                newv = Number(l_val->number <= r_val->number);
+            else if (b_ins->op == ">=")
+                newv = Number(l_val->number >= r_val->number);
+            else if (b_ins->op == "==")
+                newv = Number(l_val->number == r_val->number);
+            else if (b_ins->op == "!=")
+                newv = Number(l_val->number != r_val->number);
+            else if (b_ins->op == "&&")
+                newv = Number((int)((unsigned)l_val->number & (unsigned)r_val->number));
+            else if (b_ins->op == "||")
+                newv = Number((int)((unsigned)l_val->number | (unsigned)r_val->number));
             else
             {
-                cerr << "Error occurs in process constant folding: undefined operator '" + bIns->op + "'." << endl;
+                cerr << "Error occurs in process constant folding: undefined operator '" + b_ins->op + "'." << endl;
                 return;
             }
         }
-        else if (bIns->lhs->valueType == ValueType::NUMBER)  // 二元操作，左操作数为常量
+        else if (b_ins->lhs->value_type == ValueType::NUMBER)  // 二元操作，左操作数为常量
         {
-            shared_ptr<NumberValue> lOpVal = s_p_c<NumberValue>(bIns->lhs);
-            if (lOpVal->number == 0)  // 左操作数为0
+            shared_ptr<NumberValue> l_val = s_p_c<NumberValue>(b_ins->lhs);
+            if (l_val->number == 0)  // 左操作数为0
             {
-                if (bIns->op == "*" || bIns->op == "/" || bIns->op == "%" || bIns->op == "&&")  // 这些操作符都会使结果为0
-                    newVal = getNumberValue(0);
-                else if (bIns->op == "+" || bIns->op == "||")  // 这些操作符都会使结果等于右操作数
-                    newVal = bIns->rhs;
-                else if (bIns->op == "-")  // 为-操作，则创建一个新的一元负操作值
+                if (b_ins->op == "*" || b_ins->op == "/" || b_ins->op == "%" || b_ins->op == "&&")  // 这些操作符都会使结果为0
+                    newv = Number(0);
+                else if (b_ins->op == "+" || b_ins->op == "||")  // 这些操作符都会使结果等于右操作数
+                    newv = b_ins->rhs;
+                else if (b_ins->op == "-")  // 为-操作，则创建一个新的一元负操作值
                 {
-                    newVal = make_shared<UnaryInstruction>(negOp, bIns->rhs, bIns->block);
-                    bIns->rhs->users.insert(newVal);
-                    maintainLeftValue(newVal, bIns->rhs);
+                    newv = make_shared<UnaryInstruction>(negOp, b_ins->rhs, b_ins->block);
+                    b_ins->rhs->users.insert(newv);
+                    maintainLeftValue(newv, b_ins->rhs);  // ？？
                     replace = true;
                 }
-                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // 比较操作
+                else if (ins->type == InstructionType::CMP && (b_ins->op == ">" || b_ins->op == "<" || b_ins->op == "<=" || b_ins->op == ">="))  // 比较操作
                 {
-                    bIns->op = bIns->swapOpConst (bIns->op);    // 操作符取反
-                    shared_ptr<Value> temp = bIns->lhs;    // 左右操作值交换
-                    bIns->lhs = bIns->rhs;
-                    bIns->rhs = temp;
+                    b_ins->op = b_ins->swapOpConst (b_ins->op);    // 操作符取反
+                    shared_ptr<Value> temp = b_ins->lhs;    // 左右操作值交换
+                    b_ins->lhs = b_ins->rhs;
+                    b_ins->rhs = temp;
                     return;
                 }
                 else
                     return;
             }
-            else if (lOpVal->number == 1)  // 左操作数为1
+            else if (l_val->number == 1)  // 左操作数为1
             {
-                if (bIns->op == "*")  // 这些操作符都会使结果等于右操作数
-                    newVal = bIns->rhs;
-                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))  // 比较操作
+                if (b_ins->op == "*")  // 这些操作符都会使结果等于右操作数
+                    newv = b_ins->rhs;
+                else if (ins->type == InstructionType::CMP && (b_ins->op == ">" || b_ins->op == "<" || b_ins->op == "<=" || b_ins->op == ">="))  // 比较操作
                 {
-                    bIns->op = bIns->swapOpConst(bIns->op);    // 操作符取反
-                    shared_ptr<Value> temp = bIns->lhs;   // 左右操作值交换
-                    bIns->lhs = bIns->rhs;
-                    bIns->rhs = temp;
+                    b_ins->op = b_ins->swapOpConst(b_ins->op);    // 操作符取反
+                    shared_ptr<Value> temp = b_ins->lhs;   // 左右操作值交换
+                    b_ins->lhs = b_ins->rhs;
+                    b_ins->rhs = temp;
                     return;
                 }
                 else
                     return;
             }
-            else if (lOpVal->number == -1)  // 左操作数为1
+            else if (l_val->number == -1)  // 左操作数为1
             {
-                if (bIns->op == "*")  // 为*操作，则创建一个新的一元负操作值
+                if (b_ins->op == "*")  // 为*操作，则创建一个新的一元负操作值
                 {
-                    newVal = make_shared<UnaryInstruction>(negOp, bIns->rhs, bIns->block);
-                    bIns->rhs->users.insert(newVal);
-                    maintainLeftValue(newVal, bIns->rhs);
+                    newv = make_shared<UnaryInstruction>(negOp, b_ins->rhs, b_ins->block);
+                    b_ins->rhs->users.insert(newv);
+                    maintainLeftValue(newv, b_ins->rhs);
                     replace = true;
                 }
-                else if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))
+                else if (ins->type == InstructionType::CMP && (b_ins->op == ">" || b_ins->op == "<" || b_ins->op == "<=" || b_ins->op == ">="))
                 {
-                    bIns->op = bIns->swapOpConst(bIns->op);
-                    shared_ptr<Value> temp = bIns->lhs;
-                    bIns->lhs = bIns->rhs;
-                    bIns->rhs = temp;
+                    b_ins->op = b_ins->swapOpConst(b_ins->op);
+                    shared_ptr<Value> temp = b_ins->lhs;
+                    b_ins->lhs = b_ins->rhs;
+                    b_ins->rhs = temp;
                     return;
                 }
                 else
@@ -137,46 +137,46 @@ void fold(shared_ptr<Instruction> &ins)
             }
             else  // 不是特殊值，仅比较操作，将常数交换到右操作数
             {
-                if (ins->type == InstructionType::CMP && (bIns->op == ">" || bIns->op == "<" || bIns->op == "<=" || bIns->op == ">="))
+                if (ins->type == InstructionType::CMP && (b_ins->op == ">" || b_ins->op == "<" || b_ins->op == "<=" || b_ins->op == ">="))
                 {
-                    bIns->op = bIns->swapOpConst(bIns->op);
-                    shared_ptr<Value> temp = bIns->lhs;
-                    bIns->lhs = bIns->rhs;
-                    bIns->rhs = temp;
+                    b_ins->op = b_ins->swapOpConst(b_ins->op);
+                    shared_ptr<Value> temp = b_ins->lhs;
+                    b_ins->lhs = b_ins->rhs;
+                    b_ins->rhs = temp;
                     return;
                 }
                 else
                     return;
             }
         }
-        else if (bIns->rhs->valueType == ValueType::NUMBER)  // 二元操作，左操作数为常量
+        else if (b_ins->rhs->value_type == ValueType::NUMBER)  // 二元操作，左操作数为常量
         {
-            shared_ptr<NumberValue> rOpVal = s_p_c<NumberValue>(bIns->rhs);
-            if (rOpVal->number == 0)   // 右操作数为0
+            shared_ptr<NumberValue> r_val = s_p_c<NumberValue>(b_ins->rhs);
+            if (r_val->number == 0)   // 右操作数为0
             {
-                if (bIns->op == "*" || bIns->op == "&&")  // 这些操作符都会使结果为0
-                    newVal = getNumberValue(0);
-                else if (bIns->op == "+" || bIns->op == "||" || bIns->op == "-")  // 这些操作符都会使结果等于左操作数
-                    newVal = bIns->lhs;
+                if (b_ins->op == "*" || b_ins->op == "&&")  // 这些操作符都会使结果为0
+                    newv = Number(0);
+                else if (b_ins->op == "+" || b_ins->op == "||" || b_ins->op == "-")  // 这些操作符都会使结果等于左操作数
+                    newv = b_ins->lhs;
                 else
                     return;
             }
-            else if (rOpVal->number == 1)   // 右操作数为1
+            else if (r_val->number == 1)   // 右操作数为1
             {
-                if (bIns->op == "*" || bIns->op == "/")   // 这些操作符都会使结果等于左操作数
-                    newVal = bIns->lhs;
-                else if (bIns->op == "%")  // 这些操作符都会使结果为0
-                    newVal = getNumberValue(0);
+                if (b_ins->op == "*" || b_ins->op == "/")   // 这些操作符都会使结果等于左操作数
+                    newv = b_ins->lhs;
+                else if (b_ins->op == "%")  // 这些操作符都会使结果为0
+                    newv = Number(0);
                 else
                     return;
             }
-            else if (rOpVal->number == -1)   // 右操作数为-1
+            else if (r_val->number == -1)   // 右操作数为-1
             {
-                if (bIns->op == "*") // 为*操作，则创建一个新的一元负操作值
+                if (b_ins->op == "*") // 为*操作，则创建一个新的一元负操作值
                 {
-                    newVal = make_shared<UnaryInstruction>(negOp, bIns->lhs, bIns->block);
-                    bIns->lhs->users.insert(newVal);
-                    maintainLeftValue(newVal, bIns->lhs);
+                    newv = make_shared<UnaryInstruction>(negOp, b_ins->lhs, b_ins->block);
+                    b_ins->lhs->users.insert(newv);
+                    maintainLeftValue(newv, b_ins->lhs);
                     replace = true;
                 }
                 else
@@ -187,36 +187,36 @@ void fold(shared_ptr<Instruction> &ins)
         }
         else   // 左右操作数均不为常量
         {
-            if ((bIns->op == "-" || bIns->op == "%") && bIns->lhs == bIns->rhs)   // 当左右操作数一样，则结果为0
+            if ((b_ins->op == "-" || b_ins->op == "%") && b_ins->lhs == b_ins->rhs)   // 当左右操作数一样，则结果为0
             {
-                newVal = getNumberValue(0);
+                newv = Number(0);
             }
-            else if (bIns->op == "/" && bIns->lhs == bIns->rhs)   // 当左右操作数一样，则结果为1
+            else if (b_ins->op == "/" && b_ins->lhs == b_ins->rhs)   // 当左右操作数一样，则结果为1
             {
-                newVal = getNumberValue(1);
+                newv = Number(1);
             }
-            else if (bIns->op == "-" && dynamic_cast<UnaryInstruction *>(bIns->rhs.get()))
+            else if (b_ins->op == "-" && dynamic_cast<UnaryInstruction *>(b_ins->rhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-")   // 右操作数有取负，且操作符为-，则右操作数提出值
+                if (s_p_c<UnaryInstruction>(b_ins->rhs)->op == "-")   // 右操作数有取负，且操作符为-，则右操作数提出值
                 {
-                    bIns->op = "+";
-                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->rhs);
-                    bIns->rhs = unary->value;
-                    unary->users.erase(bIns);
-                    bIns->rhs->users.insert(bIns);
+                    b_ins->op = "+";
+                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(b_ins->rhs);
+                    b_ins->rhs = unary->value;
+                    unary->users.erase(b_ins);
+                    b_ins->rhs->users.insert(b_ins);
                     return;
                 }
                 else
                     return;
             }
-            else if (bIns->op == "+" && dynamic_cast<UnaryInstruction *>(bIns->rhs.get()))
+            else if (b_ins->op == "+" && dynamic_cast<UnaryInstruction *>(b_ins->rhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->rhs)->op == "-") // 操作符为+，右操作数有取负，左右操作相等，则结果0
+                if (s_p_c<UnaryInstruction>(b_ins->rhs)->op == "-") // 操作符为+，右操作数有取负，左右操作相等，则结果0
                 {
-                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->rhs);
-                    if (unary->value == bIns->lhs)
+                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(b_ins->rhs);
+                    if (unary->value == b_ins->lhs)
                     {
-                        newVal = getNumberValue(0);
+                        newv = Number(0);
                     }
                     else
                         return;
@@ -224,14 +224,14 @@ void fold(shared_ptr<Instruction> &ins)
                 else
                     return;
             }
-            else if (bIns->op == "+" && dynamic_cast<UnaryInstruction *>(bIns->lhs.get()))
+            else if (b_ins->op == "+" && dynamic_cast<UnaryInstruction *>(b_ins->lhs.get()))
             {
-                if (s_p_c<UnaryInstruction>(bIns->lhs)->op == "-") // 操作符为+，左操作数有取负，左右操作相等，则结果0
+                if (s_p_c<UnaryInstruction>(b_ins->lhs)->op == "-") // 操作符为+，左操作数有取负，左右操作相等，则结果0
                 {
-                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(bIns->lhs);
-                    if (unary->value == bIns->rhs)
+                    shared_ptr<UnaryInstruction> unary = s_p_c<UnaryInstruction>(b_ins->lhs);
+                    if (unary->value == b_ins->rhs)
                     {
-                        newVal = getNumberValue(0);
+                        newv = Number(0);
                     }
                     else
                         return;
@@ -246,32 +246,32 @@ void fold(shared_ptr<Instruction> &ins)
     }
     case InstructionType::UNARY:   // 一元操作
     {
-        shared_ptr<UnaryInstruction> uIns = s_p_c<UnaryInstruction>(ins);
-        if (uIns->op == "+")   // 正号，直接提取值
-            newVal = uIns->value;
-        else if (uIns->value->valueType == ValueType::NUMBER)  // 为常数
+        shared_ptr<UnaryInstruction> u_ins = s_p_c<UnaryInstruction>(ins);
+        if (u_ins->op == "+")   // 正号，直接提取值
+            newv = u_ins->value;
+        else if (u_ins->value->value_type == ValueType::NUMBER)  // 为常数
         {
-            shared_ptr<NumberValue> value = s_p_c<NumberValue>(uIns->value);
-            if (uIns->op == "-")
-                newVal = getNumberValue(-value->number);  // 负号变为负数
-            else if (uIns->op == notOp)
-                newVal = getNumberValue(!value->number);  // 非号取非
+            shared_ptr<NumberValue> value = s_p_c<NumberValue>(u_ins->value);
+            if (u_ins->op == "-")
+                newv = Number(-value->number);  // 负号变为负数
+            else if (u_ins->op == notOp)
+                newv = Number(!value->number);  // 非号取非
             else
             {
-                cerr << "Error occurs in process constant folding: undefined operator '" + uIns->op + "'." << endl;
+                cerr << "Error occurs in process constant folding: undefined operator '" + u_ins->op + "'." << endl;
                 return;
             }
         }
-        else if (dynamic_cast<UnaryInstruction *>(uIns->value.get()))  // 一元操作里还是一元操作
+        else if (dynamic_cast<UnaryInstruction *>(u_ins->value.get()))  // 一元操作里还是一元操作
         {
-            shared_ptr<UnaryInstruction> value = s_p_c<UnaryInstruction>(uIns->value);
-            if (uIns->op == "-" && value->op == "-")  // 两个均为负号
-                newVal = value->value;
-            else if (uIns->op == "!" && value->op == "!")  // 两个均为非
-                newVal = value->value;
-            else if (uIns->op == "!")  // 外层非，里层+-无所谓
+            shared_ptr<UnaryInstruction> value = s_p_c<UnaryInstruction>(u_ins->value);
+            if (u_ins->op == "-" && value->op == "-")  // 两个均为负号
+                newv = value->value;
+            else if (u_ins->op == "!" && value->op == "!")  // 两个均为非
+                newv = value->value;
+            else if (u_ins->op == "!")  // 外层非，里层+-无所谓
             {
-                newVal = make_shared<UnaryInstruction>(uIns->op, value->value, uIns->block);
+                newv = make_shared<UnaryInstruction>(u_ins->op, value->value, u_ins->block);
             }
             else
                 return;
@@ -282,15 +282,15 @@ void fold(shared_ptr<Instruction> &ins)
     }
     case InstructionType::LOAD:   // 加载操作
     {
-        shared_ptr<LoadInstruction> lIns = s_p_c<LoadInstruction>(ins);
-        if (lIns->address->valueType == ValueType::CONSTANT && lIns->offset->valueType == ValueType::NUMBER)  // 地址为const array，偏移量为常数
+        shared_ptr<LoadInstruction> l_ins = s_p_c<LoadInstruction>(ins);
+        if (l_ins->address->value_type == ValueType::CONSTANT && l_ins->offset->value_type == ValueType::NUMBER)  // 地址为const array，偏移量为常数
         {
-            shared_ptr<ConstantValue> constArray = s_p_c<ConstantValue>(lIns->address);
-            shared_ptr<NumberValue> offsetNumber = s_p_c<NumberValue>(lIns->offset);
-            if (constArray->values.count(offsetNumber->number) != 0)
-                newVal = getNumberValue(constArray->values.at(offsetNumber->number));  // 直接提取const array中的值
+            shared_ptr<ConstantValue> const_array = s_p_c<ConstantValue>(l_ins->address);
+            shared_ptr<NumberValue> offset_number = s_p_c<NumberValue>(l_ins->offset);
+            if (const_array->values.count(offset_number->number) != 0)
+                newv = Number(const_array->values.at(offset_number->number));  // 直接提取const array中的值
             else
-                newVal = getNumberValue(0);
+                newv = Number(0);
         }
         else
             return;
@@ -299,8 +299,8 @@ void fold(shared_ptr<Instruction> &ins)
     case InstructionType::PHI:   // phi
     {
         shared_ptr<PhiInstruction> pIns = s_p_c<PhiInstruction>(ins);
-        newVal = removeTrivialPhi(pIns);   // 去除不重要的phi
-        if (newVal == pIns)
+        newv = remove_trivial_phi(pIns);   // 去除不重要的phi
+        if (newv == pIns)
             return;
         break;
     }
@@ -312,18 +312,18 @@ void fold(shared_ptr<Instruction> &ins)
         for (auto &it : ins->block->instructions)
         {
             if (it == ins)
-                it = s_p_c<Instruction>(newVal);
+                it = s_p_c<Instruction>(newv);
         }
     }
-    unordered_set<shared_ptr<Value>> users = insVal->users;
+    unordered_set<shared_ptr<Value>> users = val->users;
     for (auto &it : users)
     {
-        it->replaceUse(insVal, newVal);
+        it->replaceUse(val, newv);
     }
-    insVal->abandonUse();
+    val->abandonUse();
     for (auto &it : users)
     {
-        if (it->valueType == ValueType::INSTRUCTION)   // 最终运行的结果也是一个值，递归折叠
+        if (it->value_type == ValueType::INSTRUCTION)   // 最终运行的结果也是一个值，递归折叠
         {
             shared_ptr<Instruction> itIns = s_p_c<Instruction>(it);
             fold(itIns);
@@ -346,7 +346,7 @@ void constant_folding(shared_ptr<Module> &module)
                 if (!ins->users.empty())
                     fold(ins);
             }
-            removeUnusedInstructions(bb);
+            unused_instruction_delete(bb);
         }
     }
 }

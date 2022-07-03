@@ -29,7 +29,7 @@ string getSsaName(const shared_ptr<Value> &v)
     else if (dynamic_cast<BaseValue *>(v.get()))
     {
         s = s_p_c<BaseValue>(v)->getIdent();
-        if (v->valueType == ValueType::PARAMETER && s_p_c<ParameterValue>(v)->variableType == VariableType::INT)
+        if (v->value_type == ValueType::PARAMETER && s_p_c<ParameterValue>(v)->variableType == VariableType::INT)
         {
             valueSsaMap[v->id] = s;
         }

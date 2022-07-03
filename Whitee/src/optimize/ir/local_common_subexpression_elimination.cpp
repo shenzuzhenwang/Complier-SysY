@@ -39,7 +39,7 @@ void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb)
                     if (ins->equals(i))  // 当两个的值相同
                     {
                         replace = true;
-                        if (i->valueType != INSTRUCTION)
+                        if (i->value_type != INSTRUCTION)
                         {
                             cerr << "Error occurs in process LCSE: non-instruction value in map." << endl;
                         }

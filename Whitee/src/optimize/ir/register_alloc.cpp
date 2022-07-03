@@ -106,7 +106,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
         {
             if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
                 return;
-            if (user->valueType != INSTRUCTION)
+            if (user->value_type != INSTRUCTION)
             {
                 cerr << "Error occurs in register alloc: got a non-instruction user." << endl;
             }
@@ -245,7 +245,7 @@ void buildConflictGraph(shared_ptr<Function> &func)
                 {
                     if (checkRegAllocTimeout(startAllocTime, CONFLICT_GRAPH_TIMEOUT))
                         return;
-                    if (user->valueType != INSTRUCTION)
+                    if (user->value_type != INSTRUCTION)
                     {
                         cerr << "Error occurs in register alloc: got a non-instruction user." << endl;
                     }
@@ -620,12 +620,12 @@ void addAliveValue(shared_ptr<Instruction> &value, shared_ptr<Instruction> &owne
  */
 void addAliveValue(shared_ptr<Value> &value, shared_ptr<Instruction> &owner, shared_ptr<BasicBlock> &ownerBlock)
 {
-    if (value->valueType == INSTRUCTION)
+    if (value->value_type == INSTRUCTION)
     {
         shared_ptr<Instruction> insVal = s_p_c<Instruction>(value);
         addAliveValue(insVal, owner, ownerBlock);
     }
-    else if (value->valueType == PARAMETER)
+    else if (value->value_type == PARAMETER)
     {
         if (owner->type == PHI_MOV)  // phi_move指令，在blockALiveValues加入活跃value
         {

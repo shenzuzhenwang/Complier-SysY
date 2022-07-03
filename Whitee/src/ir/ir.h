@@ -129,15 +129,15 @@ private:
 
 public:
     unsigned int id;      // 指令的ID
-    ValueType valueType;  // 值类型
+    ValueType value_type;  // 值类型
     unordered_set<shared_ptr<Value>> users;  // 使用对象
 
     bool valid = true;  // 有效
 
     static unsigned int getValueId();
 
-    explicit Value(ValueType valueType) 
-        : valueType(valueType), id(valueId++){};
+    explicit Value(ValueType value_type) 
+        : value_type(value_type), id(valueId++){};
 
     virtual string toString() = 0;
 
@@ -189,7 +189,7 @@ public:
     unordered_set<shared_ptr<Value>> variableWithoutReg;   // 必须存在内存中的，寄存器放不下的变量
     unsigned int requiredStackSize = 0; // required size in bytes.
 
-    bool hasSideEffect = true;
+    bool side_effect = true;
 
     unordered_map<string, VariableType> variables; // @Deprecated
 
@@ -222,10 +222,10 @@ public:
     unsigned int loopDepth = 1;                   // 用于寄存器权重计算
     unordered_set<shared_ptr<Value>> aliveValues; // 此basic block中活跃的变量
 
-    unordered_map<string, shared_ptr<Value>> localVarSsaMap;  // SSA MAP
+    unordered_map<string, shared_ptr<Value>> ssa_map;  // SSA MAP
 
     bool sealed = true;                                               // 标记此basic block是否密封：没有前驱会被添加进来
-    unordered_map<string, shared_ptr<PhiInstruction>> incompletePhis; // 存储不完整的 phis
+    unordered_map<string, shared_ptr<PhiInstruction>> incomplete_phis; // 存储不完整的 phis
 
     BasicBlock() 
         : Value(ValueType::BASIC_BLOCK){};
@@ -719,7 +719,7 @@ public:
     bool equals(shared_ptr<Value> &value) override { return false; }
 };
 
-shared_ptr<NumberValue> getNumberValue(int);
+shared_ptr<NumberValue> Number(int);
 
 string generateArgumentLeftValueName(const string &);
 

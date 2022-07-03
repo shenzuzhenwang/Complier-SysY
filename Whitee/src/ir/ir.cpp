@@ -42,7 +42,7 @@ ConstantValue::ConstantValue (shared_ptr<GlobalValue>& globalVar)
 ParameterValue::ParameterValue (shared_ptr<Function>& function, shared_ptr<FuncFParamNode>& funcFParam)
 	: BaseValue (ValueType::PARAMETER)
 {
-	valueType = ValueType::PARAMETER;
+	value_type = ValueType::PARAMETER;
 	name = funcFParam->ident->ident->usageName;
 	this->function = function;
 	variableType = funcFParam->dimension == 0 ? VariableType::INT : VariableType::POINTER;
@@ -53,7 +53,7 @@ GlobalValue::GlobalValue (shared_ptr<VarDefNode>& varDef)
 	: BaseValue (ValueType::GLOBAL)
 {
 	name = varDef->ident->ident->usageName;
-	valueType = ValueType::GLOBAL;
+	value_type = ValueType::GLOBAL;
 	initType = varDef->type;
 	variableType = varDef->dimension == 0 ? VariableType::INT : VariableType::POINTER;
 	dimensions = varDef->dimensions;
@@ -99,7 +99,7 @@ void Function::abandonUse ()
 void BasicBlock::replaceUse (shared_ptr<Value>& toBeReplaced, shared_ptr<Value>& replaceValue)
 {
 	shared_ptr<Value> self = shared_from_this ();
-	for (auto& it : localVarSsaMap)
+	for (auto& it : ssa_map)
 	{
 		if (it.second == toBeReplaced)
 		{
@@ -136,7 +136,7 @@ bool NumberValue::equals (shared_ptr<Value>& value)
 	shared_ptr<Value> self = shared_from_this ();
 	if (value == self)
 		return true;
-	if (value->valueType != NUMBER)
+	if (value->value_type != NUMBER)
 		return false;
 	return s_p_c<NumberValue> (value)->number == number;
 }
@@ -146,7 +146,7 @@ bool ConstantValue::equals (shared_ptr<Value>& value)
 	shared_ptr<Value> self = shared_from_this ();
 	if (value == self)
 		return true;
-	if (value->valueType != CONSTANT)
+	if (value->value_type != CONSTANT)
 		return false;
 	return s_p_c<ConstantValue> (value)->name == name;
 }
@@ -156,7 +156,7 @@ bool ParameterValue::equals (shared_ptr<Value>& value)
 	shared_ptr<Value> self = shared_from_this ();
 	if (value == self)
 		return true;
-	if (value->valueType != PARAMETER)
+	if (value->value_type != PARAMETER)
 		return false;
 	return s_p_c<ParameterValue> (value)->name == name;
 }
@@ -166,14 +166,14 @@ bool GlobalValue::equals (shared_ptr<Value>& value)
 	shared_ptr<Value> self = shared_from_this ();
 	if (value == self)
 		return true;
-	if (value->valueType != GLOBAL)
+	if (value->value_type != GLOBAL)
 		return false;
 	return s_p_c<GlobalValue> (value)->name == name;
 }
 
 bool StringValue::equals (shared_ptr<Value>& value)
 {
-	if (value->valueType != STRING)
+	if (value->value_type != STRING)
 		return false;
 	return s_p_c<StringValue> (value)->str == str;
 }
@@ -535,7 +535,7 @@ bool PhiInstruction::onlyHasBlockUserOrUserEmpty ()
 {
 	for (auto& user : users)
 	{
-		if (user->valueType != ValueType::BASIC_BLOCK)
+		if (user->value_type != ValueType::BASIC_BLOCK)
 			return false;
 	}
 	return true;
@@ -560,7 +560,7 @@ PhiMoveInstruction::PhiMoveInstruction (shared_ptr<PhiInstruction>& phi)
 
 unordered_map<int, shared_ptr<NumberValue>> numberValueMap;  // 常数公用表
 
-shared_ptr<NumberValue> getNumberValue (int number)
+shared_ptr<NumberValue> Number (int number)
 {
 	if (numberValueMap.count (number) == 0)
 		numberValueMap[number] = make_shared<NumberValue> (number);

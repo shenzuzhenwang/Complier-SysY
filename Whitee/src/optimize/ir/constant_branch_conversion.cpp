@@ -15,7 +15,7 @@ void constant_branch_conversion(shared_ptr<Module> &module)
                 if (ins->type == InstructionType::BR)  // 分支指令
                 {
                     shared_ptr<BranchInstruction> br = s_p_c<BranchInstruction>(ins);
-                    if (br->condition->valueType == ValueType::NUMBER)  // 分支条件为常数
+                    if (br->condition->value_type == ValueType::NUMBER)  // 分支条件为常数
                     {
                         shared_ptr<NumberValue> num = s_p_c<NumberValue>(br->condition);
                         if (num->number == 0)

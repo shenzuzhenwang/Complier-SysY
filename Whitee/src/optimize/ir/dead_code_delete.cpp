@@ -6,8 +6,8 @@
  */
 void dead_code_delete(shared_ptr<Module> &module)
 {
-    removeUnusedFunctions(module);
-    IsFunctionSideEffect(module);
+    unused_function_delete(module);
+    function_is_side_effect(module);
     for (auto var = module->globalStrings.begin(); var != module->globalStrings.end();)
     {
         if ((*var)->users.empty())  // 删除没有被使用的string
@@ -20,7 +20,7 @@ void dead_code_delete(shared_ptr<Module> &module)
             while (it != (*var)->users.end())
             {
                 // 删除已经失效的使用
-                if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
+                if ((*it)->value_type == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);
                 }
@@ -41,7 +41,7 @@ void dead_code_delete(shared_ptr<Module> &module)
             auto it = (*var)->users.begin();
             while (it != (*var)->users.end())
             {
-                if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
+                if ((*it)->value_type == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);
                 }
@@ -63,7 +63,7 @@ void dead_code_delete(shared_ptr<Module> &module)
             while (it != (*var)->users.end())
             {
                 // 删除已经失效的使用
-                if ((*it)->valueType == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
+                if ((*it)->value_type == ValueType::INSTRUCTION && (!s_p_c<Instruction>((*it))->block->valid || !s_p_c<Instruction>((*it))->block->function->valid))
                 {
                     it = (*var)->users.erase(it);
                 }
@@ -73,14 +73,14 @@ void dead_code_delete(shared_ptr<Module> &module)
             ++var;
         }
     }
-    vector<shared_ptr<Function>> functions = module->functions;
+    auto functions = module->functions;
     for (auto &func : functions)
     {
-        removeUnusedBasicBlocks(func);
-        vector<shared_ptr<BasicBlock>> blocks = func->blocks;
+        unused_block_delete(func);
+        auto blocks = func->blocks;
         for (auto &bb : blocks)
         {
-            removeUnusedInstructions(bb);
+            unused_instruction_delete(bb);
         }
     }
     fixRightValue(module);

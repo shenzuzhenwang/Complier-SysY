@@ -92,7 +92,7 @@ shared_ptr<Module> buildIrModule(shared_ptr<CompUnitNode> &compUnit)
                 function->params.push_back(paramValue);
                 if (s_p_c<ParameterValue>(paramValue)->variableType == VariableType::INT)  // 局部变量
                 {
-                    writeLocalVariable(entryBlock, s_p_c<ParameterValue>(paramValue)->name, paramValue);
+                    write_variable(entryBlock, s_p_c<ParameterValue>(paramValue)->name, paramValue);
                 }
                 else
                 {
@@ -177,13 +177,13 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sh
     {
         shared_ptr<InitValValNode> initVal = s_p_c<InitValValNode>(varDef->initVal);
         shared_ptr<Value> exp = expToIr(func, bb, initVal->exp);
-        if (exp->valueType == ValueType::INSTRUCTION)    // 一个非常数值，IR将其记录为一个变量
+        if (exp->value_type == ValueType::INSTRUCTION)    // 一个非常数值，IR将其记录为一个变量
         {
             shared_ptr<Instruction> insExp = s_p_c<Instruction>(exp);
             insExp->resultType = L_VAL_RESULT;
             insExp->caughtVarName = varDef->ident->ident->usageName;
         }
-        writeLocalVariable(bb, varDef->ident->ident->usageName, exp); 
+        write_variable(bb, varDef->ident->ident->usageName, exp); 
     }
     else if (varDef->dimension != 0)   // 数组
     {
@@ -202,28 +202,28 @@ void varDefToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const sh
             {
                 for (; curIndex < it.first; ++curIndex)  // 给未指定的位置赋值0
                 {
-                    shared_ptr<Value> zero = getNumberValue(0);
-                    shared_ptr<Value> offset = getNumberValue(curIndex);
+                    shared_ptr<Value> zero = Number(0);
+                    shared_ptr<Value> offset = Number(curIndex);
                     
                     shared_ptr<Instruction> store = make_shared<StoreInstruction>(zero, alloc, offset, bb);
-                    addUser(store, {zero, alloc, offset});
+                    user_use(store, {zero, alloc, offset});
                     bb->instructions.push_back(store);
                 }
                 // 给指定初始化的位置赋值
                 ++curIndex;
                 shared_ptr<Value> exp = expToIr(func, bb, it.second);
-                shared_ptr<Value> offset = getNumberValue(it.first);
+                shared_ptr<Value> offset = Number(it.first);
                 
                 shared_ptr<Instruction> store = make_shared<StoreInstruction>(exp, alloc, offset, bb);
-                addUser(store, {exp, alloc, offset});
+                user_use(store, {exp, alloc, offset});
                 bb->instructions.push_back(store);
             }
             for (; curIndex < units; ++curIndex)  // 给未指定的位置赋值0
             {
-                shared_ptr<Value> zero = getNumberValue(0);
-                shared_ptr<Value> offset = getNumberValue(curIndex);
+                shared_ptr<Value> zero = Number(0);
+                shared_ptr<Value> offset = Number(curIndex);
                 shared_ptr<Instruction> store = make_shared<StoreInstruction>(zero, alloc, offset, bb);
-                addUser(store, {zero, alloc, offset});
+                user_use(store, {zero, alloc, offset});
                 bb->instructions.push_back(store);
             }
         }
@@ -264,7 +264,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         shared_ptr<SymbolTableItem> identItem = stmt->lVal->ident->ident;  // 赋值对象
         // 查找左值
         shared_ptr<Value> address, offset;
-        switch (identItem->symbolType)  // //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
+        switch (identItem->symbolType)  //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
         {
         case SymbolType::VAR:
         {
@@ -272,24 +272,24 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             {
                 pointerToIr(stmt->lVal, address, offset, func, bb);
                 shared_ptr<Instruction> ins = make_shared<StoreInstruction>(value, address, offset, bb);
-                addUser(ins, {value, address, offset});
+                user_use(ins, {value, address, offset});
                 bb->instructions.push_back(ins);
             }
             else
             {
-                if (value->valueType == ValueType::INSTRUCTION)  // 一个值非常数值，IR将其记录为一个变量
+                if (value->value_type == ValueType::INSTRUCTION)  // 一个值非常数值，IR将其记录为一个变量
                 {
                     shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);
                     insValue->resultType = L_VAL_RESULT;
                     insValue->caughtVarName = stmt->lVal->ident->ident->usageName;
                 }
-                writeLocalVariable(bb, stmt->lVal->ident->ident->usageName, value);
+                write_variable(bb, stmt->lVal->ident->ident->usageName, value);
             }
             return;
         }
         case SymbolType::ARRAY:
         {
-            if (value->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)  // 被赋值为一个非左值 
+            if (value->value_type == ValueType::INSTRUCTION && s_p_c<Instruction>(value)->resultType != L_VAL_RESULT)  // 被赋值为一个非左值 
             {
                 shared_ptr<Instruction> insValue = s_p_c<Instruction>(value);  // 将此值转为左值
                 insValue->resultType = L_VAL_RESULT;
@@ -297,7 +297,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             }
             pointerToIr(stmt->lVal, address, offset, func, bb);
             shared_ptr<Instruction> ins = make_shared<StoreInstruction>(value, address, offset, bb);
-            addUser(ins, {value, address, offset});
+            user_use(ins, {value, address, offset});
             bb->instructions.push_back(ins);
             return;
         }
@@ -310,7 +310,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
     {
         shared_ptr<Value> value = expToIr(func, bb, stmt->exp);  // 返回值
         shared_ptr<Instruction> ins = make_shared<ReturnInstruction>(FuncType::FUNC_INT, value, bb);
-        addUser(ins, {value});
+        user_use(ins, {value});
         bb->instructions.push_back(ins);
         afterJump = true;    // 已经跳出
         return;
@@ -438,7 +438,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
             preWhileBody->predecessors.insert(whileJudge);
             whileJudge->successors.insert(preWhileBody);
         }
-        sealBasicBlock(preWhileBody);
+        seal_basic_block(preWhileBody);
 
         func->blocks.push_back(whileEnd);
         return;
@@ -491,12 +491,12 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                 {
                     pointerToIr(p->lVal, address, offset, func, bb);
                     shared_ptr<Instruction> ins = make_shared<LoadInstruction>(address, offset, bb);
-                    addUser(ins, {address, offset});
+                    user_use(ins, {address, offset});
                     bb->instructions.push_back(ins);
                     return ins;
                 }
                 // 常量传播、复制传播    直接取出对应变量的值
-                return readLocalVariable(bb, identItem->usageName);
+                return read_variable(bb, identItem->usageName);
             }
             case SymbolType::CONST_ARRAY:
             case SymbolType::ARRAY:
@@ -518,14 +518,14 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                     if (p->lVal->exps.size() == p->lVal->dimension)  // 维数与[]数一样，提取某个元素
                     {
                         shared_ptr<Instruction> load = make_shared<LoadInstruction>(address, offset, bb);
-                        addUser(load, {address, offset});
+                        user_use(load, {address, offset});
                         bb->instructions.push_back(load);
                         return load;
                     }
                     else  // 维数与[]数一样，提取某个指针
                     {
                         shared_ptr<Instruction> pt = make_shared<BinaryInstruction>(addOp, address, offset, bb);
-                        addUser(pt, {address, offset});
+                        user_use(pt, {address, offset});
                         bb->instructions.push_back(pt);
                         return pt;
                     }
@@ -548,7 +548,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             return str;
         }
         case PrimaryExpType::PRIMARY_NUMBER:  // 全局的常量数字
-            return getNumberValue(p->number);
+            return Number(p->number);
         default:
             return expToIr(func, bb, p->exp);
         }
@@ -564,7 +564,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             if (p->op == "+")
                 return value;
             shared_ptr<Instruction> ins = make_shared<UnaryInstruction>(p->op, value, bb);
-            addUser(ins, {value});
+            user_use(ins, {value});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -577,7 +577,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                 for (const auto &i : p->funcRParams->exps)
                 {
                     shared_ptr<Value> tmpExp = expToIr(func, bb, i);
-                    if (p->funcRParams->exps.size() > 1 && tmpExp->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(tmpExp)->resultType != L_VAL_RESULT) //当参数为非左值
+                    if (p->funcRParams->exps.size() > 1 && tmpExp->value_type == ValueType::INSTRUCTION && s_p_c<Instruction>(tmpExp)->resultType != L_VAL_RESULT) //当参数为非左值
                     {
                         s_p_c<Instruction>(tmpExp)->resultType = L_VAL_RESULT;
                         s_p_c<Instruction>(tmpExp)->caughtVarName = generateArgumentLeftValueName(p->ident->ident->usageName);
@@ -598,12 +598,12 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
                 targetFunction->callers.insert(func);
                 invoke = make_shared<InvokeInstruction>(targetFunction, params, bb);
             }
-            addUser(invoke, params);
+            user_use(invoke, params);
             bb->instructions.push_back(s_p_c<Instruction>(invoke));
             if (p->op == "+")
                 return invoke;
             shared_ptr<Instruction> ins = make_shared<UnaryInstruction>(p->op, invoke, bb);
-            addUser(ins, {invoke});
+            user_use(ins, {invoke});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -612,7 +612,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             if (p->op == "+")
                 return value;
             shared_ptr<Instruction> ins = make_shared<UnaryInstruction>(p->op, value, bb);
-            addUser(ins, {value});
+            user_use(ins, {value});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -629,7 +629,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             shared_ptr<Value> lhs = expToIr(func, bb, p->mulExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->unaryExp);
             shared_ptr<Instruction> ins = make_shared<BinaryInstruction>(p->op, lhs, rhs, bb);
-            addUser(ins, {lhs, rhs});
+            user_use(ins, {lhs, rhs});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -646,7 +646,7 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
             shared_ptr<Value> lhs = expToIr(func, bb, p->addExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->mulExp);
             shared_ptr<Instruction> ins = make_shared<BinaryInstruction>(p->op, lhs, rhs, bb);
-            addUser(ins, {lhs, rhs});
+            user_use(ins, {lhs, rhs});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -662,13 +662,13 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         {
             shared_ptr<Value> lhs = expToIr(func, bb, p->relExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->addExp);
-            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
+            if (lhs->value_type == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->value_type == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
             {
                 s_p_c<Instruction>(lhs)->resultType = L_VAL_RESULT;
                 s_p_c<Instruction>(lhs)->caughtVarName = generateTempLeftValueName();
             }
             shared_ptr<Instruction> ins = make_shared<BinaryInstruction>(p->op, lhs, rhs, bb);
-            addUser(ins, {lhs, rhs});
+            user_use(ins, {lhs, rhs});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -684,13 +684,13 @@ shared_ptr<Value> expToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb
         {
             shared_ptr<Value> lhs = expToIr(func, bb, p->eqExp);
             shared_ptr<Value> rhs = expToIr(func, bb, p->relExp);
-            if (lhs->valueType == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->valueType == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
+            if (lhs->value_type == INSTRUCTION && s_p_c<Instruction>(lhs)->resultType == R_VAL_RESULT && rhs->value_type == INSTRUCTION && s_p_c<Instruction>(rhs)->resultType == R_VAL_RESULT) // 比较的两侧均为右值
             {
                 s_p_c<Instruction>(lhs)->resultType = L_VAL_RESULT;
                 s_p_c<Instruction>(lhs)->caughtVarName = generateTempLeftValueName();
             }
             shared_ptr<Instruction> ins = make_shared<BinaryInstruction>(p->op, lhs, rhs, bb);
-            addUser(ins, {lhs, rhs});
+            user_use(ins, {lhs, rhs});
             bb->instructions.push_back(ins);
             return ins;
         }
@@ -720,7 +720,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
         {
             conditionToIr(func, bb, lOrExp->lAndExp, trueBlock, falseBlock);
         }
-        else  // 有|| 短路求值
+        else  // 有 || 短路求值
         {
             // 声明一个新的基本块作为第二个条件判断块
             shared_ptr<BasicBlock> logicOrBlock = make_shared<BasicBlock>(func, true, loopDepth);
@@ -740,7 +740,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
     else if (dynamic_cast<LAndExpNode *>(cond.get()))
     {
         const shared_ptr<LAndExpNode> lAndExp = s_p_c<LAndExpNode>(cond);
-        if (lAndExp->lAndExp != nullptr) // 有&& 短路求值
+        if (lAndExp->lAndExp != nullptr) // 有 && 短路求值
         {
             // 声明一个新的基本块作为第二个条件判断块
             shared_ptr<BasicBlock> logicAndBlock = make_shared<BasicBlock>(func, true, loopDepth);
@@ -760,7 +760,7 @@ void conditionToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const
     {
         shared_ptr<Value> exp = expToIr(func, bb, cond);
         shared_ptr<Value> ins = make_shared<BranchInstruction>(exp, trueBlock, falseBlock, bb);
-        addUser(ins, {exp});
+        user_use(ins, {exp});
         bb->instructions.push_back(s_p_c<Instruction>(ins));
     }
     else if (dynamic_cast<CondNode *>(cond.get()))
@@ -792,7 +792,7 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, s
         if (identItem->blockId.first == 0)
         {
             address = globalVariableMap.at(identItem->usageName);  // 全局变量，直接获取
-            offset = getNumberValue(0);
+            offset = Number(0);
             return;
         }
         else
@@ -810,16 +810,16 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, s
         offset = nullptr;
         for (int i = 0; i < lVal->exps.size(); ++i)  // 根据[]中的值，计算地址偏移量
         {
-            shared_ptr<Value> number = getNumberValue(size);
+            shared_ptr<Value> number = Number(size);
             shared_ptr<Value> off = expToIr(func, bb, lVal->exps.at(i));
             shared_ptr<Value> mul = make_shared<BinaryInstruction>(mulOp, off, number, bb);
-            addUser(mul, {number, off});
+            user_use(mul, {number, off});
             bb->instructions.push_back(s_p_c<Instruction>(mul));
             if (offset)
             {
                 shared_ptr<Value> oldOffset = offset;
                 offset = make_shared<BinaryInstruction>(addOp, offset, mul, bb);
-                addUser(offset, {oldOffset, mul});
+                user_use(offset, {oldOffset, mul});
                 bb->instructions.push_back(s_p_c<Instruction>(offset));
             }
             else
@@ -832,9 +832,9 @@ void pointerToIr(const shared_ptr<LValNode> &lVal, shared_ptr<Value> &address, s
         if (lVal->exps.size() < identItem->numOfEachDimension.size())  // []数小于维数，为指针
         {
             shared_ptr<Value> oldOffset = offset;
-            shared_ptr<Value> four = getNumberValue(_W_LEN);
+            shared_ptr<Value> four = Number(_W_LEN);
             offset = make_shared<BinaryInstruction>(mulOp, offset, four, bb);
-            addUser(offset, {oldOffset, four});
+            user_use(offset, {oldOffset, four});
             bb->instructions.push_back(s_p_c<Instruction>(offset));
         }
         if (identItem->symbolType == SymbolType::CONST_ARRAY) // 全局变量数组

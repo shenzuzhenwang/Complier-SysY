@@ -1,15 +1,15 @@
 ﻿#include "ir_optimize.h"
 
 /**
- * @brief 去掉只有store指令的变量，包括全局变量与数组
+ * @brief 只写变量清除，去掉只有store指令的变量，包括全局变量与数组
  * @param module 
  */
 void dead_array_delete(shared_ptr<Module> &module)
 {
-    for (auto glb = module->globalVariables.begin(); glb != module->globalVariables.end();)
+    for (auto var = module->globalVariables.begin(); var != module->globalVariables.end();)
     {
         bool all_store = true;
-        unordered_set<shared_ptr<Value>> users = (*glb)->users;
+        unordered_set<shared_ptr<Value>> users = (*var)->users;
         for (auto &user : users)
         {
             if (!dynamic_cast<StoreInstruction *>(user.get()))  // 不是store指令，则换下一个全局变量
@@ -24,30 +24,30 @@ void dead_array_delete(shared_ptr<Module> &module)
             {
                 user->abandonUse ();
             }
-            (*glb)->abandonUse ();
-            glb = module->globalVariables.erase (glb);
+            (*var)->abandonUse ();
+            var = module->globalVariables.erase (var);
         }
         else
-            ++glb;
+            ++var;
     }
     for (auto &func : module->functions)
     {
-        for (auto &bb : func->blocks)
+        for (auto &block : func->blocks)
         {
-            for (auto &ins : bb->instructions)
+            for (auto &ins : block->instructions)
             {
                 if (ins->type == InstructionType::ALLOC)
                 {
-                    bool canDelete = true;
+                    bool can_delete = true;
                     for (auto &user : ins->users)
                     {
                         if (!dynamic_cast<StoreInstruction *>(user.get()))  // 出现非store指令
                         {
-                            canDelete = false;
+                            can_delete = false;
                             break;
                         }
                     }
-                    if (canDelete) // 只有store指令，则将store指令去除，并将此变量去除
+                    if (can_delete) // 只有store指令，则将store指令去除，并将此变量去除
                     {
                         ins->abandonUse();
                         unordered_set<shared_ptr<Value>> users = ins->users;

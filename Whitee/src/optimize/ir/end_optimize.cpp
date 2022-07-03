@@ -14,7 +14,7 @@ void endOptimize(shared_ptr<Module> &module, OptimizeLevel level)
 {
     for (auto &func : module->functions)
     {
-        phiElimination(func);
+        phi_elimination(func);
     }
     if (_debugIr)
     {

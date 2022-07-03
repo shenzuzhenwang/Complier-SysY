@@ -37,7 +37,7 @@ void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module
     shared_ptr<GlobalValue> global = s_p_c<GlobalValue>(globalVar);
     if (global->variableType == VariableType::INT)
     {
-        shared_ptr<Value> constantNumber = getNumberValue(global->initValues.at(0));
+        shared_ptr<Value> constantNumber = Number(global->initValues.at(0));
         unordered_set<shared_ptr<Value>> users = global->users;
         for (auto user : users)
         {

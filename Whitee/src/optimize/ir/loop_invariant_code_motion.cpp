@@ -292,12 +292,12 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
     unordered_set<shared_ptr<PhiInstruction>> phis = newBlock->phis;
     for (auto phi : phis)
     {
-        removeTrivialPhi(phi);
+        remove_trivial_phi(phi);
     }
     phis = firstBlock->phis;
     for (auto phi : phis)
     {
-        removeTrivialPhi(phi);
+        remove_trivial_phi(phi);
     }
     for (auto it = func->blocks.begin(); it != func->blocks.end(); ++it)
     {
@@ -316,5 +316,5 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
  */
 inline bool judge_loop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop)
 {
-    return value->valueType == INSTRUCTION && blocksInLoop.count(s_p_c<Instruction>(value)->block) != 0;
+    return value->value_type == INSTRUCTION && blocksInLoop.count(s_p_c<Instruction>(value)->block) != 0;
 }

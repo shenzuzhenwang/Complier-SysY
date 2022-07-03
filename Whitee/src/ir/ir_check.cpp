@@ -98,7 +98,7 @@ void functionCheck(const shared_ptr<Function> &func)
     {
         if (!arg->valid)
             irError("function " + func->name + "'s parameter is not valid.");
-        if (arg->valueType != ValueType::PARAMETER)
+        if (arg->value_type != ValueType::PARAMETER)
             irError("function " + func->name + "'s parameter is not a ParameterValue.");
     }
     if (func->blocks.empty())
@@ -167,7 +167,7 @@ void instructionCheck(const shared_ptr<Instruction> &ins)
     if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)
     {
         auto it = ins->users.begin();
-        if ((*it)->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(*it)->block != ins->block)
+        if ((*it)->value_type == ValueType::INSTRUCTION && s_p_c<Instruction>(*it)->block != ins->block)
             irError("r-val and its instruction's user is not in the same block.");
     }
     if (ins->type != InstructionType::PHI && ins->users.count(ins) != 0)
@@ -316,7 +316,7 @@ void phiCheck(const shared_ptr<PhiInstruction> &phi)
         irError("phi has more than 1 users but is r-val.");
     for (auto &user : phi->users)
     {
-        if (user->valueType == ValueType::BASIC_BLOCK)
+        if (user->value_type == ValueType::BASIC_BLOCK)
         {
             irError("phi have block user.");
         }
@@ -332,7 +332,7 @@ void phiCheck(const shared_ptr<PhiInstruction> &phi)
     }
     for (auto &user : phi->users)
     {
-        if (!user->valid && user->valueType != ValueType::BASIC_BLOCK)
+        if (!user->valid && user->value_type != ValueType::BASIC_BLOCK)
             irError("phi has invalid user in function " + phi->block->function->name + " block " + to_string(phi->block->id) + ".");
     }
     for (auto &it : phi->operands)
@@ -341,13 +341,13 @@ void phiCheck(const shared_ptr<PhiInstruction> &phi)
             irError("phi's operand block is invalid.");
         else if (phi->block->predecessors.count(it.first) == 0)
             irError("phi's operand block is not in its predecessors.");
-        if (it.second->valueType == ValueType::UNDEFINED)
+        if (it.second->value_type == ValueType::UNDEFINED)
             irWarning("phi has an undefined value.");
         if (!it.second->valid)
             irError("phi's operand is invalid.");
         else if (it.second->users.count(phi) == 0)
             irError("phi's operand users does not have itself.");
-        else if (it.second->valueType == ValueType::INSTRUCTION && s_p_c<Instruction>(it.second)->resultType != L_VAL_RESULT)
+        else if (it.second->value_type == ValueType::INSTRUCTION && s_p_c<Instruction>(it.second)->resultType != L_VAL_RESULT)
         {
             irError("phi's instruction operand is not a l-value.");
         }

@@ -43,7 +43,7 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
         else if ((*ins)->type == InstructionType::STORE)
         {
             shared_ptr<StoreInstruction> store = s_p_c<StoreInstruction>(*ins);
-            if (store->address == alloc && store->offset->valueType == ValueType::NUMBER)  // 如果store时，offset为常数
+            if (store->address == alloc && store->offset->value_type == ValueType::NUMBER)  // 如果store时，offset为常数
             {
                 shared_ptr<NumberValue> off = s_p_c<NumberValue>(store->offset);
                 if (arrStores.count(off->number) != 0 && canErase.count(off->number) != 0)  // 如果不是第一次store
@@ -70,7 +70,7 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
         else if ((*ins)->type == InstructionType::LOAD)
         {
             shared_ptr<LoadInstruction> load = s_p_c<LoadInstruction>(*ins);
-            if (load->address == alloc && load->offset->valueType == ValueType::NUMBER)  // 如果load时，offset为常数
+            if (load->address == alloc && load->offset->value_type == ValueType::NUMBER)  // 如果load时，offset为常数
             {
                 shared_ptr<NumberValue> off = s_p_c<NumberValue>(load->offset);
                 if (arrValues.count(off->number) != 0)  // 此offset元素的可被折叠  则替换词load指令的对象为已知的value
@@ -82,12 +82,12 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
                         shared_ptr<Value> toBeReplace = load;
                         u->replaceUse(toBeReplace, val);
                     }
-                    if (val->valueType == INSTRUCTION && s_p_c<Instruction>(val)->resultType == R_VAL_RESULT)
+                    if (val->value_type == INSTRUCTION && s_p_c<Instruction>(val)->resultType == R_VAL_RESULT)
                     {
                         s_p_c<Instruction>(val)->resultType = L_VAL_RESULT;
                         s_p_c<Instruction>(val)->caughtVarName = generateTempLeftValueName();
                     }
-                    if (val->valueType != ValueType::NUMBER)
+                    if (val->value_type != ValueType::NUMBER)
                         canErase.erase(off->number);  // 如果此时offset存的值不为常数，则之后不能被折叠
                     load->abandonUse();
                     ins = bb->instructions.erase(ins);

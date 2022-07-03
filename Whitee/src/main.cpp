@@ -25,7 +25,7 @@
 #include "machine_ir/machine_ir_build.h"
 using namespace std;
 
-OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
+OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // 代码优化等级
 bool needIrCheck = true;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
 
@@ -52,12 +52,6 @@ int main(int argc, char **argv)
 
     if ((r = setCompileOptions(argc, argv)) != 0)
         return r;
-
-    if (sourceCodeFile.empty())
-    {
-        printHelp(argv[0]);
-        return _SCO_ST_ERR;
-    }
 
     if ((r = initConfig()) != 0)
         return r;
@@ -124,7 +118,7 @@ int main(int argc, char **argv)
         fixRightValue(module);
         for (auto &func : module->functions)
         {
-            phiElimination(func);
+            phi_elimination(func);
             getFunctionRequiredStackSize(func);
         }
         if (_debugIr)
@@ -216,54 +210,6 @@ int setCompileOptions(int argc, char **argv)
         _optimizeMachineIr = true;
     }
     return _SCO_SUCCESS;
-}
-
-/**
- * @brief 打印help说明，因为参数不符合规则
- * @param exec 执行文件的路径
- */
-void printHelp(const char *exec)
-{
-    cout << "Usage: " + string(exec) + " [-S] [-o] [-h | --help] [-d | --debug <level>]";
-    cout << endl
-         << " [-c | --check <level>] [--set-debug-path=<path>]"
-         << " <target-file> <source-file> [-O <level>]" << endl;
-
-    cout << endl;
-    cout << "    -S                  "
-         << "generate assembly, can be omitted" << endl;
-    cout << "    -o                  "
-         << "set output file, can be omitted" << endl;
-    cout << "    -h, --help          "
-         << "show usage" << endl;
-    cout << "    -d, --debug <level> "
-         << "dump debug messages to certain files" << endl;
-    cout << "                        "
-         << "level 1: dump IR and optimized IR" << endl;
-    cout << "                        "
-         << "level 2: append AST" << endl;
-    cout << "                        "
-         << "level 3: append Lexer, each Optimization Pass "
-            "and Register Allocation"
-         << endl;
-    cout << "    -c, --check <level> "
-         << "check IR's relation" << endl;
-    cout << "                        "
-         << "level 1: check IR and final optimized IR only" << endl;
-    cout << "                        "
-         << "level 2: check IR after each optimization pass" << endl;
-    cout << "    --set-debug-path=<path>" << endl;
-    cout << "                        "
-         << "set debug messages output path,"
-            " default the same path with target assembly file"
-         << endl;
-    cout << "    <target-file>       "
-         << "target assembly file in ARM-v7a" << endl;
-    cout << "    <source-file>       "
-         << "source code file matching SysY grammar" << endl;
-    cout << "    -O <level>          "
-         << "set optimization level, default non-optimization -O0" << endl;
-    cout << endl;
 }
 
 /**

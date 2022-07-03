@@ -25,24 +25,24 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb);
  * @brief 去除块不用的指令
  * @param bb 此块中的指令
  */
-void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
+void unused_instruction_delete(shared_ptr<BasicBlock> &bb)
 {
     auto it = bb->instructions.begin();
     while (it != bb->instructions.end())
     {
-        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // 有返回值指令，且不被使用
+        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // 有结果指令，且不被使用
         {
             (*it)->abandonUse();
             it = bb->instructions.erase(it);
         }
-        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // 无返回值指令，且无效
+        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // 无结果指令，且无效
         {
             it = bb->instructions.erase(it);
         }
         else if ((*it)->type == INVOKE && (*it)->users.empty())
         {
             shared_ptr<InvokeInstruction> invoke = s_p_c<InvokeInstruction>(*it);
-            if (invoke->invokeType == COMMON && !invoke->targetFunction->hasSideEffect)  // 无副作用的函数，在没有使用对象时，才能被删除
+            if (invoke->invokeType == COMMON && !invoke->targetFunction->side_effect)  // 无副作用的函数，在没有使用对象时，才能被删除
             {
                 (*it)->abandonUse();
                 it = bb->instructions.erase(it);
@@ -77,7 +77,7 @@ VISIT_ALL_PHIS:
         }
         if (del)  // 对phi中操作数进行删除了
         {
-            removeTrivialPhi(phi);
+            remove_trivial_phi(phi);
             goto VISIT_ALL_PHIS;
         }
     }
@@ -87,7 +87,7 @@ VISIT_ALL_PHIS:
  * @brief 去除不用的块
  * @param func 此func中的所有块
  */
-void removeUnusedBasicBlocks(shared_ptr<Function> &func)
+void unused_block_delete(shared_ptr<Function> &func)
 {
     blockRelationTree.clear();
     buildBlockRelationTree(func->entryBlock);  // 将所有可能的块构建
@@ -102,7 +102,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                 unordered_set<shared_ptr<Value>> users = selfIns->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::INSTRUCTION)  
+                    if (user->value_type == ValueType::INSTRUCTION)  
                     {
                         shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
                         if (userIns->block != *it && userIns->block->valid)
@@ -118,7 +118,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
                                         phi->operands.erase(op.first);
                                     }
                                 }
-                                removeTrivialPhi(phi);
+                                remove_trivial_phi(phi);
                             }
                             else  // 里面的值全部变为UndefinedValue
                             {
@@ -143,7 +143,7 @@ void removeUnusedBasicBlocks(shared_ptr<Function> &func)
  * @brief 去除不被调用的函数
  * @param module 此module里的函数
  */
-void removeUnusedFunctions(shared_ptr<Module> &module)
+void unused_function_delete(shared_ptr<Module> &module)
 {
     auto func = module->functions.begin ();
     while (func != module->functions.end ())
@@ -198,16 +198,16 @@ void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
  * @brief 函数有副作用：修改了自己范围之外的资源    修改全局变量、修改输入参数所引用的对象、做输入输出操作、调用其他有副作用的函数
  * @param module 此module中的函数
  */
-void IsFunctionSideEffect(shared_ptr<Module> &module)
+void function_is_side_effect(shared_ptr<Module> &module)
 {
     for (auto &func : module->functions)
     {
-        func->hasSideEffect = false;
+        func->side_effect = false;
         for (auto &arg : func->params)
         {
             if (s_p_c<ParameterValue>(arg)->variableType == VariableType::POINTER)   // 函数参数为指针
             {
-                func->hasSideEffect = true;
+                func->side_effect = true;
                 goto FUNC_SIDE_EFFECT_CONTINUE;
             }
         }
@@ -217,27 +217,27 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
             {
                 if (ins->type == InstructionType::STORE)
                 {
-                    if (s_p_c<StoreInstruction>(ins)->address->valueType != INSTRUCTION)  // store一个全局变量
+                    if (s_p_c<StoreInstruction>(ins)->address->value_type != INSTRUCTION)  // store一个全局变量
                     {
-                        func->hasSideEffect = true;
+                        func->side_effect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                 }
                 else if (ins->type == InstructionType::LOAD)
                 {
-                    if (s_p_c<LoadInstruction>(ins)->address->valueType != INSTRUCTION)  // load一个全局变量
+                    if (s_p_c<LoadInstruction>(ins)->address->value_type != INSTRUCTION)  // load一个全局变量
                     {
-                        func->hasSideEffect = true;
+                        func->side_effect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                 }
                 else if (ins->type == InstructionType::BINARY)
                 {
                     // 使用了全局变量
-                    if (s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->lhs->valueType == ValueType::GLOBAL 
-                        || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->rhs->valueType == ValueType::GLOBAL)
+                    if (s_p_c<BinaryInstruction>(ins)->lhs->value_type == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->lhs->value_type == ValueType::GLOBAL 
+                        || s_p_c<BinaryInstruction>(ins)->rhs->value_type == ValueType::CONSTANT || s_p_c<BinaryInstruction>(ins)->rhs->value_type == ValueType::GLOBAL)
                     {
-                        func->hasSideEffect = true;
+                        func->side_effect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                 }
@@ -245,19 +245,19 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
                 {
                     if (s_p_c<InvokeInstruction>(ins)->invokeType != COMMON)  // 调用了系统函数
                     {
-                        func->hasSideEffect = true;
+                        func->side_effect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
-                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->hasSideEffect)  // 调用了有副作用的函数
+                    else if (s_p_c<InvokeInstruction>(ins)->targetFunction->side_effect)  // 调用了有副作用的函数
                     {
-                        func->hasSideEffect = true;
+                        func->side_effect = true;
                         goto FUNC_SIDE_EFFECT_CONTINUE;
                     }
                     for (auto &arg : s_p_c<InvokeInstruction>(ins)->params)
                     {
-                        if (arg->valueType == ValueType::GLOBAL || arg->valueType == ValueType::CONSTANT)  // 函数的实参为全局变量
+                        if (arg->value_type == ValueType::GLOBAL || arg->value_type == ValueType::CONSTANT)  // 函数的实参为全局变量
                         {
-                            func->hasSideEffect = true;
+                            func->side_effect = true;
                             goto FUNC_SIDE_EFFECT_CONTINUE;
                         }
                     }
@@ -274,7 +274,7 @@ void IsFunctionSideEffect(shared_ptr<Module> &module)
  * @param user 使用值的对象，一般为指令
  * @param used 被使用的值
  */
-void addUser(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> used)
+void user_use(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> used)
 {
     for (const auto &u : used)
     {
@@ -282,7 +282,7 @@ void addUser(const shared_ptr<Value> &user, initializer_list<shared_ptr<Value>> 
     }
 }
 
-void addUser(const shared_ptr<Value> &user, const vector<shared_ptr<Value>> &used)
+void user_use(const shared_ptr<Value> &user, const vector<shared_ptr<Value>> &used)
 {
     for (const auto &u : used)
     {
@@ -315,7 +315,7 @@ void removePhiUserBlocksAndMultiCmp(shared_ptr<Module> &module)
                 unordered_set<shared_ptr<Value>> users = phi->users;
                 for (auto &user : users)
                 {
-                    if (user->valueType == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者，因为当时phi多加了此user
+                    if (user->value_type == ValueType::BASIC_BLOCK)  // 如果此指令的使用者是基本块，则删除此使用者，因为当时phi多加了此user
                     {
                         phi->users.erase(user);
                     }
@@ -357,7 +357,7 @@ void fixRightValue(shared_ptr<Module> &module)
                 if (ins->users.size() == 1 && ins->resultType == R_VAL_RESULT)
                 {
                     // 如果此右值仅被一次使用，且使用与此指令不在同一个块
-                    if (ins->users.begin()->get()->valueType == ValueType::INSTRUCTION && ins->block != s_p_c<Instruction>(*ins->users.begin())->block)
+                    if (ins->users.begin()->get()->value_type == ValueType::INSTRUCTION && ins->block != s_p_c<Instruction>(*ins->users.begin())->block)
                     {
                         ins->resultType = L_VAL_RESULT;
                         ins->caughtVarName = generateTempLeftValueName();
@@ -402,7 +402,7 @@ void getFunctionRequiredStackSize(shared_ptr<Function> &func)
  * @brief phi消除，将phi的可能取值进行copy，phi仅有一个确定值
  * @param func 
  */
-void phiElimination(shared_ptr<Function> &func)
+void phi_elimination(shared_ptr<Function> &func)
 {
     for (auto &bb : func->blocks)
     {
