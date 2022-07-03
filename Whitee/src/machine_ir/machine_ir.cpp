@@ -104,7 +104,7 @@ void MachineBB::toARM(vector<shared_ptr<Value>> &global_vars, vector<shared_ptr<
 }
 
 /**
- * @brief 立即数可以移位偶数次得到
+ * @brief 立即数可以一个8位的常数移位偶数次得到
  * @param number 立即数
  * @return true 可以得到；false 不能
  */

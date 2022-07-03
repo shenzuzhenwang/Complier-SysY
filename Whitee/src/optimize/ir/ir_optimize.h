@@ -1,4 +1,11 @@
-﻿#ifndef COMPILER_IR_OPTIMIZE_H
+﻿/*********************************************************************
+ * @file   ir_optimize.h
+ * @brief  https://compileroptimizations.com/index.html 优化类型
+ * 
+ * @author 神祖
+ * @date   July 2022
+ *********************************************************************/
+#ifndef COMPILER_IR_OPTIMIZE_H
 #define COMPILER_IR_OPTIMIZE_H
 
 #include "../../ir/ir.h"

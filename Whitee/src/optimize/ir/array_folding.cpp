@@ -1,7 +1,7 @@
 ﻿#include "ir_optimize.h"
 
 /**
- * @brief 折叠局部数组
+ * @brief 局部数组传播
  * @param alloc 局部数组
  */
 void fold_array(shared_ptr<AllocInstruction> &alloc)
@@ -104,7 +104,7 @@ void fold_array(shared_ptr<AllocInstruction> &alloc)
 }
 
 /**
- * @brief 局部数组折叠
+ * @brief 局部数组传播
  * @param module 
  */
 void array_folding(shared_ptr<Module> &module)

@@ -13,7 +13,6 @@
 
 #include "machine_ir_build.h"
 #include "../basic/std/compile_std.h"
-#include "../optimize/machine/machine_optimize.h"
 
 extern bool judgeImmValid (unsigned int imm, bool mov);
 
@@ -308,14 +307,14 @@ shared_ptr<MachineModule> buildMachineModule (shared_ptr<Module>& module)
 	machineBB->MachineInstructions.insert (machineBB->MachineInstructions.end (), res.begin (), res.end ());
 	pre_ins_count = ins_count;
 
-	if (_optimizeMachineIr)
-	{
-		delete_imm_jump (machineModule);
-		delete_useless_compute (machineModule);
-		reduce_redundant_move (machineModule);
-		//merge_mla_and_mls (machineModule);
-		exchange_branch_ins (machineModule);
-	}
+	//if (_optimizeMachineIr)
+	//{
+	//	delete_imm_jump (machineModule);
+	//	delete_useless_compute (machineModule);
+	//	reduce_redundant_move (machineModule);
+	//	//merge_mla_and_mls (machineModule);
+	//	exchange_branch_ins (machineModule);
+	//}
 
 	return machineModule;
 }
@@ -477,20 +476,6 @@ void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns
 		res.push_back (movw);
 		if (high16 != 0)
 			res.push_back (movt);
-		//if (_optimizeMachineIr)
-		//{
-		//	unsigned short low16 = (unsigned int) num & 0x0000FFFFU;
-		//	unsigned short high16 = ((unsigned int) num & 0xFFFF0000U) >> 16U;
-		//	shared_ptr<Operand> low = make_shared<Operand> (IMM, to_string (low16));
-		//	shared_ptr<Operand> high = make_shared<Operand> (IMM, to_string (high16));
-		//	shared_ptr<MovIns> movw = make_shared<MovIns> (mit::MOVW, NON, NONE, 0, des, low);
-		//	shared_ptr<MovIns> movt = make_shared<MovIns> (mit::MOVT, NON, NONE, 0, des, high);
-		//	res.push_back (movw);
-		//	if (high16 != 0)
-		//		res.push_back (movt);
-		//}
-		//else
-		//{
 		//	if (num < 0)
 		//	{
 		//		imm = make_shared<Operand> (LABEL, "_" + to_string (abs (num)));
@@ -501,7 +486,6 @@ void loadImm2Reg (int num, shared_ptr<Operand> des, vector<shared_ptr<MachineIns
 		//	}
 		//	shared_ptr<PseudoLoad> load2Reg = make_shared<PseudoLoad> (NON, NONE, 0, imm, des, false);
 		//	res.push_back (load2Reg);
-		//}
 	}
 }
 

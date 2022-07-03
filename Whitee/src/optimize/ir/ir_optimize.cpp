@@ -22,10 +22,7 @@ extern bool needIrPassCheck;  // 需要每次检查IR
  */
 void optimizeIr(shared_ptr<Module> &module, OptimizeLevel level)
 {
-    //for (int i = 0; i < OPTIMIZE_TIMES; ++i)    ？？？？感觉没用
-    //    deadCodeElimination(module);
-
-    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // 连续优化2次
+    for (int i = 0; i < OPTIMIZE_TIMES; ++i)  // 连续优化2次，以防顺序原因优化失败
     {
         globalIrCorrect = true;
         if (level >= O1)

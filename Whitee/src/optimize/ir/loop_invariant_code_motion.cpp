@@ -21,7 +21,7 @@ void fix_new_forward_block(shared_ptr<Function> &func, shared_ptr<BasicBlock> &f
 inline bool judge_loop(shared_ptr<Value> &value, unordered_set<shared_ptr<BasicBlock>> &blocksInLoop);
 
 /**
- * @brief 循环不变量移除
+ * @brief 循环不变量移除  参考
  * @param module 
  */
 void loop_invariant_code_motion(shared_ptr<Module> &module)

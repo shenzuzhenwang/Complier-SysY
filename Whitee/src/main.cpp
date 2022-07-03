@@ -1,8 +1,8 @@
 ﻿/*******************************************************************
  * @file   main.cpp
  * @brief  运行的入口，运行的主要流程  
- *         
- * 
+ *         https://buaa-se-compiling.github.io/miniSysY-tutorial/pre/design_hints.html
+ *          https://www.llvm.org/docs/ProgrammersManual.html#iterating-over-the-basicblock-in-a-function
  * @author 神祖
  * @date   May 2022
  *********************************************************************/
@@ -25,11 +25,11 @@
 #include "machine_ir/machine_ir_build.h"
 using namespace std;
 
-OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // 代码优化等级
+OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
 bool needIrCheck = true;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
 
-string sourceCodeFile = "D:\\complier_test\\function\\crypto-1.c";  // 源程序路径
+string sourceCodeFile = "D:\\complier_test\\function\\101_insert_order.sy";  // 源程序路径
 string targetCodeFile;  // 目标程序路径 
 string debugMessageDirectory;  // debug信息路径
 

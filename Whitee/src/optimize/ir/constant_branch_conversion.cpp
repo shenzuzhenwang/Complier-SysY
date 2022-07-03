@@ -1,7 +1,7 @@
 ﻿#include "ir_optimize.h"
 
 /**
- * @brief 分支条件常数转化
+ * @brief 去除无用分支
  * @param module 
  */
 void constant_branch_conversion(shared_ptr<Module> &module)

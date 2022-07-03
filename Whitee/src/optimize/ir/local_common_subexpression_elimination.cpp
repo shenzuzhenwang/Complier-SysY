@@ -3,7 +3,7 @@
 void block_common_subexpression_elimination(shared_ptr<BasicBlock> &bb);
 
 /**
- * @brief 局部公共子表达式删除   非自己写
+ * @brief 公共子表达式删除   参考  如果表达式E 已经被计算过，并且从先前的计算到现在E 中所有变量的值 没有改变，那么E 的这次出现就称为公共子表达式
  * @param module 
  */
 void local_common_subexpression_elimination(shared_ptr<Module> &module)
