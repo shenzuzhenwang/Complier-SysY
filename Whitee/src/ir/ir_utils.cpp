@@ -17,9 +17,9 @@ const unordered_set<InstructionType> noResultTypes{// 无返回值指令
                                                    InstructionType::INVOKE,
                                                    InstructionType::STORE};
 
-unordered_set<shared_ptr<BasicBlock>> blockRelationTree;
+unordered_set<shared_ptr<BasicBlock>> relation_tree;
 
-void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb);
+void build_relation_tree(const shared_ptr<BasicBlock> &bb);
 
 /**
  * @brief 去除块不用的指令
@@ -89,12 +89,12 @@ VISIT_ALL_PHIS:
  */
 void unused_block_delete(shared_ptr<Function> &func)
 {
-    blockRelationTree.clear();
-    buildBlockRelationTree(func->entryBlock);  // 将所有可能的块构建
+    relation_tree.clear();
+    build_relation_tree(func->entryBlock);  // 将所有可能的块构建
     auto it = func->blocks.begin();
     while (it != func->blocks.end())
     {
-        if (blockRelationTree.count(*it) == 0)  // 如果此块不可能运行
+        if (relation_tree.count(*it) == 0)  // 如果此块不可能运行
         {
             for (int i = (*it)->instructions.size() - 1; i >= 0; --i)
             {
@@ -104,12 +104,12 @@ void unused_block_delete(shared_ptr<Function> &func)
                 {
                     if (user->value_type == ValueType::INSTRUCTION)  
                     {
-                        shared_ptr<Instruction> userIns = s_p_c<Instruction>(user);
-                        if (userIns->block != *it && userIns->block->valid)
+                        shared_ptr<Instruction> user_ins = s_p_c<Instruction>(user);
+                        if (user_ins->block != *it && user_ins->block->valid)
                         {
-                            if (userIns->type == InstructionType::PHI)  // phi指令删除操作数
+                            if (user_ins->type == InstructionType::PHI)  // phi指令删除操作数
                             {
-                                shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(userIns);
+                                shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(user_ins);
                                 unordered_map<shared_ptr<BasicBlock>, shared_ptr<Value>> operands = phi->operands;
                                 for (auto &op : operands)
                                 {
@@ -163,7 +163,7 @@ void unused_function_delete(shared_ptr<Module> &module)
  * @param bb 后继块
  * @param pre 前驱块
  */
-void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre)
+void block_predecessor_delete(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre)
 {
     pre->successors.erase(bb);
     bb->predecessors.erase(pre);
@@ -173,7 +173,7 @@ void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &
         bb->successors.clear();
         for (auto b : successorsCopy)
         {
-            removeBlockPredecessor(b, bb);
+            block_predecessor_delete(b, bb);
         }
     }
 }
@@ -182,14 +182,14 @@ void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &
  * @brief 构建块关系树，将后继的块全部插入
  * @param bb 开始的块
  */
-void buildBlockRelationTree(const shared_ptr<BasicBlock> &bb)
+void build_relation_tree(const shared_ptr<BasicBlock> &bb)
 {
-    blockRelationTree.insert(bb);
+    relation_tree.insert(bb);
     for (const shared_ptr<BasicBlock> &b : bb->successors)
     {
-        if (blockRelationTree.count(b) == 0)
+        if (relation_tree.count(b) == 0)
         {
-            buildBlockRelationTree(b);
+            build_relation_tree(b);
         }
     }
 }

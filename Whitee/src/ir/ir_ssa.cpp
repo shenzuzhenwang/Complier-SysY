@@ -36,6 +36,7 @@ shared_ptr<Value> read_variable(shared_ptr<BasicBlock> &block, string &name)
 void write_variable(shared_ptr<BasicBlock> &block, const string &varName, const shared_ptr<Value> &value)
 {
     block->ssa_map[varName] = value;
+
     if (dynamic_cast<PhiInstruction *>(value.get()))   // 写入phi函数的值，phi被此块使用
     {
         value->users.insert(block);
@@ -50,31 +51,33 @@ void write_variable(shared_ptr<BasicBlock> &block, const string &varName, const 
  */
 shared_ptr<Value> read_variable_recursively(shared_ptr<BasicBlock> &block, string &name)
 {
+    shared_ptr<Value> val = shared_ptr<Value> ();
     if (!block->sealed)  // 块不封闭，仅存在于循环体，此时可能前驱未加入完
     {
-        shared_ptr<PhiInstruction> empty_phi = make_shared<PhiInstruction>(name, block);
-        block->incomplete_phis[name] = empty_phi;
-        write_variable(block, name, empty_phi);
-        return empty_phi;
+        shared_ptr<PhiInstruction> val = make_shared<PhiInstruction>(name, block);
+        block->incomplete_phis[name] = val;
+        write_variable(block, name, val);
+        return val;
     }
     else if (block->predecessors.size() == 1)  // 只有一个前驱的情况：不需要 phi
     {
-        shared_ptr<BasicBlock> predecessor = *(block->predecessors.begin());
-        shared_ptr<Value> val = read_variable(predecessor, name);  // 继续递归向前寻找变量的值
+        shared_ptr<BasicBlock> pre = *(block->predecessors.begin());
+        val = read_variable(pre, name);  // 继续递归向前寻找变量的值
         write_variable(block, name, val);  // 找到后写入现在的块
         return val;
     }
     else  // 如果有两个前驱块
     {
-        shared_ptr<Value> val = make_shared<PhiInstruction>(name, block);
+        val = make_shared<PhiInstruction>(name, block);
         write_variable(block, name, val);                   // 先在块中写一个无操作数的phi，为了破坏可能的循环
+
+        val = add_phi_operands (block, name, phi);  // 加入操作数
+
         shared_ptr<PhiInstruction> phi = s_p_c<PhiInstruction>(val);
         block->phis.insert(phi);
-
-        val = add_phi_operands(block, name, phi);  // 加入操作数
-        write_variable(block, name, val);
-        return val;
     }
+    write_variable (block, name, val);
+    return val;
 }
 
 /**

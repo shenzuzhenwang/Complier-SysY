@@ -33,10 +33,6 @@ string sourceCodeFile = "D:\\complier_test\\function\\101_insert_order.sy";  // 
 string targetCodeFile;  // 目标程序路径 
 string debugMessageDirectory;  // debug信息路径
 
-void printHelp(const char *exec);
-
-int setCompileOptions(int argc, char **argv);
-
 int initConfig();
 
 /**
@@ -49,9 +45,6 @@ int initConfig();
 int main(int argc, char **argv)
 {
     int r;
-
-    if ((r = setCompileOptions(argc, argv)) != 0)
-        return r;
 
     if ((r = initConfig()) != 0)
         return r;
@@ -148,71 +141,6 @@ int main(int argc, char **argv)
 }
 
 /**
- * @brief 通过读取命令行的参数，来对今后的动作进行设置
- * @param argc  命令行参数的个数
- * @param argv  命令行参数  第一个为执行文件的路径
- * @return _SCO_ARG_ERR 参数格式不正确，停止执行，并打印help说明；_SCO_HELP 打印help；_SCO_DBG_ERR debug参数出错；_SCO_OP_ERR optimize参数出错；
- *         _SCO_CHK_ERR check参数出错；_SCO_DBG_PATH_ERR debug path不正确；_SCO_SUCCESS 成功
- */
-int setCompileOptions(int argc, char **argv)
-{
-    bool argOptimizeFlag = false; 
-    bool argSourceFlag = false;
-    bool argOutputFlag = false;
-
-    if (argc < 1)
-    {
-        printHelp(argv[0]);
-        return _SCO_ARG_ERR;
-    }
-
-    for (int i = 1; i < argc; ++i)
-    {
-        if (argv[i] == "-h"s || argv[i] == "--help"s)  // -h  显示帮助
-        {
-            printHelp(argv[0]);
-            return _SCO_HELP;
-        }
-        else if (argv[i] == "-S"s && !argSourceFlag)  // -s  生成汇编
-        {
-            argSourceFlag = true;
-        }
-        else if (argv[i] == "-o"s && !argOutputFlag)  // -o
-        {
-            argOutputFlag = true;
-        }
-        else if (!argOptimizeFlag && (string(argv[i]).find("-O") == 0))  // -O  优化等级
-        {
-            argOptimizeFlag = true;
-            argv[i] += 2;
-            if (*argv[i] == '\0')
-            {
-                if (i + 1 == argc)
-                {
-                    printHelp(argv[0]);
-                    return _SCO_OP_ERR;
-                }
-                ++i;
-            }
-            if (argv[i] == "1"s)
-                optimizeLevel = OptimizeLevel::O1;
-            else if (argv[i] == "2"s)
-                optimizeLevel = OptimizeLevel::O2;
-            if (optimizeLevel >= OptimizeLevel::O2)
-            {
-                _optimizeMachineIr = true;
-            }
-        }
-    }
-
-    if (optimizeLevel >= OptimizeLevel::O2)
-    {
-        _optimizeMachineIr = true;
-    }
-    return _SCO_SUCCESS;
-}
-
-/**
  * @brief 创建一个文件夹
  * @param path 文件夹的路径
  * @return true 成功；false 失败
@@ -221,7 +149,7 @@ bool createFolder(const char *path)
 {
     if (_access(path, F_OK) != -1) // 已有此文件夹
         return true;
-    if (strlen(path) > FILENAME_MAX)  // 文件路径过长
+    if (strlen(path) > FILENAME_MAX)  // 文件路径过长 
     {
         cout << "Error: debug path is too long." << endl;
         return false;

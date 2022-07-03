@@ -5,9 +5,9 @@
  * @param globalVar 全局变量
  * @return true 可能被写入；false 不可能被写入
  */
-bool global_var_has_write_user(const shared_ptr<Value> &globalVar)
+bool global_var_has_write_user(const shared_ptr<Value> &global)
 {
-    for (auto &user : globalVar->users)
+    for (auto &user : global->users)
     {
         if (dynamic_cast<StoreInstruction *>(user.get()))
             return true;
@@ -35,7 +35,7 @@ void global_variable_to_constant(shared_ptr<Value> &globalVar, shared_ptr<Module
         }
     }
     shared_ptr<GlobalValue> global = s_p_c<GlobalValue>(globalVar);
-    if (global->variableType == VariableType::INT)
+    if (global->value_type == VariableType::INT)
     {
         shared_ptr<Value> constantNumber = Number(global->initValues.at(0));
         unordered_set<shared_ptr<Value>> users = global->users;

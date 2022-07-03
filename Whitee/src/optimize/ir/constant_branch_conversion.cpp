@@ -20,13 +20,13 @@ void constant_branch_conversion(shared_ptr<Module> &module)
                         shared_ptr<NumberValue> num = s_p_c<NumberValue>(br->condition);
                         if (num->number == 0)
                         {
-                            removeBlockPredecessor(br->trueBlock, bb);  // 去掉其trueBlock
+                            block_predecessor_delete(br->trueBlock, bb);  // 去掉其trueBlock
                             ins = make_shared<JumpInstruction>(br->falseBlock, bb);  // 变分支指令为跳转
                             br->abandonUse();
                         }
                         else
                         {
-                            removeBlockPredecessor(br->falseBlock, bb);  // 去掉其falseBlock
+                            block_predecessor_delete(br->falseBlock, bb);  // 去掉其falseBlock
                             ins = make_shared<JumpInstruction>(br->trueBlock, bb);
                             br->abandonUse();
                         }

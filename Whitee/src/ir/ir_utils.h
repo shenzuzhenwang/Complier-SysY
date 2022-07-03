@@ -13,7 +13,7 @@ extern void unused_block_delete(shared_ptr<Function> &func);
 
 extern void unused_function_delete(shared_ptr<Module> &module);
 
-extern void removeBlockPredecessor(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre);
+extern void block_predecessor_delete(shared_ptr<BasicBlock> &bb, shared_ptr<BasicBlock> &pre);
 
 extern void function_is_side_effect(shared_ptr<Module> &module);
 
