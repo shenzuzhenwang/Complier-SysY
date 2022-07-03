@@ -264,7 +264,7 @@ void stmtToIr(shared_ptr<Function> &func, shared_ptr<BasicBlock> &bb, const shar
         shared_ptr<SymbolTableItem> identItem = stmt->lVal->ident->ident;  // 赋值对象
         // 查找左值
         shared_ptr<Value> address, offset;
-        switch (identItem->symbolType)  // //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
+        switch (identItem->symbolType)  //  CONST_VAR | CONST_ARRAY | VAR | ARRAY | VOID_FUNC | RET_FUNC
         {
         case SymbolType::VAR:
         {

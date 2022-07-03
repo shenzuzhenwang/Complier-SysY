@@ -30,12 +30,12 @@ void removeUnusedInstructions(shared_ptr<BasicBlock> &bb)
     auto it = bb->instructions.begin();
     while (it != bb->instructions.end())
     {
-        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // 有返回值指令，且不被使用
+        if (noResultTypes.count((*it)->type) == 0 && (*it)->users.empty())   // 有结果指令，且不被使用
         {
             (*it)->abandonUse();
             it = bb->instructions.erase(it);
         }
-        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // 无返回值指令，且无效
+        else if (noResultTypes.count((*it)->type) != 0 && !(*it)->valid)   // 无结果指令，且无效
         {
             it = bb->instructions.erase(it);
         }

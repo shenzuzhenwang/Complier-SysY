@@ -64,7 +64,7 @@ shared_ptr<Value> readLocalVariableRecursively(shared_ptr<BasicBlock> &bb, strin
         writeLocalVariable(bb, varName, val);  // 找到后写入现在的块
         return val;
     }
-    else  // 如果有两个以上前驱块
+    else  // 如果有两个前驱块
     {
         shared_ptr<Value> val = make_shared<PhiInstruction>(varName, bb);
         writeLocalVariable(bb, varName, val);                   // 先在块中写一个无操作数的phi，为了破坏可能的循环
@@ -89,7 +89,7 @@ shared_ptr<Value> addPhiOperands(shared_ptr<BasicBlock> &bb, string &varName, sh
     for (auto &it : bb->predecessors)  // 从前驱中确定操作数
     {
         shared_ptr<BasicBlock> pred = it;
-        shared_ptr<Value> v = readLocalVariable(pred, varName);  // 递归向前驱块寻找同名变量的值，可能由于循环，找到了此phi
+        shared_ptr<Value> v = readLocalVariable(pred, varName);  // 递归向前驱块寻找同名变量的值，可能会由于循环，找到一样phi
         shared_ptr<BasicBlock> block;
         phi->operands.insert({it, v});
         v->users.insert(phi);

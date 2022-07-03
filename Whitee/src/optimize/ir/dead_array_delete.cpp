@@ -1,7 +1,7 @@
 ﻿#include "ir_optimize.h"
 
 /**
- * @brief 去掉只有store指令的变量，包括全局变量与数组
+ * @brief 只写变量清除，去掉只有store指令的变量，包括全局变量与数组
  * @param module 
  */
 void dead_array_delete(shared_ptr<Module> &module)

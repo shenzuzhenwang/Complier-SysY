@@ -25,7 +25,7 @@
 #include "machine_ir/machine_ir_build.h"
 using namespace std;
 
-OptimizeLevel optimizeLevel = OptimizeLevel::O0;  // 代码优化等级
+OptimizeLevel optimizeLevel = OptimizeLevel::O1;  // 代码优化等级
 bool needIrCheck = true;  // 初始IR和最终优化后IR检查
 bool needIrPassCheck = false;  // 每一遍优化后都进行检查
 
